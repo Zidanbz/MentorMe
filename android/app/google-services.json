@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1073921103543",
+    "project_id": "mentorme-f5b0f",
+    "storage_bucket": "mentorme-f5b0f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1073921103543:android:8d2fe48e8b0508b3bd9f32",
+        "android_client_info": {
+          "package_name": "com.example.mentorme"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA8hctVHvdxary4IC7bZNs9kHuPiiB99UE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
