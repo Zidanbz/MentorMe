@@ -80,14 +80,14 @@ class LoginPage extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  IconButton(
-                    onPressed: () {
-                      // Aksi login dengan Apple
-                    },
-                    icon: const Icon(Icons.apple),
-                    iconSize: 40,
-                  ),
-                  const SizedBox(width: 15),
+                  // IconButton(
+                  //   onPressed: () {
+                  //     // Aksi login dengan Apple
+                  //   },
+                  //   icon: const Icon(Icons.apple),
+                  //   iconSize: 40,
+                  // ),
+                  // const SizedBox(width: 15),
                   IconButton(
                     onPressed: () {
                       // Aksi login dengan Google

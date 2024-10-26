@@ -7,7 +7,6 @@ class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _SplashScreenState createState() => _SplashScreenState();
 }
 
@@ -15,8 +14,7 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   void initState() {
     super.initState();
-    Timer(const Duration(seconds: 5), () {
-      // Navigasi ke halaman selanjutnya setelah 3 detik
+    Timer(const Duration(seconds: 3), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -29,13 +27,13 @@ class _SplashScreenState extends State<SplashScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE0FFF3), // Warna latar belakang
+      backgroundColor: const Color(0xFFE0FFF3),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
-              'assets/Logo.png', // Ganti dengan path logo kamu
+              'assets/Logo.png',
               width: 200,
               height: 200,
             ),
@@ -45,7 +43,7 @@ class _SplashScreenState extends State<SplashScreen> {
               style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.bold,
-                color: Colors.black, // Warna teks
+                color: Colors.black,
               ),
             ),
           ],
@@ -59,15 +57,12 @@ class OnboardingScreen extends StatefulWidget {
   const OnboardingScreen({super.key});
 
   @override
-  // ignore: library_private_types_in_public_api
   _OnboardingScreenState createState() => _OnboardingScreenState();
 }
 
 class _OnboardingScreenState extends State<OnboardingScreen> {
   final PageController _pageController = PageController();
   int _currentPage = 0;
-
-  // Inisialisasi list _pages di dalam initState()
   List<Widget> _pages = [];
 
   @override
@@ -75,15 +70,15 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     super.initState();
     _pages = [
       _buildOnboardingPage(
-        'assets/onboarding1.png', // Ganti dengan path gambar onboarding 1
+        'assets/onboarding1.png',
         'Menggali potensi diri dalam dengan bimbingan mentor',
       ),
       _buildOnboardingPage(
-        'assets/unboarding2.png', // Ganti dengan path gambar onboarding 2
+        'assets/unboarding2.png',
         'Temukan ide brilian untuk diskusikan proyek bersama teman-teman dengan minat yang sama!',
       ),
       _buildOnboardingPage(
-        'assets/unboarding3.png', // Ganti dengan path gambar onboarding 3
+        'assets/unboarding3.png',
         'Bergabunglah bersama MentorMe Sekarang!',
       ),
     ];
@@ -144,11 +139,11 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 children: [
                   ElevatedButton(
                     onPressed: () {
-                      // Navigasi ke halaman Daftar
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const RegisterPage()),
+                          builder: (context) => const DaftarPilihanPage(),
+                        ),
                       );
                     },
                     style: ElevatedButton.styleFrom(
@@ -169,8 +164,9 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                            builder: (context) => const LoginPage()),
-                      ); // Navigasi ke halaman Masuk
+                          builder: (context) => const LoginPilihanPage(),
+                        ),
+                      );
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: Colors.white,
@@ -214,5 +210,190 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     }
     return indicators;
+  }
+}
+
+class DaftarPilihanPage extends StatelessWidget {
+  const DaftarPilihanPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE0FFF3),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 100),
+              Image.asset(
+                'assets/Logo.png', // Sesuaikan dengan path logo Anda
+                width: 200,
+                height: 200,
+              ),
+              const Text(
+                'MentorMe',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'DAFTAR',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Daftar sebagai:',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => const RegisterPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF339989),
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  'Trainee',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFFFFFFFF),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // TODO: Navigasi ke halaman Daftar Mentor
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFFFFF),
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  'Mentor',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFF339989),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class LoginPilihanPage extends StatelessWidget {
+  const LoginPilihanPage({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFE0FFF3),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(20.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const SizedBox(height: 100),
+              Image.asset(
+                'assets/Logo.png', // Sesuaikan dengan path logo Anda
+                width: 200,
+                height: 200,
+              ),
+              const Text(
+                'MentorMe',
+                style: TextStyle(
+                  fontSize: 24,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'MASUK',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 5),
+              const Text(
+                'Masuk sebagai:',
+                style: TextStyle(fontSize: 16),
+              ),
+              const SizedBox(height: 30),
+              ElevatedButton(
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginPage()),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF339989),
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  'Trainee',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFFFFFFFF),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: () {
+                  // TODO: Navigasi ke halaman Login Mentor
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFFFFFFF),
+                  minimumSize: const Size.fromHeight(50),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(25),
+                  ),
+                ),
+                child: const Text(
+                  'Mentor',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: Color(0xFF339989),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 100),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
