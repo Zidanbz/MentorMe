@@ -2,6 +2,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Daftar/daftar_page.dart';
 import 'package:mentorme/Pages/Login/login_page.dart';
+import 'package:mentorme/PagesForMentor/Daftar/DaftarForMentor.dart';
+import 'package:mentorme/PagesForMentor/Login/LoginForMentor.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -280,7 +282,10 @@ class DaftarPilihanPage extends StatelessWidget {
               const SizedBox(height: 20),
               ElevatedButton(
                 onPressed: () {
-                  // TODO: Navigasi ke halaman Daftar Mentor
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const RegisterForMentorPage()),
+                  );
                 },
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFFFFFFF),
@@ -371,7 +376,11 @@ class LoginPilihanPage extends StatelessWidget {
               ),
               const SizedBox(height: 20),
               ElevatedButton(
-                onPressed: () {
+                  onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => const LoginForMentorPage()),
+                  );
                   // TODO: Navigasi ke halaman Login Mentor
                 },
                 style: ElevatedButton.styleFrom(

@@ -38,6 +38,12 @@ class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
+      theme: ThemeData(
+        fontFamily: 'SFPro',
+        textTheme: const TextTheme(
+          bodyMedium: TextStyle(fontWeight: FontWeight.w400),
+        ),
+      ),
       debugShowCheckedModeBanner: false,
       home: Scaffold(
         backgroundColor: const Color(0xffE0FFF3),
