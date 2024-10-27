@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/Pages/Beranda/beranda.dart';
 import 'package:mentorme/Pages/Daftar/daftar_page.dart';
 import 'package:mentorme/main.dart';
 
@@ -107,7 +108,7 @@ class LoginPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const MyApp(),
+                      builder: (context) => const BerandaPage(),
                     ),
                   );
                 },
