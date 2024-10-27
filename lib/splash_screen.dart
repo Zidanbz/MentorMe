@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Daftar/daftar_page.dart';
 import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/PagesForMentor/Daftar/DaftarForMentor.dart';
-import 'package:mentorme/PagesForMentor/Login/LoginForMentor.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
