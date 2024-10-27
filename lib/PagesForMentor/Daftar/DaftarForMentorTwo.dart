@@ -1,6 +1,5 @@
 import 'dart:io'; // Import dart:io untuk FileImage
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mentorme/PagesForMentor/Daftar/DaftarForMentorThree.dart';
 
 class Daftarformentortwo extends StatefulWidget {
@@ -15,15 +14,7 @@ class _DaftarformentortwoState extends State<Daftarformentortwo> {
 
 // gw belom selesaiin bingung gw
 
-  var image;
-  void imagem() async {
-    // ignore: deprecated_member_use
-    PickedFile? picked = await ImagePicker().getImage(
-        preferredCameraDevice: CameraDevice.front, source: ImageSource.camera);
-    setState(() {
-      image = File(picked!.path);
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +46,7 @@ class _DaftarformentortwoState extends State<Daftarformentortwo> {
                   ),
                   const SizedBox(height: 20),
                   GestureDetector(
-                    onTap: imagem,
+                    // onTap: imagem,
                     child: Container(
                       height: 200,
                       decoration: BoxDecoration(

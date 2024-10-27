@@ -5,6 +5,8 @@ import 'package:mentorme/Pages/Kegiatanku/kegiatanku.dart';
 import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/Pages/Projectku/project_marketplace.dart';
 import 'package:mentorme/Pages/SplashScreen/splash_screen.dart';
+import 'package:mentorme/PagesForMentor/Daftar/DaftarForMentorThree.dart';
+import 'package:mentorme/PagesForMentor/uploadProject/uploadProject.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -26,11 +28,14 @@ class _MyAppState extends State<MyApp> {
   int _currentIndex = 0;
 
   final List<Widget> _pages = [
+    TambahProjectPage(),
+    // const UploadFotoPage(),
     const SplashScreen(),
     const LoginPage(),
     const BerandaPage(),
     const ProjectPage(),
     const Pelajaranku(),
+
     // HomeScreen(),
     // Tambahkan halaman lain di sini jika ada
   ];

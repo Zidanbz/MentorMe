@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
 import 'package:mentorme/PagesForMentor/Daftar/AgreementPage.dart';
 
 class UploadFotoPage extends StatefulWidget {
@@ -11,29 +10,6 @@ class UploadFotoPage extends StatefulWidget {
 }
 
 class _UploadFotoPageState extends State<UploadFotoPage> {
-  String? _imagePath;
-  String? _cvPath;
-
-  final ImagePicker _picker = ImagePicker();
-
-  Future<void> _pickImage(ImageSource source, String type) async {
-    try {
-      final XFile? pickedImage = await _picker.pickImage(source: source);
-      if (pickedImage != null) {
-        setState(() {
-          if (type == 'foto') {
-            _imagePath = pickedImage.path;
-          } else if (type == 'cv') {
-            _cvPath = pickedImage.path;
-          }
-        });
-      }
-    } catch (e) {
-      print('Error picking image: $e');
-      // Tampilkan pesan error ke pengguna (misalnya, menggunakan SnackBar)
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -63,26 +39,12 @@ class _UploadFotoPageState extends State<UploadFotoPage> {
                 ),
                 const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: () => _pickImage(ImageSource.gallery, 'foto'),
                   child: Container(
                     height: 200,
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
-                      image: _imagePath != null
-                          ? DecorationImage(
-                              image: FileImage(File(_imagePath!)),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
                     ),
-                    child: _imagePath == null
-                        ? const Icon(
-                            Icons.add_a_photo,
-                            size: 40,
-                            color: Colors.grey,
-                          )
-                        : null,
                   ),
                 ),
                 const SizedBox(height: 20),
@@ -95,26 +57,12 @@ class _UploadFotoPageState extends State<UploadFotoPage> {
                 ),
                 const SizedBox(height: 10),
                 GestureDetector(
-                  onTap: () => _pickImage(ImageSource.gallery, 'cv'),
                   child: Container(
                     height: 200,
                     decoration: BoxDecoration(
                       color: Colors.grey[300],
                       borderRadius: BorderRadius.circular(8),
-                      image: _cvPath != null
-                          ? DecorationImage(
-                              image: FileImage(File(_cvPath!)),
-                              fit: BoxFit.cover,
-                            )
-                          : null,
                     ),
-                    child: _cvPath == null
-                        ? const Icon(
-                            Icons.add_a_photo,
-                            size: 40,
-                            color: Colors.grey,
-                          )
-                        : null,
                   ),
                 ),
                 const SizedBox(height: 20),
