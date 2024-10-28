@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Daftar/daftar_page.dart';
+import 'package:mentorme/PagesForMentor/projectForMentor/projectForMentor.dart';
 import 'package:mentorme/main.dart';
 
 class LoginForMentorPage extends StatelessWidget {
@@ -107,7 +108,7 @@ class LoginForMentorPage extends StatelessWidget {
                   Navigator.push(
                     context,
                     MaterialPageRoute(
-                      builder: (context) => const MyApp(),
+                      builder: (context) => const ProjectForMentorPage(),
                     ),
                   );
                 },
