@@ -5,12 +5,21 @@ import 'package:flutter/services.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/global/global.dart';
+import 'dart:convert';
+import 'package:crypto/crypto.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
 
   @override
   State<RegisterPage> createState() => _RegisterPageState();
+}
+
+// hash password
+String hashPassword(String password) {
+  var bytes = utf8.encode(password);
+  var digest = sha256.convert(bytes);
+  return digest.toString();
 }
 
 class _RegisterPageState extends State<RegisterPage> {
@@ -35,12 +44,16 @@ class _RegisterPageState extends State<RegisterPage> {
 
         currentUser = auth.user;
         if (currentUser != null) {
+          // hash password
+          String hashedPassword =
+              hashPassword(passwordTextEditingController.text.trim());
           Map<String, dynamic> userData = {
             'id': currentUser!.uid,
             'nama': namaTextEditingController.text.trim(),
             'phone': phoneTextEditingController.text
                 .trim(), // Assuming you meant phone
             'email': emailTextEditingController.text.trim(),
+            'password': hashedPassword,
           };
 
           DatabaseReference userRef = FirebaseDatabase.instance
