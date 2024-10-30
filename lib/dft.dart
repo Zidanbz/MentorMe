@@ -219,7 +219,7 @@ class _RegisterPageState extends State<RegisterPage> {
                       ),
                       SizedBox(height: 10),
                       TextFormField(
-                        obscureText: true,
+                        obscureText: !_passwordVisible,
                         inputFormatters: [
                           LengthLimitingTextInputFormatter(50),
                         ],
