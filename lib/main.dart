@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:mentorme/dft.dart';
 import 'package:mentorme/splash_screen.dart';
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
+  await Firebase.initializeApp();
   runApp(const MyApp());
 }
 
@@ -36,8 +35,7 @@ class _MyAppState extends State<MyApp> {
           bodyMedium: TextStyle(fontWeight: FontWeight.w400),
         ),
       ),
-      home: const SplashScreen(),
+      home: const RegisterPage(),
     );
   }
 }
-

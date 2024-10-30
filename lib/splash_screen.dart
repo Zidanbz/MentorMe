@@ -2,8 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Daftar/daftar_page.dart';
 import 'package:mentorme/Pages/Login/login_page.dart';
-import 'package:mentorme/PagesForMentor/Daftar/DaftarForMentor.dart';
-import 'package:mentorme/PagesForMentor/Login/LoginForMentor.dart';
+import 'package:mentorme/dft.dart';
 import 'package:mentorme/homePageMentor.dart';
 import 'package:mentorme/homePageTrainee.dart';
 
@@ -146,7 +145,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const DaftarPilihanPage(),
+                          builder: (context) => RegisterPage(),
                         ),
                       );
                     },
@@ -168,7 +167,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (context) => const LoginPilihanPage(),
+                          builder: (context) => const LoginPage(),
                         ),
                       );
                     },
@@ -214,199 +213,5 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       );
     }
     return indicators;
-  }
-}
-
-class DaftarPilihanPage extends StatelessWidget {
-  const DaftarPilihanPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE0FFF3),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 100),
-              Image.asset(
-                'assets/Logo.png', // Sesuaikan dengan path logo Anda
-                width: 200,
-                height: 200,
-              ),
-              const Text(
-                'MentorMe',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'DAFTAR',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'Daftar sebagai:',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const RegisterPage()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF339989),
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Trainee',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const RegisterForMentorPage()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFFFFF),
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Mentor',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFF339989),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 100),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class LoginPilihanPage extends StatelessWidget {
-  const LoginPilihanPage({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFE0FFF3),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(20.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              const SizedBox(height: 100),
-              Image.asset(
-                'assets/Logo.png', // Sesuaikan dengan path logo Anda
-                width: 200,
-                height: 200,
-              ),
-              const Text(
-                'MentorMe',
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'Login',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-              const SizedBox(height: 5),
-              const Text(
-                'Login sebagai:',
-                style: TextStyle(fontSize: 16),
-              ),
-              const SizedBox(height: 30),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const Homepagetrainee()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF339989),
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Trainee',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFFFFFFFF),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                        builder: (context) => const Homepagementor()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFFFFFFFF),
-                  minimumSize: const Size.fromHeight(50),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(25),
-                  ),
-                ),
-                child: const Text(
-                  'Mentor',
-                  style: TextStyle(
-                    fontSize: 18,
-                    color: Color(0xFF339989),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 100),
-            ],
-          ),
-        ),
-      ),
-    );
   }
 }
