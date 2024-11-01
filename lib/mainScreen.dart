@@ -1,7 +1,9 @@
+import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
 import 'package:mentorme/Pages/Kegiatanku/kegiatanku.dart';
 import 'package:mentorme/Pages/Projectku/project_marketplace.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,10 +16,10 @@ class _MainStateScreen extends State<MainScreen>
     with SingleTickerProviderStateMixin {
   TabController? tabController;
   int selectedIndex = 0;
+  String userName = '';
 
   onItemClicked(int index) {
     if (tabController != null) {
-      // <-- Tambahkan pengecekan null
       setState(() {
         selectedIndex = index;
         tabController!.index = selectedIndex;
@@ -28,8 +30,29 @@ class _MainStateScreen extends State<MainScreen>
   @override
   void initState() {
     super.initState();
+    tabController = TabController(length: 3, vsync: this);
+    getUserName();
+  }
 
-    tabController = TabController(length: 5, vsync: this);
+  Future<void> getUserName() async {
+    try {
+      final user = FirebaseAuth.instance.currentUser;
+      if (user != null) {
+        final ref = FirebaseDatabase.instance.ref('users/${user.uid}');
+        final snapshot = await ref.get();
+
+        if (snapshot.exists) {
+          setState(() {
+            final data = snapshot.value as Map<dynamic, dynamic>?;
+            userName = data?['nama'] ?? 'User';
+          });
+        } else {
+          print('User data not found');
+        }
+      }
+    } catch (e) {
+      print('Error fetching user name: $e');
+    }
   }
 
   @override
@@ -43,19 +66,19 @@ class _MainStateScreen extends State<MainScreen>
         title: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Row(
+            Row(
               children: [
-                CircleAvatar(
+                const CircleAvatar(
                   radius: 24,
-                  backgroundImage: AssetImage('assets/User.jpg'),
+                  backgroundImage: AssetImage('assets/person.png'),
                 ),
-                SizedBox(width: 8),
+                const SizedBox(width: 8),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Hi! Zidan',
-                      style: TextStyle(
+                      'Hi! $userName',
+                      style: const TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -117,16 +140,16 @@ class _MainStateScreen extends State<MainScreen>
         ),
       ),
       body: TabBarView(
-        physics: NeverScrollableScrollPhysics(),
+        physics: const NeverScrollableScrollPhysics(),
         controller: tabController,
-        children: [
+        children: const [
           BerandaPage(),
           ProjectPage(),
           Pelajaranku(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
+        items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
             label: 'Home',
@@ -149,7 +172,7 @@ class _MainStateScreen extends State<MainScreen>
           ),
         ],
         type: BottomNavigationBarType.fixed,
-        selectedLabelStyle: TextStyle(fontSize: 14),
+        selectedLabelStyle: const TextStyle(fontSize: 14),
         showUnselectedLabels: true,
         currentIndex: selectedIndex,
         onTap: onItemClicked,
