@@ -1,9 +1,9 @@
-import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
 import 'package:mentorme/Pages/Kegiatanku/kegiatanku.dart';
 import 'package:mentorme/Pages/Projectku/project_marketplace.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -38,20 +38,21 @@ class _MainStateScreen extends State<MainScreen>
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
-        final ref = FirebaseDatabase.instance.ref('users/${user.uid}');
-        final snapshot = await ref.get();
+        final userDoc = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(user.uid)
+            .get();
 
-        if (snapshot.exists) {
+        if (userDoc.exists) {
           setState(() {
-            final data = snapshot.value as Map<dynamic, dynamic>?;
-            userName = data?['nama'] ?? 'User';
+            userName = userDoc.data()?['nama'] ?? 'User';
           });
         } else {
-          print('User data not found');
+          print('Data pengguna tidak ditemukan');
         }
       }
     } catch (e) {
-      print('Error fetching user name: $e');
+      print('Error mengambil nama pengguna: $e');
     }
   }
 

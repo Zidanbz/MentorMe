@@ -7,6 +7,7 @@ import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/global/global.dart';
 import 'dart:convert';
 import 'package:crypto/crypto.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -37,40 +38,98 @@ class _RegisterPageState extends State<RegisterPage> {
   void submitForm() async {
     if (_formKey.currentState!.validate()) {
       try {
-        UserCredential auth = await firebaseAuth.createUserWithEmailAndPassword(
+        // Tampilkan loading dialog
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context) {
+            return Dialog(
+              backgroundColor: Color(0xFFE0FFF3),
+              child: Padding(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/Logo.png',
+                      width: 60,
+                      height: 60,
+                    ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        CircularProgressIndicator(color: Colors.green),
+                        const SizedBox(width: 15),
+                        const Text("Sedang mendaftar..."),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+
+        // Buat user di Firebase Auth
+        UserCredential userCredential =
+            await FirebaseAuth.instance.createUserWithEmailAndPassword(
           email: emailTextEditingController.text.trim(),
           password: passwordTextEditingController.text.trim(),
         );
 
-        currentUser = auth.user;
-        if (currentUser != null) {
-          // hash password
+        // Jika berhasil membuat user
+        if (userCredential.user != null) {
+          // Hash password untuk disimpan
           String hashedPassword =
               hashPassword(passwordTextEditingController.text.trim());
+
+          // Siapkan data user
           Map<String, dynamic> userData = {
-            'id': currentUser!.uid,
+            'uid': userCredential.user!.uid,
             'nama': namaTextEditingController.text.trim(),
-            'phone': phoneTextEditingController.text
-                .trim(), // Assuming you meant phone
+            'phone': phoneTextEditingController.text.trim(),
             'email': emailTextEditingController.text.trim(),
             'password': hashedPassword,
+            'createdAt': FieldValue.serverTimestamp(),
+            'updatedAt': FieldValue.serverTimestamp(),
           };
 
-          DatabaseReference userRef = FirebaseDatabase.instance
-              .ref()
-              .child('users/${currentUser!.uid}');
+          // Simpan ke Firestore
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .set(userData);
 
-          await userRef.set(userData); // Save user data to Firebase
+          // Tutup loading dialog
+          Navigator.pop(context);
+
+          // Tampilkan pesan sukses
+          Fluttertoast.showToast(msg: "Akun berhasil dibuat");
+
+          // Arahkan ke halaman login
+          Navigator.pushReplacement(
+              context, MaterialPageRoute(builder: (c) => const LoginPage()));
         }
+      } on FirebaseAuthException catch (e) {
+        // Tutup loading dialog
+        Navigator.pop(context);
 
-        await Fluttertoast.showToast(msg: "Akun berhasil dibuat");
-        Navigator.push(
-            context, MaterialPageRoute(builder: (c) => const LoginPage()));
-      } catch (error) {
-        Fluttertoast.showToast(msg: "Error Registration: $error");
+        if (e.code == 'weak-password') {
+          Fluttertoast.showToast(msg: "Password terlalu lemah");
+        } else if (e.code == 'email-already-in-use') {
+          Fluttertoast.showToast(msg: "Email sudah terdaftar");
+        } else {
+          Fluttertoast.showToast(msg: "Terjadi kesalahan: ${e.message}");
+        }
+      } catch (e) {
+        // Tutup loading dialog
+        Navigator.pop(context);
+        Fluttertoast.showToast(msg: "Terjadi kesalahan: $e");
       }
     } else {
-      Fluttertoast.showToast(msg: "Error Registration: Please fill all fields");
+      Fluttertoast.showToast(msg: "Mohon isi semua data dengan benar");
     }
   }
 

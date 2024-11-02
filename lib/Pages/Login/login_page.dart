@@ -4,7 +4,9 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
 import 'package:mentorme/Pages/Daftar/daftar_page.dart';
 import 'package:mentorme/global/Fontstyle.dart';
+import 'package:mentorme/global/global.dart';
 import 'package:mentorme/mainScreen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -68,7 +70,7 @@ class _LoginPageState extends State<LoginPage> {
 
   void loginUser() async {
     if (_formKey.currentState!.validate()) {
-      showLoadingDialog(); // Menampilkan animasi loading
+      showLoadingDialog();
 
       try {
         UserCredential userCredential =
@@ -78,21 +80,29 @@ class _LoginPageState extends State<LoginPage> {
         );
 
         if (userCredential.user != null) {
-          Fluttertoast.showToast(msg: "Login berhasil");
-          hideLoadingDialog(); // Menyembunyikan animasi loading
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (c) =>
-                    const MainScreen()), // Ganti dengan halaman utama Anda
-          );
+          DocumentSnapshot userDoc = await FirebaseFirestore.instance
+              .collection('users')
+              .doc(userCredential.user!.uid)
+              .get();
+
+          if (userDoc.exists) {
+            currentUser = userCredential.user;
+
+            Fluttertoast.showToast(msg: "Login berhasil");
+            hideLoadingDialog();
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (c) => const MainScreen()),
+            );
+          } else {
+            hideLoadingDialog();
+            Fluttertoast.showToast(msg: "Data pengguna tidak ditemukan!");
+            await FirebaseAuth.instance.signOut();
+          }
         }
       } catch (error) {
-        hideLoadingDialog(); // Menyembunyikan animasi loading jika terjadi error
-        Fluttertoast.showToast(msg: "Email dan password salah!");
-
-        // emailTextEditingController.clear();
-        // passwordTextEditingController.clear();
+        hideLoadingDialog();
+        Fluttertoast.showToast(msg: "$error");
       }
     } else {
       Fluttertoast.showToast(msg: "Mohon isi semua data dengan benar");
