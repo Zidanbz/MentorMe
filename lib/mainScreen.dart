@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
 import 'package:mentorme/Pages/Kegiatanku/kegiatanku.dart';
+import 'package:mentorme/Pages/Profile/profile.dart';
 import 'package:mentorme/Pages/Projectku/project_marketplace.dart';
+import 'package:mentorme/Pages/Konsultasi/konsultasi.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -30,7 +32,7 @@ class _MainStateScreen extends State<MainScreen>
   @override
   void initState() {
     super.initState();
-    tabController = TabController(length: 3, vsync: this);
+    tabController = TabController(length: 5, vsync: this);
     getUserName();
   }
 
@@ -61,6 +63,7 @@ class _MainStateScreen extends State<MainScreen>
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: const Color(0xffE0FFF3),
         scrolledUnderElevation: 0,
         toolbarHeight: 100,
@@ -143,10 +146,12 @@ class _MainStateScreen extends State<MainScreen>
       body: TabBarView(
         physics: const NeverScrollableScrollPhysics(),
         controller: tabController,
-        children: const [
-          BerandaPage(),
-          ProjectPage(),
-          Pelajaranku(),
+        children: [
+          const BerandaPage(),
+          const ProjectPage(),
+          const Pelajaranku(),
+          KonsultasiPage(),
+          const ProfileScreen(),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
@@ -165,7 +170,7 @@ class _MainStateScreen extends State<MainScreen>
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.message),
-            label: 'Messages',
+            label: 'Konsultasi',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
