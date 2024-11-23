@@ -58,111 +58,128 @@ class _MainStateScreen extends State<MainScreen>
     }
   }
 
+  // Fungsi untuk menentukan apakah header harus ditampilkan
+  bool _shouldShowHeader() {
+    return selectedIndex != 4; // 4 adalah index untuk Profile page
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.white,
-      appBar: AppBar(
-        automaticallyImplyLeading: false,
-        backgroundColor: const Color(0xffE0FFF3),
-        scrolledUnderElevation: 0,
-        toolbarHeight: 100,
-        title: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                const CircleAvatar(
-                  radius: 24,
-                  backgroundImage: AssetImage('assets/person.png'),
-                ),
-                const SizedBox(width: 8),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+      body: Column(
+        children: [
+          // Header yang hanya muncul jika bukan di Profile page
+          if (selectedIndex != 4)
+            Container(
+              color: const Color(0xffE0FFF3),
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top,
+                left: 16,
+                right: 16,
+                bottom: 16,
+              ),
+              child: SizedBox(
+                height: 80,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      'Hi! $userName',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
+                    Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundImage: AssetImage('assets/person.png'),
+                        ),
+                        const SizedBox(width: 8),
+                        Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Hi! $userName',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                    Row(
+                      children: [
+                        IconButton(
+                          icon: const Icon(Icons.notifications),
+                          color: const Color(0xff339989),
+                          onPressed: () {},
+                        ),
+                        Container(
+                          height: 40,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xff7DE2D1),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Image.asset(
+                                'assets/Coin.png',
+                                height: 24,
+                                width: 24,
+                              ),
+                              const SizedBox(width: 4),
+                              const Text(
+                                '15',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 20,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              GestureDetector(
+                                onTap: () {},
+                                child: const Icon(
+                                  Icons.add_box,
+                                  color: Color(0xff339989),
+                                  size: 24,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
-            Row(
+          // Content
+          Expanded(
+            child: TabBarView(
+              physics: const NeverScrollableScrollPhysics(),
+              controller: tabController,
               children: [
-                IconButton(
-                  icon: const Icon(Icons.notifications),
-                  color: const Color(0xff339989),
-                  onPressed: () {
-                    // Handle notifications icon tap
-                  },
-                ),
-                Container(
-                  height: 40,
-                  padding: const EdgeInsets.symmetric(horizontal: 8),
-                  decoration: BoxDecoration(
-                    color: const Color(0xff7DE2D1),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Image.asset(
-                        'assets/Coin.png',
-                        height: 24,
-                        width: 24,
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        '15',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 20,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      GestureDetector(
-                        onTap: () {
-                          // Handle the add button tap
-                        },
-                        child: const Icon(
-                          Icons.add_box,
-                          color: Color(0xff339989),
-                          size: 24,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                const BerandaPage(),
+                const ProjectPage(),
+                const Pelajaranku(),
+                KonsultasiPage(),
+                const ProfileScreen(),
               ],
             ),
-          ],
-        ),
-      ),
-      body: TabBarView(
-        physics: const NeverScrollableScrollPhysics(),
-        controller: tabController,
-        children: [
-          const BerandaPage(),
-          const ProjectPage(),
-          const Pelajaranku(),
-          KonsultasiPage(),
-          const ProfileScreen(),
+          ),
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home),
-            label: 'Home',
+            label: 'Beranda',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.layers),
-            label: 'Project',
+            label: 'ProjectKu',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.book),
@@ -174,7 +191,7 @@ class _MainStateScreen extends State<MainScreen>
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.person),
-            label: 'Profile',
+            label: 'Profil',
           ),
         ],
         type: BottomNavigationBarType.fixed,
@@ -182,6 +199,8 @@ class _MainStateScreen extends State<MainScreen>
         showUnselectedLabels: true,
         currentIndex: selectedIndex,
         onTap: onItemClicked,
+        selectedItemColor: const Color(0xff339989),
+        unselectedItemColor: Colors.grey,
       ),
     );
   }

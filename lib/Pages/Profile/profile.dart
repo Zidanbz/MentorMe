@@ -21,20 +21,24 @@ class ProfileScreen extends StatelessWidget {
               children: [
                 // Header
                 Container(
-                  padding: const EdgeInsets.all(16),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                   color: const Color(0xFFE8F5F5),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Row(
+                      Row(
                         children: [
-                          Icon(Icons.notifications, color: Color(0xFF339989)),
-                          SizedBox(width: 8),
-                          Text(
+                          IconButton(
+                            icon: const Icon(Icons.notifications_none),
+                            color: const Color(0xFF339989),
+                            onPressed: () {},
+                          ),
+                          const Text(
                             'Profil',
                             style: TextStyle(
                               fontSize: 20,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
                             ),
                           ),
                         ],
@@ -42,7 +46,7 @@ class ProfileScreen extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.logout),
                         color: const Color(0xFF339989),
-                        onPressed: () => _handleLogout(context),
+                        onPressed: () {},
                       ),
                     ],
                   ),
@@ -58,17 +62,40 @@ class ProfileScreen extends StatelessWidget {
                         backgroundImage: AssetImage('assets/person.png'),
                       ),
                       const SizedBox(height: 12),
-                      const Text(
-                        'Sulaiman',
-                        style: TextStyle(
-                          fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Text(
+                            'Sulaiman',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF339989),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'PREMIUM',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
+                      const SizedBox(height: 4),
                       const Text(
                         'Mahasiswa',
                         style: TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           color: Colors.grey,
                         ),
                       ),
@@ -87,44 +114,83 @@ class ProfileScreen extends StatelessWidget {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xFF7DE2D1),
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: SizedBox(
+                                height: 36,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFF7DE2D1),
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                  ),
+                                  onPressed: () {},
+                                  child: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Riwayat Transaksi',
+                                      style: TextStyle(fontSize: 13),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            onPressed: () {},
-                            child: const Text('Riwayat Transaksi'),
                           ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF339989),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: SizedBox(
+                                height: 36,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black87,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                  ),
+                                  onPressed: () {},
+                                  child: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Edit Profil',
+                                      style: TextStyle(fontSize: 13),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            onPressed: () {},
-                            child: const Text('Edit Profil'),
                           ),
-                          ElevatedButton(
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.white,
-                              foregroundColor: const Color(0xFF339989),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 24, vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(20),
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 4),
+                              child: SizedBox(
+                                height: 36,
+                                child: ElevatedButton(
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.white,
+                                    foregroundColor: Colors.black87,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(18),
+                                    ),
+                                  ),
+                                  onPressed: () {},
+                                  child: const FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      'Top Up Koin',
+                                      style: TextStyle(fontSize: 13),
+                                    ),
+                                  ),
+                                ),
                               ),
                             ),
-                            onPressed: () {},
-                            child: const Text('Top Up Koin'),
                           ),
                         ],
                       ),
@@ -147,15 +213,16 @@ class ProfileScreen extends StatelessWidget {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        TransactionCard(
-                          title: 'Pemrograman Web\nPengenalan HTML',
-                          amount: '150.000',
-                          isSuccess: true,
+                        _buildTransactionItem(
+                          'Pemrograman Web\nPengenalan HTML',
+                          'Rp. 150.000',
+                          true,
                         ),
-                        TransactionCard(
-                          title: 'Pemrograman Web\nCSS Untuk Styling',
-                          amount: '200.000',
-                          isSuccess: false,
+                        const SizedBox(height: 8),
+                        _buildTransactionItem(
+                          'Pemrograman Web\nCSS Untuk Styling',
+                          'Rp. 200.000',
+                          false,
                         ),
                       ],
                     ),
@@ -168,14 +235,97 @@ class ProfileScreen extends StatelessWidget {
             Positioned(
               right: 16,
               bottom: 16,
-              child: FloatingActionButton(
-                backgroundColor: const Color(0xFF339989),
-                onPressed: () {},
-                child: const Icon(Icons.help_outline, color: Colors.white),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF339989),
+                  borderRadius: BorderRadius.circular(24),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: const [
+                    Icon(Icons.help_outline, color: Colors.white, size: 20),
+                    SizedBox(width: 4),
+                    Text(
+                      'Bantuan',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem(String title, String amount, bool isSuccess) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: const Color(0xFFE8F5F5),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: const Icon(
+              Icons.people,
+              color: Color(0xFF339989),
+              size: 24,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  children: [
+                    Icon(
+                      isSuccess ? Icons.check_circle : Icons.cancel,
+                      size: 16,
+                      color: isSuccess ? const Color(0xFF339989) : Colors.red,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      isSuccess ? 'Transaksi Selesai' : 'Transaksi Gagal',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSuccess ? const Color(0xFF339989) : Colors.red,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          Text(
+            amount,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
       ),
     );
   }
