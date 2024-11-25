@@ -1,13 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mentorme/global/transaction_card.dart';
+import 'edit_profile.dart';
 
 class ProfileScreen extends StatelessWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   void _handleLogout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    // Navigate to login screen or handle logout
+  }
+
+  void _navigateToEditProfile(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => const EditProfileScreen(),
+      ),
+    );
   }
 
   @override
@@ -46,67 +55,89 @@ class ProfileScreen extends StatelessWidget {
                       IconButton(
                         icon: const Icon(Icons.logout),
                         color: const Color(0xFF339989),
-                        onPressed: () {},
+                        onPressed: () => _handleLogout(context),
                       ),
                     ],
                   ),
                 ),
 
-                // Profile Info
+                // Profile Info with new layout
                 Container(
                   padding: const EdgeInsets.all(16),
                   child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const CircleAvatar(
-                        radius: 40,
-                        backgroundImage: AssetImage('assets/person.png'),
-                      ),
-                      const SizedBox(height: 12),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          const Text(
-                            'Sulaiman',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
+                          // Profile Image
                           Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF339989),
+                            width: 80,
+                            height: 80,
+                            child: ClipRRect(
                               borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'PREMIUM',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                              child: Image.asset(
+                                'assets/person.png',
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),
+                          const SizedBox(width: 16),
+                          // Profile Info
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Sulaiman',
+                                      style: TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    const Spacer(), // Menambahkan spacer untuk mendorong badge ke kanan
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 4,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF339989),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: const Text(
+                                        'PREMIUM',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Mahasiswa',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                const Text(
+                                  'Saya seorang mahasiswa yang sedang mencari kebenaran',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ],
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Mahasiswa',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Saya seorang mahasiswa yang sedang mencari kebenaran',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey,
-                        ),
                       ),
                       const SizedBox(height: 16),
 
@@ -154,7 +185,8 @@ class ProfileScreen extends StatelessWidget {
                                       borderRadius: BorderRadius.circular(18),
                                     ),
                                   ),
-                                  onPressed: () {},
+                                  onPressed: () =>
+                                      _navigateToEditProfile(context),
                                   child: const FittedBox(
                                     fit: BoxFit.scaleDown,
                                     child: Text(
@@ -198,7 +230,7 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
 
-                // Transaction History
+                // Rest of the code remains the same...
                 Expanded(
                   child: Container(
                     padding: const EdgeInsets.all(16),
@@ -229,34 +261,6 @@ class ProfileScreen extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
-
-            // Help Button
-            Positioned(
-              right: 16,
-              bottom: 16,
-              child: Container(
-                decoration: BoxDecoration(
-                  color: const Color(0xFF339989),
-                  borderRadius: BorderRadius.circular(24),
-                ),
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: const [
-                    Icon(Icons.help_outline, color: Colors.white, size: 20),
-                    SizedBox(width: 4),
-                    Text(
-                      'Bantuan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
             ),
           ],
         ),
