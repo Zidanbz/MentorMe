@@ -8,7 +8,14 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
 class MainScreen extends StatefulWidget {
-  const MainScreen({super.key});
+  final List<Map<String, dynamic>> categories;
+  final List<Map<String, dynamic>> learningPaths;
+
+  const MainScreen({
+    super.key,
+    required this.categories,
+    required this.learningPaths,
+  });
 
   @override
   State<MainScreen> createState() => _MainStateScreen();
@@ -56,11 +63,6 @@ class _MainStateScreen extends State<MainScreen>
     } catch (e) {
       print('Error mengambil nama pengguna: $e');
     }
-  }
-
-  // Fungsi untuk menentukan apakah header harus ditampilkan
-  bool _shouldShowHeader() {
-    return selectedIndex != 4; // 4 adalah index untuk Profile page
   }
 
   @override
@@ -161,7 +163,10 @@ class _MainStateScreen extends State<MainScreen>
               physics: const NeverScrollableScrollPhysics(),
               controller: tabController,
               children: [
-                const BerandaPage(),
+                BerandaPage(
+                  categories: widget.categories,
+                  learningPaths: widget.learningPaths,
+                ),
                 const ProjectPage(),
                 const Pelajaranku(),
                 KonsultasiPage(),

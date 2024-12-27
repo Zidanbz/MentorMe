@@ -1,7 +1,15 @@
 import 'package:flutter/material.dart';
+import 'dart:convert';
 
 class BerandaPage extends StatefulWidget {
-  const BerandaPage({super.key});
+  final List<Map<String, dynamic>> categories;
+  final List<Map<String, dynamic>> learningPaths;
+
+  const BerandaPage({
+    super.key,
+    required this.categories,
+    required this.learningPaths,
+  });
 
   @override
   State<BerandaPage> createState() => _BerandaPageState();
@@ -22,6 +30,11 @@ class _BerandaPageState extends State<BerandaPage> {
     );
   }
 
+  Image decodeBase64Image(String base64String) {
+    final decodedBytes = base64Decode(base64String);
+    return Image.memory(decodedBytes);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -34,10 +47,6 @@ class _BerandaPageState extends State<BerandaPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [],
-                ),
                 const Text(
                   'BERANDA',
                   style: TextStyle(
@@ -58,7 +67,7 @@ class _BerandaPageState extends State<BerandaPage> {
                         borderSide: BorderSide.none,
                       ),
                       contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      prefixIcon: const Icon(Icons.search), // Icon pencarian
+                      prefixIcon: const Icon(Icons.search),
                     ),
                   ),
                 ),
@@ -70,136 +79,6 @@ class _BerandaPageState extends State<BerandaPage> {
             child: SingleChildScrollView(
               child: Column(
                 children: [
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          InkWell(
-                            onTap: () => _onCardTap('Card 1'),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 16),
-                              width: 300,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                image: const DecorationImage(
-                                  image: AssetImage('assets/CardUp.png'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Card 1',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Content for card 1. This text could be longer to extend the card horizontally.',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () => _onCardTap('Card 2'),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              margin: const EdgeInsets.only(right: 16),
-                              width: 300,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                image: const DecorationImage(
-                                  image: AssetImage('assets/CardUp.png'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Card 2',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Content for card 2. This text could be longer to extend the card horizontally.',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                          InkWell(
-                            onTap: () => _onCardTap('Card 3'),
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              width: 300,
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(16),
-                                image: const DecorationImage(
-                                  image: AssetImage('assets/CardUp.png'),
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                              child: const Padding(
-                                padding: EdgeInsets.all(16.0),
-                                child: Column(
-                                  mainAxisSize: MainAxisSize.min,
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Card 3',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'Content for card 3. This text could be longer to extend the card horizontally.',
-                                      style: TextStyle(
-                                        fontSize: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 16.0),
                     child: Column(
@@ -216,67 +95,41 @@ class _BerandaPageState extends State<BerandaPage> {
                         SingleChildScrollView(
                           scrollDirection: Axis.horizontal,
                           child: Row(
-                            children: [
-                              ElevatedButton(
-                                onPressed: () => _onButtonTap('Desain'),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.black,
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
+                            children: widget.categories.map((category) {
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: ElevatedButton(
+                                  onPressed: () =>
+                                      _onButtonTap(category['name']),
+                                  style: ElevatedButton.styleFrom(
+                                    foregroundColor: Colors.black,
+                                    backgroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(8.0),
+                                    ),
+                                    side: const BorderSide(color: Colors.grey),
                                   ),
-                                  side: const BorderSide(color: Colors.grey),
-                                ),
-                                child: const Text(
-                                  'Desain',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () => _onButtonTap('Bisnis'),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.black,
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  side: const BorderSide(color: Colors.grey),
-                                ),
-                                child: const Text(
-                                  'Bisnis',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 16,
+                                  child: Text(
+                                    category['name'],
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                    ),
                                   ),
                                 ),
-                              ),
-                              const SizedBox(width: 8),
-                              ElevatedButton(
-                                onPressed: () =>
-                                    _onButtonTap('IT & Perangkat Lunak'),
-                                style: ElevatedButton.styleFrom(
-                                  foregroundColor: Colors.black,
-                                  backgroundColor: Colors.white,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(8.0),
-                                  ),
-                                  side: const BorderSide(color: Colors.grey),
-                                ),
-                                child: const Text(
-                                  'IT & Perangkat Lunak',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ),
-                            ],
+                              );
+                            }).toList(),
                           ),
                         ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Learning Path',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 5),
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -287,31 +140,10 @@ class _BerandaPageState extends State<BerandaPage> {
                             mainAxisSpacing: 16,
                             childAspectRatio: 0.8,
                           ),
-                          itemCount: 4,
+                          itemCount: widget.learningPaths.length,
                           itemBuilder: (context, index) {
-                            String imagePath = '';
-                            String title = '';
-                            String description = '';
-
-                            switch (index) {
-                              case 0:
-                                imagePath = 'assets/Lp-Web.png';
-                                break;
-                              case 1:
-                                imagePath = 'assets/Lp-Da.png';
-                                break;
-                              case 2:
-                                imagePath = 'assets/Lp-Statistika.png';
-                                break;
-                              case 3:
-                                imagePath = 'assets/Lp-Jarkom.png';
-                                break;
-                              default:
-                                imagePath = 'assets/placeholder.png';
-                                title = 'Default Title';
-                                description = 'Default Description';
-                                break;
-                            }
+                            final learningPath = widget.learningPaths[index];
+                            final picture = learningPath['picture'];
 
                             return InkWell(
                               onTap: () {
@@ -321,36 +153,26 @@ class _BerandaPageState extends State<BerandaPage> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   borderRadius: BorderRadius.circular(7),
-                                  image: DecorationImage(
-                                    image: AssetImage(imagePath),
-                                    fit: BoxFit.cover,
-                                  ),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.all(16.0),
-                                  child: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        title,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: picture != null
+                                          ? decodeBase64Image(picture)
+                                          : const Icon(Icons.image),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: Text(
+                                        learningPath['name'],
                                         style: const TextStyle(
                                           fontSize: 16,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.white,
                                         ),
                                       ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        description,
-                                        style: const TextStyle(
-                                          fontSize: 14,
-                                          color: Colors.white,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             );

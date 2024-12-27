@@ -1,4 +1,3 @@
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
@@ -6,7 +5,8 @@ import 'package:mentorme/Pages/Daftar/daftar_page.dart';
 import 'package:mentorme/global/Fontstyle.dart';
 import 'package:mentorme/global/global.dart';
 import 'package:mentorme/mainScreen.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -30,25 +30,20 @@ class _LoginPageState extends State<LoginPage> {
         return Dialog(
           backgroundColor: Color(0xFFE0FFF3),
           child: Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 20, vertical: 10), // Atur padding secukupnya
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
             child: Column(
-              mainAxisSize:
-                  MainAxisSize.min, // Supaya kotak menyesuaikan dengan konten
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Image.asset(
                   'assets/Logo.png',
-                  width: 60, // Sesuaikan ukuran logo
+                  width: 60,
                   height: 60,
                 ),
                 const SizedBox(height: 15),
                 Row(
-                  mainAxisSize: MainAxisSize
-                      .min, // Menyesuaikan lebar berdasarkan isi Row
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    CircularProgressIndicator(
-                      color: Colors.green,
-                    ),
+                    const CircularProgressIndicator(color: Colors.green),
                     const SizedBox(width: 15),
                     const Text(
                       "Sedang masuk...",
@@ -68,41 +63,59 @@ class _LoginPageState extends State<LoginPage> {
     Navigator.of(context, rootNavigator: true).pop();
   }
 
-  void loginUser() async {
+  Future<void> loginUser() async {
     if (_formKey.currentState!.validate()) {
       showLoadingDialog();
 
       try {
-        UserCredential userCredential =
-            await FirebaseAuth.instance.signInWithEmailAndPassword(
-          email: emailTextEditingController.text.trim(),
-          password: passwordTextEditingController.text.trim(),
+        final response = await http.post(
+          Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/login/user'),
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({
+            'email': emailTextEditingController.text.trim(),
+            'password': passwordTextEditingController.text.trim(),
+          }),
         );
 
-        if (userCredential.user != null) {
-          DocumentSnapshot userDoc = await FirebaseFirestore.instance
-              .collection('users')
-              .doc(userCredential.user!.uid)
-              .get();
+        final responseData = json.decode(response.body);
 
-          if (userDoc.exists) {
-            currentUser = userCredential.user;
+        hideLoadingDialog();
 
-            Fluttertoast.showToast(msg: "Login berhasil");
-            hideLoadingDialog();
-            Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(builder: (c) => const MainScreen()),
-            );
-          } else {
-            hideLoadingDialog();
-            Fluttertoast.showToast(msg: "Data pengguna tidak ditemukan!");
-            await FirebaseAuth.instance.signOut();
-          }
+        if (response.statusCode == 200) {
+          String token = responseData['data']['token'];
+          currentUserToken = token;
+
+          // Validasi categories dan learningPaths agar tidak null
+          List<Map<String, dynamic>> categories =
+              responseData['data']['categories'] != null
+                  ? List<Map<String, dynamic>>.from(
+                      responseData['data']['categories'])
+                  : [];
+          List<Map<String, dynamic>> learningPaths =
+              responseData['data']['learningPath'] != null
+                  ? List<Map<String, dynamic>>.from(
+                      responseData['data']['learningPath'])
+                  : [];
+
+          Fluttertoast.showToast(msg: "Login berhasil");
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(
+              builder: (c) => MainScreen(
+                categories: categories,
+                learningPaths: learningPaths,
+              ),
+            ),
+          );
+        } else {
+          String errorMessage = responseData['error'] ?? "Terjadi kesalahan.";
+          Fluttertoast.showToast(msg: errorMessage);
         }
       } catch (error) {
         hideLoadingDialog();
-        Fluttertoast.showToast(msg: "$error");
+        Fluttertoast.showToast(msg: "Gagal login: $error");
       }
     } else {
       Fluttertoast.showToast(msg: "Mohon isi semua data dengan benar");
@@ -122,7 +135,7 @@ class _LoginPageState extends State<LoginPage> {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/Logo.png', // Ganti dengan path logo
+                  'assets/Logo.png',
                   width: 150,
                   height: 150,
                 ),
@@ -185,16 +198,12 @@ class _LoginPageState extends State<LoginPage> {
                     return null;
                   },
                 ),
-                SizedBox(
-                  height: 25,
-                ),
+                const SizedBox(height: 25),
                 const Text(
                   'Or social login',
                   style: TextStyle(fontSize: 16),
                 ),
-                SizedBox(
-                  height: 10,
-                ),
+                const SizedBox(height: 10),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -204,7 +213,7 @@ class _LoginPageState extends State<LoginPage> {
                       },
                       icon: Image.asset(
                         'assets/google.png',
-                        width: 27, // Lebar gambar
+                        width: 27,
                         height: 27,
                       ),
                     ),
