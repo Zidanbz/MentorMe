@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:provider/provider.dart';
 import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/mainScreen.dart';
 import 'package:mentorme/splash_screen.dart';
+import 'package:mentorme/providers/project_provider.dart'; // Tambahkan ini
 import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MyApp());
+  runApp(
+    MultiProvider(
+      // Wrap dengan MultiProvider
+      providers: [
+        ChangeNotifierProvider(create: (_) => ProjectProvider()),
+      ],
+      child: const MyApp(),
+    ),
+  );
 }
 
 class MyApp extends StatefulWidget {
@@ -19,8 +29,6 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  // Inisialisasi peran
-
   @override
   Widget build(BuildContext context) {
     return MaterialApp(

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:convert';
+import 'package:provider/provider.dart'; // Tambahkan ini
+// import 'package:lib/providers/project_provider.dart';
+import 'package:mentorme/providers/project_provider.dart';
 
 class BerandaPage extends StatefulWidget {
   final List<Map<String, dynamic>> categories;
@@ -149,7 +152,14 @@ class _BerandaPageState extends State<BerandaPage> {
 
                             return InkWell(
                               onTap: () {
-                                // Handle grid item tap
+                                // Ambil ID dari learning path
+                                final learningPathId = learningPath[
+                                    'ID']; // Pastikan key 'ID' sesuai dengan response API
+                                // Set ID ke provider
+                                Provider.of<ProjectProvider>(context,
+                                        listen: false)
+                                    .setSelectedLearningPathId(learningPathId);
+                                // Pindah ke tab Project
                                 widget.onTabChange(1);
                               },
                               borderRadius: BorderRadius.circular(7),
