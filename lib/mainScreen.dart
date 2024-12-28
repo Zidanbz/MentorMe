@@ -26,12 +26,17 @@ class _MainStateScreen extends State<MainScreen>
   TabController? tabController;
   int selectedIndex = 0;
   String userName = '';
+  String selectedLearningPathId = '';
 
-  onItemClicked(int index) {
+  // Definisikan handleTabChange
+  void handleTabChange(int index, {String? learningPathId}) {
     if (tabController != null) {
       setState(() {
         selectedIndex = index;
         tabController!.index = selectedIndex;
+        if (learningPathId != null) {
+          selectedLearningPathId = learningPathId;
+        }
       });
     }
   }
@@ -62,6 +67,15 @@ class _MainStateScreen extends State<MainScreen>
       }
     } catch (e) {
       print('Error mengambil nama pengguna: $e');
+    }
+  }
+
+  void onItemClicked(int index) {
+    if (tabController != null) {
+      setState(() {
+        selectedIndex = index;
+        tabController!.index = selectedIndex;
+      });
     }
   }
 
@@ -166,6 +180,7 @@ class _MainStateScreen extends State<MainScreen>
                 BerandaPage(
                   categories: widget.categories,
                   learningPaths: widget.learningPaths,
+                  onTabChange: handleTabChange, // Gunakan handleTabChange
                 ),
                 const ProjectPage(),
                 const Pelajaranku(),

@@ -4,11 +4,13 @@ import 'dart:convert';
 class BerandaPage extends StatefulWidget {
   final List<Map<String, dynamic>> categories;
   final List<Map<String, dynamic>> learningPaths;
+  final Function(int) onTabChange;
 
   const BerandaPage({
     super.key,
     required this.categories,
     required this.learningPaths,
+    required this.onTabChange,
   });
 
   @override
@@ -148,6 +150,7 @@ class _BerandaPageState extends State<BerandaPage> {
                             return InkWell(
                               onTap: () {
                                 // Handle grid item tap
+                                widget.onTabChange(1);
                               },
                               borderRadius: BorderRadius.circular(7),
                               child: Container(
