@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:mentorme/global/global.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -14,7 +17,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
-  final _emailController = TextEditingController();
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -27,11 +29,59 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     }
   }
 
+  Future<void> _editProfile() async {
+    if (_formKey.currentState!.validate()) {
+      try {
+        var request = http.MultipartRequest(
+          'PUT',
+          Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/profile/edit'),
+        );
+
+        // Tambahkan field yang dibutuhkan
+        request.fields['fullName'] = _nameController.text;
+        request.fields['phone'] = _phoneController.text;
+
+        // Jika ada gambar, kirim sebagai file
+        if (_image != null) {
+          request.files.add(
+            await http.MultipartFile.fromPath('picture', _image!.path),
+          );
+        }
+
+        // Tambahkan header jika API membutuhkan authorization
+        request.headers.addAll({
+          'Authorization': 'Bearer $currentUserToken',
+          'Content-Type': 'application/json',
+        });
+
+        // Kirim request
+        var response = await request.send();
+        var responseBody = await response.stream.bytesToString();
+
+        if (response.statusCode == 200) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Profil berhasil disimpan')),
+          );
+        } else {
+          print(
+              'Gagal menyimpan profil. Status: ${response.statusCode}, Response: $responseBody');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal menyimpan profil: $responseBody')),
+          );
+        }
+      } catch (e) {
+        print('Error: $e');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Terjadi kesalahan. Coba lagi nanti.')),
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _nameController.dispose();
     _phoneController.dispose();
-    _emailController.dispose();
     super.dispose();
   }
 
@@ -91,26 +141,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 prefixText: '+62 ',
                 keyboardType: TextInputType.phone,
               ),
-              const SizedBox(height: 16),
-              _buildTextField(
-                label: 'E-mail',
-                controller: _emailController,
-                required: true,
-                keyboardType: TextInputType.emailAddress,
-              ),
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (_formKey.currentState!.validate()) {
-                      // TODO: Implement save logic
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                            content: Text('Profil berhasil disimpan')),
-                      );
-                    }
-                  },
+                  onPressed: _editProfile,
                   style: ElevatedButton.styleFrom(
                     backgroundColor: const Color(0xFF40B59F),
                     padding: const EdgeInsets.symmetric(vertical: 16),

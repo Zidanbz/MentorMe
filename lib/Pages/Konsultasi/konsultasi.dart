@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/Pages/Konsultasi/roomchat.dart';
 import 'mentor_selection_page.dart';
 
 class KonsultasiPage extends StatelessWidget {
@@ -24,7 +25,6 @@ class KonsultasiPage extends StatelessWidget {
             child: Stack(
               clipBehavior: Clip.none,
               children: [
-                // Mengubah Container menjadi Material + InkWell untuk efek button
                 Material(
                   color: Colors.transparent,
                   child: InkWell(
@@ -38,7 +38,7 @@ class KonsultasiPage extends StatelessWidget {
                     },
                     borderRadius: BorderRadius.circular(10),
                     child: Container(
-                      height: 60,
+                      height: 80,
                       width: double.infinity,
                       decoration: BoxDecoration(
                         color: Color(0xFF27DEBF),
@@ -72,7 +72,7 @@ class KonsultasiPage extends StatelessWidget {
                               'Konsultasi disini!',
                               style: TextStyle(
                                 color: Colors.white,
-                                fontSize: 15,
+                                fontSize: 20,
                                 fontWeight: FontWeight.w500,
                               ),
                             ),
@@ -141,6 +141,7 @@ class KonsultasiPage extends StatelessWidget {
               child: ListView(
                 children: [
                   _buildHistoryItem(
+                    context,
                     'Natifa Putri',
                     'Mentor',
                     'Riwayat chat: Sesi Konsultasi Selesai',
@@ -148,6 +149,7 @@ class KonsultasiPage extends StatelessWidget {
                   ),
                   SizedBox(height: 8),
                   _buildHistoryItem(
+                    context,
                     'Allan Dev',
                     'Mentor',
                     'Riwayat chat: Sesi Konsultasi Selesai',
@@ -162,53 +164,65 @@ class KonsultasiPage extends StatelessWidget {
     );
   }
 
-  Widget _buildHistoryItem(
-      String name, String role, String status, String imagePath) {
-    return Container(
-      padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        color: Color(0xFF27DEBF).withOpacity(0.1),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            backgroundImage: AssetImage(imagePath),
-            radius: 20,
+  Widget _buildHistoryItem(BuildContext context, String name, String role,
+      String status, String imagePath) {
+    return InkWell(
+      onTap: () {
+        // Navigasi ke halaman detail
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RoomchatPage(),
           ),
-          SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  name,
-                  style: TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  role,
-                  style: TextStyle(
-                    color: Colors.grey[600],
-                    fontSize: 12,
-                  ),
-                ),
-                SizedBox(height: 2),
-                Text(
-                  status,
-                  style: TextStyle(
-                    color: Colors.grey[500],
-                    fontSize: 11,
-                  ),
-                ),
-              ],
+        );
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          color: Color(0xFF27DEBF).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            CircleAvatar(
+              backgroundImage: AssetImage(imagePath),
+              radius: 20,
             ),
-          ),
-        ],
+            SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w500,
+                      color: Colors.black,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    role,
+                    style: TextStyle(
+                      color: Colors.grey[600],
+                      fontSize: 12,
+                    ),
+                  ),
+                  SizedBox(height: 2),
+                  Text(
+                    status,
+                    style: TextStyle(
+                      color: Colors.grey[500],
+                      fontSize: 11,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

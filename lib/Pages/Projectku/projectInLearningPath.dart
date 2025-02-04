@@ -1,26 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:mentorme/providers/getProject_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
 import 'dart:convert';
 import 'package:mentorme/Pages/detail-project/detail-project.dart';
 
-class ProjectPage extends StatefulWidget {
-  const ProjectPage({Key? key}) : super(key: key);
-
-  @override
-  State<ProjectPage> createState() => _ProjectPageState();
-}
-
-class _ProjectPageState extends State<ProjectPage> {
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<GetProjectProvider>(context, listen: false)
-          .fetchAllProjects();
-    });
-  }
+class ProjectPageInLearningPath extends StatelessWidget {
+  const ProjectPageInLearningPath({Key? key, required learningPathId})
+      : super(key: key);
 
   Widget _buildProjectCard(BuildContext context, Map<String, dynamic> project) {
     // Tambahkan parameter context
@@ -135,10 +121,22 @@ class _ProjectPageState extends State<ProjectPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<GetProjectProvider>(
-      builder: (context, GetProjectProvider, child) {
+    return Consumer<ProjectProvider>(
+      builder: (context, projectProvider, child) {
         return Scaffold(
           backgroundColor: const Color(0xffE0FFF3),
+          appBar: AppBar(
+            backgroundColor: const Color(0xff27DEBF), // Example color
+            title: const Text('Projects'), // Example title
+            centerTitle: true,
+            leading: IconButton(
+              // Example back button
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () {
+                Navigator.pop(context); // Navigate back
+              },
+            ),
+          ),
           body: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -153,13 +151,13 @@ class _ProjectPageState extends State<ProjectPage> {
                 ),
               ),
               Expanded(
-                child: GetProjectProvider.isLoading
+                child: projectProvider.isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
                           color: Color(0xff339989),
                         ),
                       )
-                    : GetProjectProvider.projects.isEmpty
+                    : projectProvider.projects.isEmpty
                         ? const Center(
                             child: Text(
                               'No projects available',
@@ -170,11 +168,11 @@ class _ProjectPageState extends State<ProjectPage> {
                             ),
                           )
                         : ListView.builder(
-                            itemCount: GetProjectProvider.projects.length,
+                            itemCount: projectProvider.projects.length,
                             itemBuilder: (context, index) {
                               return _buildProjectCard(
                                 context, // Tambahkan context sebagai parameter
-                                GetProjectProvider.projects[index],
+                                projectProvider.projects[index],
                               );
                             },
                           ),

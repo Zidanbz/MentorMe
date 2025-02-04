@@ -1,68 +1,68 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
-class Pelajaranku extends StatefulWidget {
-  const Pelajaranku({super.key});
+import 'package:mentorme/Pages/Kegiatanku/detail_kegiatan.dart';
+import 'package:mentorme/global/global.dart';
+
+class Kegiatanku extends StatefulWidget {
+  const Kegiatanku({super.key});
 
   @override
-  State<Pelajaranku> createState() => _PelajarankuState();
+  State<Kegiatanku> createState() => _KegiatankuState();
 }
 
-class _PelajarankuState extends State<Pelajaranku> {
+class _KegiatankuState extends State<Kegiatanku> {
   int _currentIndex = 0;
+  List<dynamic> _progressCourses = [];
+  List<dynamic> _completedCourses = [];
+  bool _isLoading = true;
+  String _errorMessage = '';
 
-  // List of texts for each card
-  final List<String> _titles = [
-    'PEMOGRAMAN WEB',
-    'DATA ANALYST',
-    'JARINGAN KOMPUTER',
-    'STATISTIKA',
-  ];
+  @override
+  void initState() {
+    super.initState();
+    _fetchLearningData();
+  }
 
-  final List<String> _details = [
-    '4.7 (320 Reviews)',
-    '4.7 (320 Reviews)',
-    '4.7 (320 Reviews)',
-    '4.7 (320 Reviews)',
-  ];
-
-  final List<String> _additionalTexts = [
-    '1.122 students',
-    '1.122 students',
-    '1.122 students',
-    '1.122 students',
-  ];
-
-  // List of progress percentages for each card
-  final List<double> _progressValues = [
-    0.7, // 70% progress
-    0.5, // 50% progress
-    0.8, // 80% progress
-    0.3, // 30% progress
-  ];
-
-  // Dummy list of completed courses for "Selesai" tab
-  final List<String> _completedCourses = [
-    'MATEMATIKA DASAR',
-    'BASIS DATA',
-  ];
-
-  // List data untuk "Selesai" tab
-  final List<String> _completedTitles = [
-    'MATEMATIKA DASAR',
-    'BASIS DATA',
-  ];
-  final List<String> _completedDetails = [
-    '4.8 (200 Reviews)',
-    '4.9 (150 Reviews)',
-  ];
-  final List<String> _completedAdditionalTexts = [
-    '2.234 students',
-    '3.456 students',
-  ];
-  final List<double> _completedProgressValues = [
-    1.0, // 100% progress
-    1.0, // 100% progress
-  ];
+  Future<void> _fetchLearningData() async {
+    try {
+      final response = await http.get(
+          Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/my/learning'),
+          headers: {
+            'Authorization': 'Bearer $currentUserToken',
+          });
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        if (data['data'] != null) {
+          setState(() {
+            _progressCourses = data['data']['learning']
+                .where((course) => course['progress'] == true)
+                .toList();
+            _completedCourses = data['data']['learning']
+                .where((course) => course['progress'] == false)
+                .toList();
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+        }
+      } else {
+        setState(() {
+          _errorMessage = 'Failed to load data';
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      setState(() {
+        _errorMessage = 'An error occurred: $e';
+        _isLoading = false;
+      });
+    }
+  }
 
   void _onButtonPressed(int index) {
     setState(() {
@@ -74,86 +74,90 @@ class _PelajarankuState extends State<Pelajaranku> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xffE0FFF3),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  "Pelajaranku",
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(
-                  height: 8,
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : _errorMessage.isNotEmpty
+              ? Center(child: Text(_errorMessage))
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    ElevatedButton(
-                      onPressed: () => _onButtonPressed(0),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(165, 35),
-                        backgroundColor:
-                            _currentIndex == 0 ? const Color(0xff27DEBF) : null,
-                      ),
-                      child: const Text(
-                        "Progress",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            "Kegiatanku",
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              ElevatedButton(
+                                onPressed: () => _onButtonPressed(0),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(165, 35),
+                                  backgroundColor: _currentIndex == 0
+                                      ? const Color(0xff27DEBF)
+                                      : null,
+                                ),
+                                child: const Text(
+                                  "Progress",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              ElevatedButton(
+                                onPressed: () => _onButtonPressed(1),
+                                style: ElevatedButton.styleFrom(
+                                  minimumSize: const Size(165, 35),
+                                  backgroundColor: _currentIndex == 1
+                                      ? const Color(0xff27DEBF)
+                                      : null,
+                                ),
+                                child: const Text(
+                                  "Selesai",
+                                  style: TextStyle(
+                                    color: Colors.black,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    ElevatedButton(
-                      onPressed: () => _onButtonPressed(1),
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(165, 35),
-                        backgroundColor:
-                            _currentIndex == 1 ? const Color(0xff27DEBF) : null,
-                      ),
-                      child: const Text(
-                        "Selesai",
-                        style: TextStyle(
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
+                    Expanded(
+                      child: _currentIndex == 0
+                          ? _buildProgressList()
+                          : _buildCompletedList(),
                     ),
                   ],
                 ),
-              ],
-            ),
-          ),
-          Expanded(
-            child: _currentIndex == 0
-                ? _buildProgressList()
-                : _buildCompletedList(),
-          ),
-        ],
-      ),
     );
   }
 
   Widget _buildProgressList() {
     return SingleChildScrollView(
       child: Column(
-        children: List.generate(_titles.length, (index) {
+        children: _progressCourses.map((course) {
           return _buildCard(
-            imagePath: 'assets/Background.png',
-            title: _titles[index],
-            details: _details[index],
-            additionalText: _additionalTexts[index],
-            progress: _progressValues[index],
+            imagePath: course['project']['picture'], // Ambil dari API
+            title: course['project']['materialName'],
+            details: '4.7 (320 Reviews)', // Contoh detail
+            additionalText: '${course['project']['student']} students',
+            progress: 0.7, // Contoh progress
             showProgress: true,
           );
-        }),
+        }).toList(),
       ),
     );
   }
@@ -161,16 +165,16 @@ class _PelajarankuState extends State<Pelajaranku> {
   Widget _buildCompletedList() {
     return SingleChildScrollView(
       child: Column(
-        children: List.generate(_completedCourses.length, (index) {
+        children: _completedCourses.map((course) {
           return _buildCard(
-            imagePath: 'assets/Card1.png',
-            title: _completedTitles[index],
-            details: _completedDetails[index],
-            additionalText: _completedAdditionalTexts[index],
-            progress: _completedProgressValues[index],
-            showProgress: false, // Tidak menampilkan progress bar
+            imagePath: course['project']['picture'], // Ambil dari API
+            title: course['project']['materialName'],
+            details: '4.8 (200 Reviews)', // Contoh detail
+            additionalText: '${course['project']['student']} students',
+            progress: 1.0, // Progress selesai
+            showProgress: true,
           );
-        }),
+        }).toList(),
       ),
     );
   }
@@ -183,105 +187,117 @@ class _PelajarankuState extends State<Pelajaranku> {
     required double progress,
     required bool showProgress,
   }) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        image: DecorationImage(
-          image: AssetImage(imagePath),
-          fit: BoxFit.cover,
-        ),
-        borderRadius: BorderRadius.circular(8),
-        color: Colors.white,
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.5),
-            spreadRadius: 3,
-            blurRadius: 5,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 18,
-                color: Colors.black,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: Colors.orange,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            details,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.supervised_user_circle_outlined,
-                            size: 24,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            additionalText,
-                            style: const TextStyle(
-                              fontSize: 14,
-                              color: Colors.black,
-                            ),
-                          ),
-                        ],
-                      ),
-                      if (showProgress) ...[
-                        const SizedBox(height: 8),
-                        SizedBox(
-                          width: 300, // Adjust the width here
-                          height: 7, // Adjust the height here
-                          child: LinearProgressIndicator(
-                            value: progress,
-                            backgroundColor: Colors.grey[300],
-                            color: const Color(0xff27DEBF),
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '${(progress * 100).toInt()}% Complete',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            color: Colors.black,
-                          ),
-                        ),
-                      ],
-                    ],
-                  ),
-                ),
-              ],
+    // Decode base64 image
+    Uint8List imageBytes = base64Decode(imagePath);
+
+    return GestureDetector(
+      onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(builder: (context) => DetailKegiatan()),
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(8),
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.5),
+              spreadRadius: 3,
+              blurRadius: 5,
+              offset: const Offset(0, 3),
             ),
           ],
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Image.memory(imageBytes,
+                  height: 100,
+                  width: double.infinity,
+                  fit: BoxFit.cover), // Menampilkan gambar
+              const SizedBox(height: 8),
+              Text(
+                title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 18,
+                  color: Colors.black,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.star,
+                              color: Colors.orange,
+                              size: 20,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              details,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.supervised_user_circle_outlined,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              additionalText,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                color: Colors.black,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (showProgress) ...[
+                          const SizedBox(height: 8),
+                          SizedBox(
+                            width: 300,
+                            height: 7,
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: Colors.grey[300],
+                              color: const Color(0xff27DEBF),
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '${(progress * 100).toInt()}% Complete',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Colors.black,
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );

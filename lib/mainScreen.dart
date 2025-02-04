@@ -6,6 +6,11 @@ import 'package:mentorme/Pages/Projectku/project_marketplace.dart';
 import 'package:mentorme/Pages/Konsultasi/konsultasi.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:mentorme/Pages/notifications/notifications.dart';
+import 'package:mentorme/Pages/topup/topupcoin.dart';
+import 'package:mentorme/models/mainScreen_models.dart';
+import 'package:mentorme/models/Profile_models.dart';
+import 'package:mentorme/controller/api_services.dart';
 
 class MainScreen extends StatefulWidget {
   final List<Map<String, dynamic>> categories;
@@ -27,8 +32,30 @@ class _MainStateScreen extends State<MainScreen>
   int selectedIndex = 0;
   String userName = '';
   String selectedLearningPathId = '';
+  Profile? _profile;
+  bool _isLoading = true;
+  int _coinBalance = 0;
+  bool _isCoinLoading = true;
 
-  // Definisikan handleTabChange
+  Future<void> _fetchCoinBalance() async {
+    try {
+      final coin = await ApiService().fetchCoin();
+      if (mounted) {
+        setState(() {
+          _coinBalance = coin;
+          _isCoinLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isCoinLoading = false;
+        });
+      }
+      print("Error fetching coin balance: $e");
+    }
+  }
+
   void handleTabChange(int index, {String? learningPathId}) {
     if (tabController != null) {
       setState(() {
@@ -41,11 +68,32 @@ class _MainStateScreen extends State<MainScreen>
     }
   }
 
+  Future<void> _fetchProfile() async {
+    try {
+      final profile = await ApiService().fetchProfile();
+      if (mounted) {
+        setState(() {
+          _profile = profile;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Handle error in fetching profile
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      print("Error fetching profile: $e");
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     tabController = TabController(length: 5, vsync: this);
-    getUserName();
+    _fetchProfile();
+    _fetchCoinBalance();
   }
 
   Future<void> getUserName() async {
@@ -59,7 +107,7 @@ class _MainStateScreen extends State<MainScreen>
 
         if (userDoc.exists) {
           setState(() {
-            userName = userDoc.data()?['nama'] ?? 'User';
+            userName = userDoc.data()?['fullName'] ?? 'User';
           });
         } else {
           print('Data pengguna tidak ditemukan');
@@ -77,6 +125,28 @@ class _MainStateScreen extends State<MainScreen>
         tabController!.index = selectedIndex;
       });
     }
+  }
+
+  Widget _buildNavigationBarItem(IconData icon, String label, int index) {
+    final bool isSelected = selectedIndex == index;
+
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 200),
+      curve: Curves.easeInOut,
+      margin: isSelected ? const EdgeInsets.only(bottom: 5) : EdgeInsets.zero,
+      decoration: isSelected
+          ? BoxDecoration(
+              color: const Color(0xffE0FFF3),
+              borderRadius: BorderRadius.circular(8),
+            )
+          : null,
+      padding: const EdgeInsets.all(4),
+      child: Icon(
+        icon,
+        size: isSelected ? 30 : 24, // Ikon lebih besar jika dipilih
+        color: isSelected ? const Color(0xff339989) : Colors.grey,
+      ),
+    );
   }
 
   @override
@@ -102,9 +172,21 @@ class _MainStateScreen extends State<MainScreen>
                   children: [
                     Row(
                       children: [
-                        const CircleAvatar(
-                          radius: 24,
-                          backgroundImage: AssetImage('assets/person.png'),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => const ProfileScreen()),
+                            );
+                          },
+                          child: CircleAvatar(
+                            radius: 24,
+                            backgroundImage: _profile?.picture != null
+                                ? NetworkImage(_profile!.picture)
+                                : const AssetImage('assets/person.png')
+                                    as ImageProvider,
+                          ),
                         ),
                         const SizedBox(width: 8),
                         Column(
@@ -112,7 +194,7 @@ class _MainStateScreen extends State<MainScreen>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Hi! $userName',
+                              'Hi! ${_profile?.fullName ?? 'User'}',
                               style: const TextStyle(
                                 fontSize: 18,
                                 fontWeight: FontWeight.bold,
@@ -127,7 +209,13 @@ class _MainStateScreen extends State<MainScreen>
                         IconButton(
                           icon: const Icon(Icons.notifications),
                           color: const Color(0xff339989),
-                          onPressed: () {},
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                  builder: (context) => NotificationPage()),
+                            );
+                          },
                         ),
                         Container(
                           height: 40,
@@ -145,17 +233,26 @@ class _MainStateScreen extends State<MainScreen>
                                 width: 24,
                               ),
                               const SizedBox(width: 4),
-                              const Text(
-                                '15',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
+                              _isCoinLoading
+                                  ? const CircularProgressIndicator() // Loader saat coin di-fetch
+                                  : Text(
+                                      '$_coinBalance',
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 20,
+                                      ),
+                                    ),
                               const SizedBox(width: 4),
                               GestureDetector(
-                                onTap: () {},
+                                onTap: () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                        builder: (context) =>
+                                            TopUpCoinMeScreen()),
+                                  );
+                                },
                                 child: const Icon(
                                   Icons.add_box,
                                   color: Color(0xff339989),
@@ -180,10 +277,10 @@ class _MainStateScreen extends State<MainScreen>
                 BerandaPage(
                   categories: widget.categories,
                   learningPaths: widget.learningPaths,
-                  onTabChange: handleTabChange, // Gunakan handleTabChange
+                  onTabChange: handleTabChange,
                 ),
                 const ProjectPage(),
-                const Pelajaranku(),
+                const Kegiatanku(),
                 KonsultasiPage(),
                 const ProfileScreen(),
               ],
@@ -192,29 +289,30 @@ class _MainStateScreen extends State<MainScreen>
         ],
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: const [
+        items: [
           BottomNavigationBarItem(
-            icon: Icon(Icons.home),
+            icon: _buildNavigationBarItem(Icons.home, 'Beranda', 0),
             label: 'Beranda',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.layers),
-            label: 'ProjectKu',
+            icon:
+                _buildNavigationBarItem(Icons.layers, 'Project Marketplace', 1),
+            label: 'Project Marketplace',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.book),
+            icon: _buildNavigationBarItem(Icons.book, 'Pelajaranku', 2),
             label: 'Pelajaranku',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.message),
+            icon: _buildNavigationBarItem(Icons.message, 'Konsultasi', 3),
             label: 'Konsultasi',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.person),
+            icon: _buildNavigationBarItem(Icons.person, 'Profil', 4),
             label: 'Profil',
           ),
         ],
-        type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.shifting,
         selectedLabelStyle: const TextStyle(fontSize: 14),
         showUnselectedLabels: true,
         currentIndex: selectedIndex,

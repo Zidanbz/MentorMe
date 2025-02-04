@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/Pages/Projectku/projectInLearningPath.dart';
 import 'dart:convert';
 import 'package:provider/provider.dart'; // Tambahkan ini
 // import 'package:lib/providers/project_provider.dart';
@@ -149,18 +150,27 @@ class _BerandaPageState extends State<BerandaPage> {
                           itemBuilder: (context, index) {
                             final learningPath = widget.learningPaths[index];
                             final picture = learningPath['picture'];
+                            final learningPathId = learningPath['ID'];
 
                             return InkWell(
                               onTap: () {
                                 // Ambil ID dari learning path
-                                final learningPathId = learningPath[
-                                    'ID']; // Pastikan key 'ID' sesuai dengan response API
+                                // Pastikan key 'ID' sesuai dengan response API
                                 // Set ID ke provider
                                 Provider.of<ProjectProvider>(context,
                                         listen: false)
                                     .setSelectedLearningPathId(learningPathId);
                                 // Pindah ke tab Project
-                                widget.onTabChange(1);
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (context) =>
+                                        ProjectPageInLearningPath(
+                                      learningPathId:
+                                          learningPathId, // Kirim ID ke halaman tujuan
+                                    ),
+                                  ),
+                                );
                               },
                               borderRadius: BorderRadius.circular(7),
                               child: Container(

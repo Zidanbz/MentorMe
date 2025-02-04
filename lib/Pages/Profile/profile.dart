@@ -1,13 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:mentorme/global/transaction_card.dart';
+import 'package:mentorme/Pages/notifications/notifications.dart';
+import 'package:mentorme/Pages/topup/historytopup.dart';
+import 'package:mentorme/Pages/topup/topupcoin.dart';
 import 'edit_profile.dart';
+import 'package:mentorme/models/Profile_models.dart';
+import 'package:mentorme/controller/api_services.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  Profile? _profile;
+  bool _isLoading = true;
 
   void _handleLogout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
+    // Optionally, navigate to the login screen after logging out
   }
 
   void _navigateToEditProfile(BuildContext context) {
@@ -19,248 +32,269 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _fetchProfile() async {
+    try {
+      final profile = await ApiService().fetchProfile();
+      if (mounted) {
+        setState(() {
+          _profile = profile;
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      // Handle error in fetching profile
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      print("Error fetching profile: $e");
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color(0xFFE8F5F5),
       body: SafeArea(
-        child: Stack(
-          children: [
-            Column(
-              children: [
-                // Header
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  color: const Color(0xFFE8F5F5),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : Stack(
+                children: [
+                  Column(
                     children: [
-                      Row(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_none),
-                            color: const Color(0xFF339989),
-                            onPressed: () {},
-                          ),
-                          const Text(
-                            'Profil',
-                            style: TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ],
-                      ),
-                      IconButton(
-                        icon: const Icon(Icons.logout),
-                        color: const Color(0xFF339989),
-                        onPressed: () => _handleLogout(context),
-                      ),
+                      _buildHeader(context),
+                      _buildProfileInfo(context),
+                      _buildTransactionSection(context),
                     ],
                   ),
-                ),
+                ],
+              ),
+      ),
+    );
+  }
 
-                // Profile Info with new layout
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Profile Image
-                          Container(
-                            width: 80,
-                            height: 80,
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(12),
-                              child: Image.asset(
-                                'assets/person.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 16),
-                          // Profile Info
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Text(
-                                      'Sulaiman',
-                                      style: TextStyle(
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const Spacer(), // Menambahkan spacer untuk mendorong badge ke kanan
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(
-                                        horizontal: 8,
-                                        vertical: 4,
-                                      ),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF339989),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: const Text(
-                                        'PREMIUM',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Mahasiswa',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                                const SizedBox(height: 4),
-                                const Text(
-                                  'Saya seorang mahasiswa yang sedang mencari kebenaran',
-                                  style: TextStyle(
-                                    fontSize: 14,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      // Action Buttons
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: SizedBox(
-                                height: 36,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: const Color(0xFF7DE2D1),
-                                    foregroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                  ),
-                                  onPressed: () {},
-                                  child: const FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'Riwayat Transaksi',
-                                      style: TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: SizedBox(
-                                height: 36,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black87,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                  ),
-                                  onPressed: () =>
-                                      _navigateToEditProfile(context),
-                                  child: const FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'Edit Profil',
-                                      style: TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Padding(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 4),
-                              child: SizedBox(
-                                height: 36,
-                                child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.white,
-                                    foregroundColor: Colors.black87,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(18),
-                                    ),
-                                  ),
-                                  onPressed: () {},
-                                  child: const FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      'Top Up Koin',
-                                      style: TextStyle(fontSize: 13),
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-
-                // Rest of the code remains the same...
-                Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.all(16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Oktober 2024',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        _buildTransactionItem(
-                          'Pemrograman Web\nPengenalan HTML',
-                          'Rp. 150.000',
-                          true,
-                        ),
-                        const SizedBox(height: 8),
-                        _buildTransactionItem(
-                          'Pemrograman Web\nCSS Untuk Styling',
-                          'Rp. 200.000',
-                          false,
-                        ),
-                      ],
+  Widget _buildHeader(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      color: const Color(0xFFE8F5F5),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.notifications),
+                color: const Color(0xFF339989),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => NotificationPage(),
                     ),
-                  ),
+                  );
+                },
+              ),
+              const Text(
+                'Profil',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.w600,
                 ),
-              ],
+              ),
+            ],
+          ),
+          IconButton(
+            icon: const Icon(Icons.logout),
+            color: const Color(0xFF339989),
+            onPressed: () => _handleLogout(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProfileInfo(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Profile Image
+              Container(
+                width: 80,
+                height: 80,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: _profile?.picture.isNotEmpty == true
+                      ? Image.network(
+                          _profile!.picture, // URL gambar
+                          fit: BoxFit.cover,
+                        )
+                      : Image.asset(
+                          'assets/person.png', // Default profile image
+                          fit: BoxFit.cover,
+                        ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              // Profile Info
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      _profile?.fullName ?? 'Loading...',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Mahasiswa',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    const Text(
+                      'Saya seorang mahasiswa yang sedang mencari kebenaran',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          _buildActionButtons(context),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildActionButtons(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        _buildActionButton('Riwayat Transaksi', () {}),
+        _buildActionButton(
+            'Edit Profil', () => _navigateToEditProfile(context)),
+        _buildActionButton(
+          'Top Up Koin',
+          () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => TopUpCoinMeScreen()),
+            );
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildActionButton(String label, VoidCallback onPressed) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+        child: SizedBox(
+          height: 36,
+          child: ElevatedButton(
+            style: ElevatedButton.styleFrom(
+              backgroundColor: label == 'Top Up Koin'
+                  ? Colors.white
+                  : const Color(0xFF7DE2D1),
+              foregroundColor:
+                  label == 'Top Up Koin' ? Colors.black87 : Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(18),
+              ),
+            ),
+            onPressed: onPressed,
+            child: Text(
+              label,
+              style: const TextStyle(fontSize: 13),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionSection(BuildContext context) {
+    return Expanded(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            InkWell(
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => HistoryCoinMeScreen()),
+                );
+              },
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
+                decoration: BoxDecoration(
+                  color: Colors.blueAccent,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: const [
+                    Text(
+                      'Riwayat Top-Up',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Icon(
+                      Icons.arrow_forward,
+                      color: Colors.white,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Oktober 2024',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 12),
+            _buildTransactionItem(
+              'Pemrograman Web\nPengenalan HTML',
+              'Rp. 150.000',
+              true,
+            ),
+            const SizedBox(height: 8),
+            _buildTransactionItem(
+              'Pemrograman Web\nCSS Untuk Styling',
+              'Rp. 200.000',
+              false,
             ),
           ],
         ),
