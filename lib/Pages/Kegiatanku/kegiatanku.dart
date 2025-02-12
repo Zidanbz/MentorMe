@@ -29,13 +29,17 @@ class _KegiatankuState extends State<Kegiatanku> {
   Future<void> _fetchLearningData() async {
     try {
       final response = await http.get(
-          Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/my/learning'),
-          headers: {
-            'Authorization': 'Bearer $currentUserToken',
-          });
+        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/my/learning'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
-        if (data['data'] != null) {
+        print('Data dari API: ${data['data']}'); // Log data dari API
+
+        if (data['data'] != null && data['data']['learning'] != null) {
           setState(() {
             _progressCourses = data['data']['learning']
                 .where((course) => course['progress'] == true)
@@ -48,17 +52,18 @@ class _KegiatankuState extends State<Kegiatanku> {
         } else {
           setState(() {
             _isLoading = false;
+            _errorMessage = 'Data tidak ditemukan';
           });
         }
       } else {
         setState(() {
-          _errorMessage = 'Failed to load data';
+          _errorMessage = 'Gagal memuat data';
           _isLoading = false;
         });
       }
     } catch (e) {
       setState(() {
-        _errorMessage = 'An error occurred: $e';
+        _errorMessage = 'Terjadi kesalahan: $e';
         _isLoading = false;
       });
     }
@@ -150,12 +155,13 @@ class _KegiatankuState extends State<Kegiatanku> {
       child: Column(
         children: _progressCourses.map((course) {
           return _buildCard(
-            imagePath: course['project']['picture'], // Ambil dari API
-            title: course['project']['materialName'],
+            imagePath: course['project']['picture'] ?? '', // Ambil dari API
+            title: course['project']['materialName'] ?? 'Tidak ada judul',
             details: '4.7 (320 Reviews)', // Contoh detail
-            additionalText: '${course['project']['student']} students',
+            additionalText: '${course['student'] ?? 0} students',
             progress: 0.7, // Contoh progress
             showProgress: true,
+            course: course,
           );
         }).toList(),
       ),
@@ -167,12 +173,13 @@ class _KegiatankuState extends State<Kegiatanku> {
       child: Column(
         children: _completedCourses.map((course) {
           return _buildCard(
-            imagePath: course['project']['picture'], // Ambil dari API
-            title: course['project']['materialName'],
+            imagePath: course['project']['picture'] ?? '', // Ambil dari API
+            title: course['project']['materialName'] ?? 'Tidak ada judul',
             details: '4.8 (200 Reviews)', // Contoh detail
-            additionalText: '${course['project']['student']} students',
+            additionalText: '${course['student'] ?? 0} students',
             progress: 1.0, // Progress selesai
-            showProgress: true,
+            showProgress: false,
+            course: course,
           );
         }).toList(),
       ),
@@ -186,15 +193,23 @@ class _KegiatankuState extends State<Kegiatanku> {
     required String additionalText,
     required double progress,
     required bool showProgress,
+    required Map<String, dynamic> course,
   }) {
-    // Decode base64 image
+    // Decode base64 image jika perlu
     Uint8List imageBytes = base64Decode(imagePath);
 
     return GestureDetector(
       onTap: () {
+        final String activityId = course['ID'] ?? '';
+        print("Data course: $course");
+        print("Course ID: ${course['IDProject']}");
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => DetailKegiatan()),
+          MaterialPageRoute(
+            builder: (context) => DetailKegiatan(
+              activityId: activityId,
+            ), // Pass ID
+          ),
         );
       },
       child: Container(

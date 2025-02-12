@@ -1,134 +1,129 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+
+import 'package:mentorme/global/global.dart';
 
 class DetailKegiatan extends StatelessWidget {
+  final String activityId;
+  DetailKegiatan({Key? key, required this.activityId}) : super(key: key);
+
+  Future<Map<String, dynamic>> _fetchActivityDetails() async {
+    if (activityId.isEmpty) {
+      print("Error: activityId is null or empty!");
+      throw Exception("Invalid activity ID");
+    }
+    try {
+      print('Fetching details for activity ID: $activityId');
+      final response = await http.get(
+        Uri.parse(
+            'https://widgets-catb7yz54a-uc.a.run.app/api/my/activity/$activityId'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken', // Jika perlu
+          'Content-Type': 'application/json',
+        },
+      );
+      print('Raw API Response: ${response.body}');
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData != null && responseData['data'] != null) {
+          return responseData['data'];
+        } else {
+          print("Error: Data is null or malformed");
+          throw Exception("Invalid response format");
+        }
+      } else {
+        print('Error: ${response.statusCode}');
+        print('Response body: ${response.body}');
+        throw Exception('Failed to load activity details');
+      }
+    } catch (e) {
+      print('Exception: $e');
+      throw Exception('Failed to load activity details: $e');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Color(0xffE0FFF3),
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back),
-          onPressed: () {
-            Navigator.pop(context);
-          },
-        ),
         title: Text('Detail Kegiatan'),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: EdgeInsets.all(16.0),
-              decoration: BoxDecoration(
-                color: Color(0xff3DD598).withOpacity(0.5),
-                borderRadius: BorderRadius.circular(12.0),
-              ),
-              child: Row(
-                children: [
-                  CircleAvatar(
-                    radius: 30,
-                    backgroundImage: AssetImage('assets/mentor.png'),
-                  ),
-                  SizedBox(width: 16.0),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Pemrograman Web',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4.0),
-                      Text('Nama Mentor: Mulyono'),
-                      SizedBox(height: 4.0),
-                      Text('Total Progress: 0%'),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            SizedBox(height: 16.0),
-            Expanded(
-              child: ListView(
-                children: [
-                  buildActivityCard(
-                      'Pertemuan 1', 'Belajar dasar HTML, CSS, Javascript'),
-                  buildActivityCard('Pertemuan 2',
-                      'Menerapkan Program HTML, CSS, Javascript'),
-                  buildActivityCard('Pertemuan 3', 'Website Pertama'),
-                  buildActivityCard(
-                      'Pertemuan 4', 'Tugas Akhir membuat Website'),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+      body: FutureBuilder<Map<String, dynamic>>(
+        future: _fetchActivityDetails(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return Center(child: CircularProgressIndicator());
+          } else if (snapshot.hasError) {
+            return Center(child: Text('Failed to load activity details'));
+          } else if (!snapshot.hasData) {
+            return Center(child: Text('No data available'));
+          }
 
-  Widget buildActivityCard(String title, String description) {
-    return Card(
-      margin: EdgeInsets.only(bottom: 16.0),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12.0),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          final activityDetails = snapshot.data!;
+          final fullName = activityDetails['fullName'] ?? 'N/A';
+          final materialName = activityDetails['materialName'] ?? 'N/A';
+          final trainActivities = activityDetails['train'] ?? [];
+
+          return Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
+                  'Nama Mentor: $fullName',
+                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                 ),
-                Row(
-                  children: [
-                    Icon(
-                      Icons.warning_amber_outlined,
-                      color: Colors.red,
-                    ),
-                    SizedBox(width: 4.0),
-                    Text(
-                      'Belum dibuat',
-                      style: TextStyle(color: Colors.red),
-                    ),
-                  ],
+                SizedBox(height: 10),
+                Text(
+                  'Materi: $materialName',
+                  style: TextStyle(fontSize: 18),
                 ),
-              ],
-            ),
-            SizedBox(height: 8.0),
-            Text(description),
-            SizedBox(height: 16.0),
-            Row(
-              children: [
+                SizedBox(height: 20),
+                Text(
+                  'Aktivitas:',
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
+                SizedBox(height: 10),
                 Expanded(
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Color(0xff3DD598),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8.0),
-                      ),
-                    ),
-                    onPressed: () {},
-                    child: Text('Isi Project'),
+                  child: ListView.builder(
+                    itemCount: trainActivities.length,
+                    itemBuilder: (context, index) {
+                      final activity = trainActivities[index]['trainActivity'];
+                      final meeting = activity['meeting'] ?? 'N/A';
+                      final syllabus =
+                          activity['materialNameSyllabus'] ?? 'N/A';
+                      final status = activity['status'] ?? false;
+
+                      return Card(
+                        margin: EdgeInsets.symmetric(vertical: 5),
+                        child: Padding(
+                          padding: const EdgeInsets.all(10.0),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                meeting,
+                                style: TextStyle(
+                                    fontSize: 16, fontWeight: FontWeight.bold),
+                              ),
+                              SizedBox(height: 5),
+                              Text('Materi: $syllabus'),
+                              SizedBox(height: 5),
+                              Text(
+                                  'Status: ${status ? "Selesai" : "Belum Selesai"}'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }

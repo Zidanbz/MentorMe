@@ -28,11 +28,13 @@ class GetProjectProvider extends ChangeNotifier {
       final responseData = json.decode(response.body);
 
       if (response.statusCode == 200) {
+        final jsonData = json.decode(response.body);
+        print('Fetched projects: $_projects');
         // Decode base64 images here:
         _projects = (responseData['data'] as List).map((project) {
-          if (project['picture'] != null) {
+          if (project['data'] != null) {
             try {
-              project['decodedImage'] = base64Decode(project['picture']);
+              _projects = List<Map<String, dynamic>>.from(jsonData['data']);
             } catch (e) {
               print('Error decoding image: $e');
               // Handle decoding error, e.g., set a placeholder image.

@@ -88,27 +88,27 @@ class ApiService {
 
   Future<int> fetchCoin() async {
     try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user == null) throw Exception("User not logged in");
-
       final response = await http.get(
-        Uri.parse("$baseUrl/coin/get"),
+        Uri.parse('$baseUrl/coin/get'),
         headers: {
-          'Authorization':
-              'Bearer $currentUserToken', // Tambahkan jika autentikasi diperlukan
-          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentUserToken', // Jika diperlukan
         },
       );
 
       if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        return data["data"]["coin"] ?? 0;
+        final Map<String, dynamic> jsonResponse = json.decode(response.body);
+        if (jsonResponse['code'] == 200 && jsonResponse['error'] == null) {
+          final int coinBalance = jsonResponse['data']['coin'];
+          return coinBalance;
+        } else {
+          throw Exception(
+              'Gagal mengambil saldo koin: ${jsonResponse['error']}');
+        }
       } else {
-        throw Exception("Failed to fetch coin");
+        throw Exception('Gagal mengambil saldo koin: ${response.statusCode}');
       }
     } catch (e) {
-      print("Error fetching coin: $e");
-      return 0;
+      throw Exception('Gagal mengambil saldo koin: $e');
     }
   }
 }

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
 import 'package:mentorme/Pages/Kegiatanku/kegiatanku.dart';
@@ -40,12 +42,15 @@ class _MainStateScreen extends State<MainScreen>
   Future<void> _fetchCoinBalance() async {
     try {
       final coin = await ApiService().fetchCoin();
+
       if (mounted) {
         setState(() {
           _coinBalance = coin;
+          // print(" $_coinBalance");
           _isCoinLoading = false;
         });
       }
+      print("Coin balance fetched successfully: $_coinBalance");
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -183,9 +188,17 @@ class _MainStateScreen extends State<MainScreen>
                           child: CircleAvatar(
                             radius: 24,
                             backgroundImage: _profile?.picture != null
-                                ? NetworkImage(_profile!.picture)
-                                : const AssetImage('assets/person.png')
-                                    as ImageProvider,
+                                ? Image.memory(
+                                    base64Decode(_profile!.picture ?? ''),
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return Image.asset(
+                                        'assets/person.png',
+                                        fit: BoxFit.cover,
+                                      );
+                                    },
+                                  ).image
+                                : const AssetImage('assets/person.png'),
                           ),
                         ),
                         const SizedBox(width: 8),
@@ -234,7 +247,7 @@ class _MainStateScreen extends State<MainScreen>
                               ),
                               const SizedBox(width: 4),
                               _isCoinLoading
-                                  ? const CircularProgressIndicator() // Loader saat coin di-fetch
+                                  ? const CircularProgressIndicator() // Loader saat koin di-fetch
                                   : Text(
                                       '$_coinBalance',
                                       style: const TextStyle(

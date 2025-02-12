@@ -6,6 +6,7 @@ import 'package:mentorme/Pages/topup/topupcoin.dart';
 import 'edit_profile.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/controller/api_services.dart';
+import 'dart:convert';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -136,9 +137,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: _profile?.picture.isNotEmpty == true
-                      ? Image.network(
-                          _profile!.picture, // URL gambar
+                      ? Image.memory(
+                          base64Decode(_profile!.picture ?? ''),
                           fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Image.asset(
+                              'assets/person.png',
+                              fit: BoxFit.cover,
+                            );
+                          },
                         )
                       : Image.asset(
                           'assets/person.png', // Default profile image

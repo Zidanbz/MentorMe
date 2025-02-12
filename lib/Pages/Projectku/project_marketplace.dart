@@ -3,6 +3,7 @@ import 'package:mentorme/providers/getProject_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
 import 'dart:convert';
+import 'dart:developer' as developer;
 import 'package:mentorme/Pages/detail-project/detail-project.dart';
 
 class ProjectPage extends StatefulWidget {
@@ -27,6 +28,7 @@ class _ProjectPageState extends State<ProjectPage> {
     return InkWell(
       // Wrap Card dengan InkWell
       onTap: () {
+        developer.log('Tapped project: ${project.toString()}');
         Navigator.push(
           context,
           MaterialPageRoute(
@@ -87,7 +89,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   const Icon(Icons.person, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    'Mentor: ${project['fullName'] ?? 'Unknown'}',
+                    'Mentor: ${project['mentor'] ?? 'Unknown'}',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
