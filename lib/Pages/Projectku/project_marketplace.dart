@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/Pages/detail-project/detail_projectmarketplace.dart';
 import 'package:mentorme/providers/getProject_provider.dart';
 import 'package:provider/provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
@@ -23,17 +24,19 @@ class _ProjectPageState extends State<ProjectPage> {
     });
   }
 
-  Widget _buildProjectCard(BuildContext context, Map<String, dynamic> project) {
+  Widget _buildProjectCard(
+      BuildContext context, Map<String, dynamic> projectId) {
+    final projectID = projectId['id'];
     // Tambahkan parameter context
     return InkWell(
       // Wrap Card dengan InkWell
       onTap: () {
-        developer.log('Tapped project: ${project.toString()}');
+        developer.log('Project data: ${projectId.toString()}');
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DetailProjectPage(
-              project: project,
+            builder: (context) => DetailProjectmarketplacePage(
+              projectId: projectId,
             ),
           ),
         );
@@ -52,9 +55,9 @@ class _ProjectPageState extends State<ProjectPage> {
               // Gambar project
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: project['picture'] != null
+                child: projectId['picture'] != null
                     ? Image.memory(
-                        base64Decode(project['picture']),
+                        base64Decode(projectId['picture']),
                         height: 150,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -75,7 +78,7 @@ class _ProjectPageState extends State<ProjectPage> {
               const SizedBox(height: 16),
               // Nama material
               Text(
-                project['materialName'] ?? 'Untitled',
+                projectId['materialName'] ?? 'Untitled',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
@@ -89,7 +92,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   const Icon(Icons.person, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    'Mentor: ${project['mentor'] ?? 'Unknown'}',
+                    'Mentor: ${projectId['mentor'] ?? 'Unknown'}',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
@@ -107,7 +110,7 @@ class _ProjectPageState extends State<ProjectPage> {
                       const Icon(Icons.people, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
-                        '${project['student'] ?? 0} Students',
+                        '${projectId['student'] ?? 0} Students',
                         style: const TextStyle(
                           fontSize: 14,
                           color: Colors.grey,
@@ -116,7 +119,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     ],
                   ),
                   Text(
-                    'Rp ${project['price']?.toString().replaceAllMapped(
+                    'Rp ${projectId['price']?.toString().replaceAllMapped(
                           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                           (Match m) => '${m[1]}.',
                         ) ?? '0'}',

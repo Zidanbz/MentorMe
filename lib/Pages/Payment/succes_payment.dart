@@ -5,6 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 
 class PaymentSuccessScreen extends StatelessWidget {
+  final String paymentId;
+  const PaymentSuccessScreen({super.key, required this.paymentId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

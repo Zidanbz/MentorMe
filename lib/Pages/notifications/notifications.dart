@@ -1,6 +1,54 @@
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
+import 'package:mentorme/models/notif_model.dart';
 
-class NotificationPage extends StatelessWidget {
+class NotificationPage extends StatefulWidget {
+  @override
+  _NotificationPageState createState() => _NotificationPageState();
+}
+
+class _NotificationPageState extends State<NotificationPage> {
+  List<AppNotification> notifications =
+      []; // Changed from Notification to AppNotification
+  bool isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchNotifications();
+  }
+
+  Future<void> fetchNotifications() async {
+    final response = await http
+        .get(Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/get/all'));
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      if (data['code'] == 200) {
+        setState(() {
+          notifications = (data['error'] as List)
+              .map((notification) => AppNotification.fromJson(
+                  notification)) // Changed from Notification to AppNotification
+              .toList();
+          isLoading = false;
+        });
+      } else {
+        // Handle API error
+        setState(() {
+          isLoading = false;
+        });
+        print('API Error: ${data['message']}');
+      }
+    } else {
+      // Handle HTTP error
+      setState(() {
+        isLoading = false;
+      });
+      print('HTTP Error: ${response.statusCode}');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -20,20 +68,27 @@ class NotificationPage extends StatelessWidget {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: ListView.builder(
-          itemCount: 3,
-          itemBuilder: (context, index) {
-            return NotificationCard();
-          },
-        ),
-      ),
+      body: isLoading
+          ? Center(child: CircularProgressIndicator())
+          : Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: ListView.builder(
+                itemCount: notifications.length,
+                itemBuilder: (context, index) {
+                  return NotificationCard(notification: notifications[index]);
+                },
+              ),
+            ),
     );
   }
 }
 
 class NotificationCard extends StatelessWidget {
+  final AppNotification
+      notification; // Changed from Notification to AppNotification
+
+  NotificationCard({required this.notification});
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -48,18 +103,16 @@ class NotificationCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'mentoring dengan harga terjangkau',
+              notification.title,
               style: TextStyle(
                 fontSize: 16.0,
                 fontWeight: FontWeight.bold,
               ),
             ),
-            // SizedBox(height: 8.0),
             Text(
-              'Penasaran materinya tentang apa aja? Yuk, simak video berikut ini!',
+              notification.message,
               style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
             ),
-            // SizedBox(height: 16.0),
             Align(
               alignment: Alignment.centerRight,
               child: ElevatedButton(

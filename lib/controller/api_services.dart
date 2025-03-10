@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/global/global.dart';
+import 'package:mentorme/models/learning_model.dart';
 import 'package:mentorme/models/mainScreen_models.dart';
 
 class ApiService {
@@ -109,6 +110,70 @@ class ApiService {
       }
     } catch (e) {
       throw Exception('Gagal mengambil saldo koin: $e');
+    }
+  }
+
+  Future<List<Learning>?> fetchUserLearning() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/my/learning'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        if (responseData['code'] == 200 && responseData['data'] != null) {
+          // Pastikan untuk mengakses daftar dengan benar
+          List<Learning> learnings = (responseData['data']['learning'] as List)
+              .map((item) => Learning.fromJson(item))
+              .toList();
+          return learnings;
+        } else {
+          print('No learning data available');
+          return [];
+        }
+      } else {
+        print('Failed to fetch learning data: ${response.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print('Error fetching learning data: $e');
+      return null;
+    }
+  }
+
+  Future<Map<String, dynamic>> getTransactionHistory() async {
+    final String url = '$baseUrl/profile/history';
+
+    try {
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        return jsonDecode(response.body);
+      } else {
+        return {
+          "code": response.statusCode,
+          "error": "Failed to fetch data",
+          "data": null,
+          "message": response.reasonPhrase,
+        };
+      }
+    } catch (e) {
+      return {
+        "code": 500,
+        "error": e.toString(),
+        "data": null,
+        "message": "Internal Server Error",
+      };
     }
   }
 }

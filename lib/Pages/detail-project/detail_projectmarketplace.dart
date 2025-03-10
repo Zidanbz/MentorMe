@@ -7,11 +7,11 @@ import 'package:mentorme/global/global.dart';
 import 'package:mentorme/Pages/Payment/payment_detail.dart';
 
 class DetailProjectmarketplacePage extends StatefulWidget {
-  final Map<String, dynamic> project;
+  final Map<String, dynamic> projectId;
 
   const DetailProjectmarketplacePage({
     Key? key,
-    required this.project,
+    required this.projectId,
   }) : super(key: key);
 
   @override
@@ -28,7 +28,7 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
   void initState() {
     super.initState();
     developer
-        .log('DetailProjectPage initialized with project: ${widget.project}');
+        .log('DetailProjectPage initialized with project: ${widget.projectId}');
     fetchDetailProject();
   }
 
@@ -49,23 +49,22 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
   }
 
   Future<void> fetchDetailProject() async {
-    final projectId = widget.project['ID'];
-    if (projectId == null) {
-      setState(() {
-        isLoading = false;
-      });
+    final projectId = widget.projectId['ID'];
+    if (projectId == null || projectId.toString().isEmpty) {
+      developer.log('Error: Project ID is missing or invalid');
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project ID is missing')),
+        const SnackBar(content: Text('Project ID tidak ditemukan')),
       );
       return;
     }
+
     try {
-      developer.log('Fetching project with ID: ${widget.project['ID']}');
-      developer.log('Using token: $currentUserToken');
+      // developer.log('Fetching project with ID: ${widget.projectId['id']}');
+      // developer.log('Using token: $currentUserToken');
 
       final response = await http.get(
         Uri.parse(
-            'https://widgets-catb7yz54a-uc.a.run.app/api/learn/project/$projectId'),
+            'https://widgets-catb7yz54a-uc.a.run.app/api/learn/project/${widget.projectId['ID']}'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $currentUserToken',
@@ -108,7 +107,7 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
             }
           }
         });
-      } else if (response.statusCode == 400) {
+      } else if (response.statusCode == 401) {
         // Try to refresh token first
         final refreshed = await refreshToken();
         if (refreshed) {
@@ -177,7 +176,7 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 20),
                     child: Text(
-                      widget.project['materialName'] ?? 'Project Title',
+                      widget.projectId['materialName'] ?? 'Project Title',
                       style: const TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.bold,
@@ -369,7 +368,7 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                           context,
                           MaterialPageRoute(
                             builder: (context) => PaymentDetailPage(
-                              projectId: widget.project['ID']
+                              projectId: widget.projectId['ID']
                                   .toString(), // Sesuaikan dengan nama field yang benar
                             ),
                           ),
@@ -383,7 +382,7 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                         ),
                       ),
                       child: Text(
-                        'Beli Project - Rp ${widget.project['price'] ?? 0}',
+                        'Beli Project - Rp ${widget.projectId['price'] ?? 0}',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,

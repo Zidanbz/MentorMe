@@ -135,9 +135,10 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
     try {
       final response =
           await _paymentProvider.processPayment(widget.projectId, paymentData);
-      print("📌 Request Body yang dikirim: $paymentData");
+      print("📌 Request Body voucher yang dikirim: $paymentData");
+      print("📌 Request Body project yang dikirim: ${widget.projectId}");
       print("📌 Response API: $response");
-
+      print("📌 Nilai selectedVoucher sebelum pembayaran: $selectedVoucher");
       if (response != null &&
           response['code'] == 201 &&
           response['data'] != null) {
@@ -148,8 +149,9 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (context) =>
-                WaitingPaymentScreen(projectId: widget.projectId),
+            builder: (context) => WaitingPaymentScreen(
+              projectId: widget.projectId,
+            ),
           ),
         );
 
@@ -256,12 +258,6 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                     _buildDetailItem(
                       Icons.people,
                       '1x Konsultasi Online Gratis',
-                      const Color(0xff339989),
-                    ),
-                    const SizedBox(height: 15),
-                    _buildDetailItem(
-                      Icons.monetization_on,
-                      '10 Koin Gratis',
                       const Color(0xff339989),
                     ),
                     const SizedBox(height: 20),

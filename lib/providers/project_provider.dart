@@ -12,8 +12,8 @@ class ProjectProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get projects => _projects;
   bool get isLoading => _isLoading;
 
-  void setSelectedLearningPathId(String id) {
-    _selectedLearningPathId = id;
+  void setSelectedLearningPathId(String ID) {
+    _selectedLearningPathId = ID;
     fetchProjects();
   }
 

@@ -15,7 +15,7 @@ class WaitingPaymentScreen extends StatefulWidget {
 }
 
 class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
-  final PaymentProvider _paymentProvider = PaymentProvider();
+  final ApiService _apiService = ApiService();
   bool isChecking = true;
   String? error;
 
@@ -27,11 +27,10 @@ class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
 
   Future<void> _checkPaymentStatus() async {
     try {
-      final response =
-          await _paymentProvider.getHistoryTransaction(widget.projectId);
-      print("\ud83d\udccc Response check payment: $response");
+      final Map<String, dynamic> response =
+          await _apiService.getTransactionHistory();
 
-      if (response != null && response['code'] == 200) {
+      if (response['code'] == 200) {
         String status = response['data']['status'];
         print("Status Pembayaran: $status");
 
@@ -39,14 +38,17 @@ class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
           print("Pembayaran diterima, pindah ke SuccessScreen");
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => PaymentSuccessScreen()),
+            MaterialPageRoute(
+                builder: (context) => PaymentSuccessScreen(
+                      paymentId: response['data']['ID'],
+                    )),
           );
         } else if (status == 'pending') {
-          print("Pembayaran pending, pindah ke FailedScreen");
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (context) => PaymentFailedScreen()),
-          );
+          print("Pembayaran pending, tetap di halaman WaitingPaymentScreen");
+          setState(() {
+            isChecking = true;
+          });
+          Future.delayed(Duration(seconds: 5), () => _checkPaymentStatus());
         } else {
           print("Status tidak dikenali, tetap di halaman pengecekan.");
           setState(() {
@@ -91,9 +93,21 @@ class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
             child: Column(
               children: [
                 isChecking
-                    ? CircularProgressIndicator(
-                        color: Colors.teal,
-                        strokeWidth: 6.0,
+                    ? Column(
+                        children: [
+                          CircularProgressIndicator(
+                            color: Colors.teal,
+                            strokeWidth: 6.0,
+                          ),
+                          SizedBox(height: 20),
+                          Text(
+                            'Menunggu pembayaran...',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ],
                       )
                     : error != null
                         ? Column(
@@ -101,7 +115,9 @@ class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
                               Text(error!, textAlign: TextAlign.center),
                               SizedBox(height: 20),
                               ElevatedButton(
-                                onPressed: _checkPaymentStatus,
+                                onPressed: () {
+                                  _checkPaymentStatus();
+                                },
                                 child: Text("Coba Lagi"),
                               ),
                             ],

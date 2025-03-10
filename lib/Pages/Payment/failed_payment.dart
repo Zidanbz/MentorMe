@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:animate_do/animate_do.dart';
 
 class PaymentFailedScreen extends StatelessWidget {
+  final String paymentId;
+  const PaymentFailedScreen({super.key, required this.paymentId});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

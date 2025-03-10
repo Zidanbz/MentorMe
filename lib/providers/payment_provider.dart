@@ -6,10 +6,10 @@ class PaymentProvider {
   static const String baseUrl = 'https://widgets-catb7yz54a-uc.a.run.app';
 
   /// **1. Get History Transaction**
-  Future<Map<String, dynamic>> getHistoryTransaction(String projectId) async {
+  Future<Map<String, dynamic>> getHistoryTransaction(String paymentId) async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/api/payment/history?projectId=$projectId'),
+        Uri.parse('$baseUrl/api/profile/history?projectId=$paymentId'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $currentUserToken',

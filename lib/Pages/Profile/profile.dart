@@ -7,6 +7,7 @@ import 'edit_profile.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/controller/api_services.dart';
 import 'dart:convert';
+import 'package:mentorme/models/learning_model.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
@@ -17,11 +18,11 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   Profile? _profile;
+  List<Learning>? _learningData;
   bool _isLoading = true;
 
   void _handleLogout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    // Optionally, navigate to the login screen after logging out
   }
 
   void _navigateToEditProfile(BuildContext context) {
@@ -36,20 +37,21 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _fetchProfile() async {
     try {
       final profile = await ApiService().fetchProfile();
+      final learningData = await ApiService().fetchUserLearning();
       if (mounted) {
         setState(() {
           _profile = profile;
+          _learningData = learningData;
           _isLoading = false;
         });
       }
     } catch (e) {
-      // Handle error in fetching profile
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
       }
-      print("Error fetching profile: $e");
+      print("Error fetching profile or learning data: $e");
     }
   }
 
@@ -66,16 +68,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       body: SafeArea(
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
-            : Stack(
-                children: [
-                  Column(
-                    children: [
-                      _buildHeader(context),
-                      _buildProfileInfo(context),
-                      _buildTransactionSection(context),
-                    ],
-                  ),
-                ],
+            : SingleChildScrollView(
+                // Tambahkan SingleChildScrollView di sini
+                child: Column(
+                  children: [
+                    _buildHeader(context),
+                    _buildProfileInfo(context),
+                    _buildTransactionSection(context),
+                  ],
+                ),
               ),
       ),
     );
@@ -130,7 +131,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Profile Image
               Container(
                 width: 80,
                 height: 80,
@@ -148,13 +148,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           },
                         )
                       : Image.asset(
-                          'assets/person.png', // Default profile image
+                          'assets/person.png',
                           fit: BoxFit.cover,
                         ),
                 ),
               ),
               const SizedBox(width: 16),
-              // Profile Info
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -198,7 +197,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceEvenly,
       children: [
-        _buildActionButton('Riwayat Transaksi', () {}),
         _buildActionButton(
             'Edit Profil', () => _navigateToEditProfile(context)),
         _buildActionButton(
@@ -224,9 +222,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: ElevatedButton.styleFrom(
               backgroundColor: label == 'Top Up Koin'
                   ? Colors.white
-                  : const Color(0xFF7DE2D1),
+                  : const Color(0xFFffffff),
               foregroundColor:
-                  label == 'Top Up Koin' ? Colors.black87 : Colors.white,
+                  label == 'Top Up Koin' ? Colors.black87 : Colors.black,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -243,73 +241,39 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildTransactionSection(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            InkWell(
-              onTap: () {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                      builder: (context) => HistoryCoinMeScreen()),
-                );
-              },
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                decoration: BoxDecoration(
-                  color: Colors.blueAccent,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: const [
-                    Text(
-                      'Riwayat Top-Up',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    Icon(
-                      Icons.arrow_forward,
-                      color: Colors.white,
-                    ),
-                  ],
-                ),
-              ),
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const SizedBox(height: 16),
+          const Text(
+            'Riwayat Transaksi',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
             ),
-            const SizedBox(height: 16),
-            const Text(
-              'Oktober 2024',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 12),
-            _buildTransactionItem(
-              'Pemrograman Web\nPengenalan HTML',
-              'Rp. 150.000',
-              true,
-            ),
-            const SizedBox(height: 8),
-            _buildTransactionItem(
-              'Pemrograman Web\nCSS Untuk Styling',
-              'Rp. 200.000',
-              false,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 12),
+          if (_learningData != null)
+            ..._learningData!.map((learning) {
+              return Column(
+                children: [
+                  _buildTransactionItem(
+                    learning
+                        .project.materialName, // Misalnya, jika ada nama proyek
+                    learning.progress ? 'Gagal' : 'Berhasil', // Status
+                  ),
+                  const SizedBox(height: 10),
+                ],
+              );
+            }).toList(),
+        ],
       ),
     );
   }
 
-  Widget _buildTransactionItem(String title, String amount, bool isSuccess) {
+  Widget _buildTransactionItem(String materialName, String status) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -325,49 +289,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
               borderRadius: BorderRadius.circular(8),
             ),
             child: const Icon(
-              Icons.people,
+              Icons.attach_money,
               color: Color(0xFF339989),
               size: 24,
             ),
           ),
           const SizedBox(width: 12),
+          const SizedBox(height: 60),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  title,
+                  materialName,
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
                 const SizedBox(height: 4),
-                Row(
-                  children: [
-                    Icon(
-                      isSuccess ? Icons.check_circle : Icons.cancel,
-                      size: 16,
-                      color: isSuccess ? const Color(0xFF339989) : Colors.red,
-                    ),
-                    const SizedBox(width: 4),
-                    Text(
-                      isSuccess ? 'Transaksi Selesai' : 'Transaksi Gagal',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: isSuccess ? const Color(0xFF339989) : Colors.red,
-                      ),
-                    ),
-                  ],
+                Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.bold,
+                    color: status == 'Gagal' ? Colors.red : Colors.green,
+                  ),
                 ),
               ],
-            ),
-          ),
-          Text(
-            amount,
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w500,
             ),
           ),
         ],
