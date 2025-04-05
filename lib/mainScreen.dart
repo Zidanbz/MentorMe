@@ -39,27 +39,28 @@ class _MainStateScreen extends State<MainScreen>
   int _coinBalance = 0;
   bool _isCoinLoading = true;
 
-  Future<void> _fetchCoinBalance() async {
-    try {
-      final coin = await ApiService().fetchCoin();
+  // Future<void> _fetchCoinBalance() async {
+  //   try {
+  //     final coin = await ApiService().fetchCoin();
 
-      if (mounted) {
-        setState(() {
-          _coinBalance = coin;
-          // print(" $_coinBalance");
-          _isCoinLoading = false;
-        });
-      }
-      print("Coin balance fetched successfully: $_coinBalance");
-    } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isCoinLoading = false;
-        });
-      }
-      print("Error fetching coin balance: $e");
-    }
-  }
+  //     if (mounted) {
+  //       setState(() {
+  //         _coinBalance = coin;
+  //         // print(" $_coinBalance");
+  //         _isCoinLoading = false;
+  //       });
+  //     }
+  //     print("Coin balance fetched successfully: $_coinBalance");
+  //   } catch (e) {
+  //     if (mounted) {
+  //       setState(() {
+  //         // _coinBalance = 0;
+  //         _isCoinLoading = false;
+  //       });
+  //     }
+  //     print("Error fetching coin balance: $e");
+  //   }
+  // }
 
   void handleTabChange(int index, {String? learningPathId}) {
     if (tabController != null) {
@@ -98,7 +99,7 @@ class _MainStateScreen extends State<MainScreen>
     super.initState();
     tabController = TabController(length: 5, vsync: this);
     _fetchProfile();
-    _fetchCoinBalance();
+    // _fetchCoinBalance();
   }
 
   Future<void> getUserName() async {
@@ -187,9 +188,11 @@ class _MainStateScreen extends State<MainScreen>
                           },
                           child: CircleAvatar(
                             radius: 24,
-                            backgroundImage: _profile?.picture != null
+                            backgroundImage: (_profile?.picture != null &&
+                                    _profile!.picture != '' &&
+                                    _profile!.picture != 'No Picture')
                                 ? Image.memory(
-                                    base64Decode(_profile!.picture ?? ''),
+                                    base64Decode(_profile!.picture!),
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Image.asset(
@@ -230,51 +233,51 @@ class _MainStateScreen extends State<MainScreen>
                             );
                           },
                         ),
-                        Container(
-                          height: 40,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                          decoration: BoxDecoration(
-                            color: const Color(0xff7DE2D1),
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Image.asset(
-                                'assets/Coin.png',
-                                height: 24,
-                                width: 24,
-                              ),
-                              const SizedBox(width: 4),
-                              _isCoinLoading
-                                  ? const CircularProgressIndicator() // Loader saat koin di-fetch
-                                  : Text(
-                                      '$_coinBalance',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 20,
-                                      ),
-                                    ),
-                              const SizedBox(width: 4),
-                              GestureDetector(
-                                onTap: () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                        builder: (context) =>
-                                            TopUpCoinMeScreen()),
-                                  );
-                                },
-                                child: const Icon(
-                                  Icons.add_box,
-                                  color: Color(0xff339989),
-                                  size: 24,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
+                        // Container(
+                        //   height: 40,
+                        //   padding: const EdgeInsets.symmetric(horizontal: 8),
+                        //   decoration: BoxDecoration(
+                        //     color: const Color(0xff7DE2D1),
+                        //     borderRadius: BorderRadius.circular(8),
+                        //   ),
+                        //   child: Row(
+                        //     mainAxisSize: MainAxisSize.min,
+                        //     children: [
+                        //       Image.asset(
+                        //         'assets/Coin.png',
+                        //         height: 24,
+                        //         width: 24,
+                        //       ),
+                        //       const SizedBox(width: 4),
+                        //       _isCoinLoading
+                        //           ? const CircularProgressIndicator() // Loader saat koin di-fetch
+                        //           : Text(
+                        //               '$_coinBalance',
+                        //               style: const TextStyle(
+                        //                 color: Colors.white,
+                        //                 fontWeight: FontWeight.bold,
+                        //                 fontSize: 20,
+                        //               ),
+                        //             ),
+                        //       const SizedBox(width: 4),
+                        //       GestureDetector(
+                        //         onTap: () {
+                        //           Navigator.push(
+                        //             context,
+                        //             MaterialPageRoute(
+                        //                 builder: (context) =>
+                        //                     TopUpCoinMeScreen()),
+                        //           );
+                        //         },
+                        //         child: const Icon(
+                        //           Icons.add_box,
+                        //           color: Color(0xff339989),
+                        //           size: 24,
+                        //         ),
+                        //       ),
+                        //     ],
+                        //   ),
+                        // ),
                       ],
                     ),
                   ],

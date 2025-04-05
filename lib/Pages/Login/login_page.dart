@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mentorme/Pages/Beranda/beranda.dart';
@@ -7,6 +8,8 @@ import 'package:mentorme/global/global.dart';
 import 'package:mentorme/mainScreen.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -87,7 +90,26 @@ class _LoginPageState extends State<LoginPage> {
           String token = responseData['data']['token'];
           currentUserToken = token;
 
-          // Validasi categories dan learningPaths agar tidak null
+          // Ambil nameUser dari response
+          String nameUser = responseData['data']['nameUser'] ?? '';
+          String emailUser = responseData['data']['email'] ?? '';
+
+          // Simpan ke SharedPreferences
+          final prefs = await SharedPreferences.getInstance();
+          await prefs.setString('nameUser', nameUser);
+          await prefs.setString('emailUser', emailUser);
+
+          // Coba update displayName di Firebase Auth (jika user sudah login Firebase)
+          User? firebaseUser = FirebaseAuth.instance.currentUser;
+          if (firebaseUser != null && nameUser.isNotEmpty) {
+            await firebaseUser.updateDisplayName(nameUser);
+            await firebaseUser.reload(); // refresh data
+            print('✅ Display name diperbarui: $nameUser');
+          } else {
+            print('⚠️ Firebase user tidak ditemukan atau nameUser kosong');
+          }
+
+          // Ambil data lainnya
           List<Map<String, dynamic>> categories =
               responseData['data']['categories'] != null
                   ? List<Map<String, dynamic>>.from(

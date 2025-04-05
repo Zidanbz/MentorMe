@@ -22,19 +22,19 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
-  void _onCardTap(String cardTitle) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NewPage(title: cardTitle)),
-    );
-  }
+  // void _onCardTap(String cardTitle) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(builder: (context) => NewPage(title: cardTitle)),
+  //   );
+  // }
 
-  void _onButtonTap(String buttonTitle) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(builder: (context) => NewPage(title: buttonTitle)),
-    );
-  }
+  // void _onButtonTap(String buttonTitle) {
+  //   Navigator.push(
+  //     context,
+  //     MaterialPageRoute(builder: (context) => NewPage(title: buttonTitle)),
+  //   );
+  // }
 
   Image decodeBase64Image(String base64String) {
     final decodedBytes = base64Decode(base64String);
@@ -60,23 +60,23 @@ class _BerandaPageState extends State<BerandaPage> {
                     fontWeight: FontWeight.bold,
                   ),
                 ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: 'Search...',
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(vertical: 14),
-                      prefixIcon: const Icon(Icons.search),
-                    ),
-                  ),
-                ),
+                // const SizedBox(height: 8),
+                // Container(
+                //   padding: const EdgeInsets.symmetric(horizontal: 16),
+                //   child: TextField(
+                //     decoration: InputDecoration(
+                //       hintText: 'Search...',
+                //       filled: true,
+                //       fillColor: Colors.white,
+                //       border: OutlineInputBorder(
+                //         borderRadius: BorderRadius.circular(12),
+                //         borderSide: BorderSide.none,
+                //       ),
+                //       contentPadding: const EdgeInsets.symmetric(vertical: 14),
+                //       prefixIcon: const Icon(Icons.search),
+                //     ),
+                //   ),
+                // ),
               ],
             ),
           ),
@@ -90,44 +90,44 @@ class _BerandaPageState extends State<BerandaPage> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        const Text(
-                          'Kategori',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 5),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: widget.categories.map((category) {
-                              return Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: ElevatedButton(
-                                  onPressed: () =>
-                                      _onButtonTap(category['name']),
-                                  style: ElevatedButton.styleFrom(
-                                    foregroundColor: Colors.black,
-                                    backgroundColor: Colors.white,
-                                    shape: RoundedRectangleBorder(
-                                      borderRadius: BorderRadius.circular(8.0),
-                                    ),
-                                    side: const BorderSide(color: Colors.grey),
-                                  ),
-                                  child: Text(
-                                    category['name'],
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
-                                ),
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
+                        // const Text(
+                        //   'Kategori',
+                        //   style: TextStyle(
+                        //     fontSize: 20,
+                        //     fontWeight: FontWeight.bold,
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 5),
+                        // SingleChildScrollView(
+                        //   scrollDirection: Axis.horizontal,
+                        //   child: Row(
+                        //     children: widget.categories.map((category) {
+                        //       return Padding(
+                        //         padding: const EdgeInsets.only(right: 8.0),
+                        //         child: ElevatedButton(
+                        //           onPressed: () =>
+                        //               _onButtonTap(category['name']),
+                        //           style: ElevatedButton.styleFrom(
+                        //             foregroundColor: Colors.black,
+                        //             backgroundColor: Colors.white,
+                        //             shape: RoundedRectangleBorder(
+                        //               borderRadius: BorderRadius.circular(8.0),
+                        //             ),
+                        //             side: const BorderSide(color: Colors.grey),
+                        //           ),
+                        //           child: Text(
+                        //             category['name'],
+                        //             style: const TextStyle(
+                        //               fontWeight: FontWeight.bold,
+                        //               fontSize: 16,
+                        //             ),
+                        //           ),
+                        //         ),
+                        //       );
+                        //     }).toList(),
+                        //   ),
+                        // ),
+                        // const SizedBox(height: 16),
                         const Text(
                           'Learning Path',
                           style: TextStyle(
@@ -135,7 +135,7 @@ class _BerandaPageState extends State<BerandaPage> {
                             fontWeight: FontWeight.bold,
                           ),
                         ),
-                        const SizedBox(height: 5),
+                        // const SizedBox(height: 5),
                         GridView.builder(
                           shrinkWrap: true,
                           physics: const NeverScrollableScrollPhysics(),
@@ -214,20 +214,20 @@ class _BerandaPageState extends State<BerandaPage> {
   }
 }
 
-class NewPage extends StatelessWidget {
-  final String title;
+// class NewPage extends StatelessWidget {
+//   final String title;
 
-  const NewPage({super.key, required this.title});
+//   const NewPage({super.key, required this.title});
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-      ),
-      body: Center(
-        child: Text('This is the $title page'),
-      ),
-    );
-  }
-}
+//   @override
+//   Widget build(BuildContext context) {
+//     return Scaffold(
+//       appBar: AppBar(
+//         title: Text(title),
+//       ),
+//       body: Center(
+//         child: Text('This is the $title page'),
+//       ),
+//     );
+//   }
+// }

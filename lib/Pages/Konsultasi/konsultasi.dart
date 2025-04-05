@@ -6,135 +6,39 @@ class KonsultasiPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xFFE0F7EF),
+      backgroundColor: Color(0xffE0FFF3),
       body: Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 10),
-          Text(
-            'Konsultasi',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
+
+          // Konsultasi di kiri
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: Text(
+              'KONSULTASI',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black,
+              ),
             ),
           ),
           SizedBox(height: 16),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Stack(
-              clipBehavior: Clip.none,
-              children: [
-                Material(
-                  color: Colors.transparent,
-                  child: InkWell(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MentorSelectionPage(),
-                        ),
-                      );
-                    },
-                    borderRadius: BorderRadius.circular(10),
-                    child: Container(
-                      height: 80,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: Color(0xFF27DEBF),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Stack(
-                        children: [
-                          Positioned(
-                            left: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Image.asset(
-                              'assets/leaves.png',
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          Positioned(
-                            right: 0,
-                            top: 0,
-                            bottom: 0,
-                            child: Transform.scale(
-                              scaleX: -1,
-                              child: Image.asset(
-                                'assets/leaves.png',
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                          Center(
-                            child: Text(
-                              'Konsultasi disini!',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 20,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: -15,
-                  left: 0,
-                  right: 0,
-                  child: Center(
-                    child: Container(
-                      padding:
-                          EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
-                            blurRadius: 4,
-                            offset: Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Image.asset(
-                            'assets/coin_icon.png',
-                            width: 12,
-                            height: 12,
-                          ),
-                          SizedBox(width: 2),
-                          Text(
-                            '5',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w500,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 35),
-          Text(
-            'Riwayat',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.w500,
-              color: Colors.black,
+
+          // Riwayat di tengah
+          Center(
+            child: Text(
+              'Riwayat',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w500,
+                color: Colors.black,
+              ),
             ),
           ),
           SizedBox(height: 12),
+
           Expanded(
             child: Padding(
               padding: EdgeInsets.symmetric(horizontal: 16),
@@ -168,7 +72,6 @@ class KonsultasiPage extends StatelessWidget {
       String status, String imagePath) {
     return InkWell(
       onTap: () {
-        // Navigasi ke halaman detail
         Navigator.push(
           context,
           MaterialPageRoute(

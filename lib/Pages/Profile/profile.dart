@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:mentorme/Pages/Konsultasi/help.dart';
+import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/Pages/notifications/notifications.dart';
 import 'package:mentorme/Pages/topup/historytopup.dart';
 import 'package:mentorme/Pages/topup/topupcoin.dart';
@@ -23,6 +25,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _handleLogout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
+    print("User signed out");
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(builder: (context) => LoginPage()),
+    );
   }
 
   void _navigateToEditProfile(BuildContext context) {
@@ -30,6 +37,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => const EditProfileScreen(),
+      ),
+    );
+  }
+
+  void _navigateTohelpPage(BuildContext context) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => HelpPage(),
       ),
     );
   }
@@ -136,20 +152,24 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 80,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: _profile?.picture.isNotEmpty == true
+                  child: (_profile?.picture != null &&
+                          _profile!.picture!.isNotEmpty &&
+                          _profile!.picture! != "No Picture")
                       ? Image.memory(
-                          base64Decode(_profile!.picture ?? ''),
+                          base64Decode(_profile!.picture!),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Image.asset(
-                              'assets/person.png',
-                              fit: BoxFit.cover,
+                            return const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.grey,
                             );
                           },
                         )
-                      : Image.asset(
-                          'assets/person.png',
-                          fit: BoxFit.cover,
+                      : const Icon(
+                          Icons.person,
+                          size: 60,
+                          color: Colors.grey,
                         ),
                 ),
               ),
@@ -199,15 +219,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         _buildActionButton(
             'Edit Profil', () => _navigateToEditProfile(context)),
-        _buildActionButton(
-          'Top Up Koin',
-          () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(builder: (context) => TopUpCoinMeScreen()),
-            );
-          },
-        ),
+        // _buildActionButton(
+        //   'Top Up Koin',
+        //   () {
+        //     Navigator.push(
+        //       context,
+        //       MaterialPageRoute(builder: (context) => TopUpCoinMeScreen()),
+        //     );
+        //   },
+        // ),
+        _buildActionButton('Bantuan', () => _navigateTohelpPage(context)),
       ],
     );
   }
@@ -250,19 +271,34 @@ class _ProfileScreenState extends State<ProfileScreen> {
           const Text(
             'Riwayat Transaksi',
             style: TextStyle(
-              fontSize: 16,
+              fontSize: 24,
               fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 12),
-          if (_learningData != null)
+          if (_learningData == null || _learningData!.isEmpty)
+            Column(
+              children: [
+                const SizedBox(height: 20),
+                Image.asset(
+                  'assets/Maskot.png',
+                  width: 160,
+                ),
+                const SizedBox(height: 12),
+                const Text(
+                  'Belum ada transaksi,\nayo lakukan pembelian!',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 14, color: Colors.black54),
+                ),
+              ],
+            )
+          else
             ..._learningData!.map((learning) {
               return Column(
                 children: [
                   _buildTransactionItem(
-                    learning
-                        .project.materialName, // Misalnya, jika ada nama proyek
-                    learning.progress ? 'Gagal' : 'Berhasil', // Status
+                    learning.project.materialName,
+                    learning.progress ? 'Gagal' : 'Berhasil',
                   ),
                   const SizedBox(height: 10),
                 ],

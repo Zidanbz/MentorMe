@@ -1,8 +1,7 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Payment/succes_payment.dart';
 import 'package:mentorme/controller/api_services.dart';
-import 'package:mentorme/providers/payment_provider.dart';
-import 'failed_payment.dart';
 
 class WaitingPaymentScreen extends StatefulWidget {
   final String projectId;
@@ -11,150 +10,95 @@ class WaitingPaymentScreen extends StatefulWidget {
       : super(key: key);
 
   @override
-  _WaitingPaymentScreenState createState() => _WaitingPaymentScreenState();
+  State<WaitingPaymentScreen> createState() => _WaitingPaymentScreenState();
 }
 
 class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
-  final ApiService _apiService = ApiService();
-  bool isChecking = true;
-  String? error;
+  Timer? _pollingTimer;
+  bool _isNavigated = false;
 
   @override
   void initState() {
     super.initState();
-    _checkPaymentStatus();
+    _startPolling();
+  }
+
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _checkPaymentStatus();
+    });
   }
 
   Future<void> _checkPaymentStatus() async {
     try {
-      final Map<String, dynamic> response =
-          await _apiService.getTransactionHistory();
+      final response = await ApiService().fetchProfileHistory();
+      debugPrint("📦 Full response: $response");
 
-      if (response['code'] == 200) {
-        String status = response['data']['status'];
-        print("Status Pembayaran: $status");
+      final history = response['history'] as List<dynamic>?;
 
-        if (status == 'accept') {
-          print("Pembayaran diterima, pindah ke SuccessScreen");
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(
-                builder: (context) => PaymentSuccessScreen(
-                      paymentId: response['data']['ID'],
-                    )),
-          );
-        } else if (status == 'pending') {
-          print("Pembayaran pending, tetap di halaman WaitingPaymentScreen");
-          setState(() {
-            isChecking = true;
-          });
-          Future.delayed(Duration(seconds: 5), () => _checkPaymentStatus());
-        } else {
-          print("Status tidak dikenali, tetap di halaman pengecekan.");
-          setState(() {
-            isChecking = false;
-          });
+      if (history == null) {
+        debugPrint("📭 Data dari API kosong / null");
+        return;
+      }
+
+      final projectIdTarget = widget.projectId.trim().toLowerCase();
+
+      for (var item in history) {
+        final status = item['status']?.toString().toLowerCase();
+        final projectIdFromApi =
+            item['project']?['ID']?.toString().trim().toLowerCase();
+
+        debugPrint("🧩 Cek Project: $projectIdFromApi | Status: $status");
+
+        if (projectIdFromApi == projectIdTarget && status == 'accept') {
+          _pollingTimer?.cancel();
+
+          if (!_isNavigated) {
+            _isNavigated = true;
+            Navigator.of(context).pushReplacement(
+              MaterialPageRoute(
+                builder: (_) => const PaymentSuccessScreen(),
+              ),
+            );
+          }
+          break;
         }
-      } else {
-        setState(() {
-          error = "Gagal memeriksa status pembayaran.";
-        });
       }
     } catch (e) {
-      setState(() {
-        error = "Terjadi kesalahan: ${e.toString()}";
-      });
+      debugPrint("⚠️ Error saat cek status pembayaran: $e");
     }
   }
 
   @override
+  void dispose() {
+    _pollingTimer?.cancel();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.green[50],
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Text(
-          'Pembayaran',
-          style: TextStyle(color: Colors.black),
-        ),
-        centerTitle: true,
-      ),
-      body: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: [
-          SizedBox(height: 20),
-          Center(
-            child: Column(
-              children: [
-                isChecking
-                    ? Column(
-                        children: [
-                          CircularProgressIndicator(
-                            color: Colors.teal,
-                            strokeWidth: 6.0,
-                          ),
-                          SizedBox(height: 20),
-                          Text(
-                            'Menunggu pembayaran...',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ],
-                      )
-                    : error != null
-                        ? Column(
-                            children: [
-                              Text(error!, textAlign: TextAlign.center),
-                              SizedBox(height: 20),
-                              ElevatedButton(
-                                onPressed: () {
-                                  _checkPaymentStatus();
-                                },
-                                child: Text("Coba Lagi"),
-                              ),
-                            ],
-                          )
-                        : Text(
-                            'Menunggu pembayaran...',
-                            style: TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-              ],
+    return const Scaffold(
+      backgroundColor: Color(0xffE0FFF3),
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(
+              color: Color(0xff339989),
             ),
-          ),
-          SizedBox(height: 40),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20.0),
-            child: ElevatedButton(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.teal,
-                padding: EdgeInsets.symmetric(vertical: 15),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(25),
-                ),
-              ),
-              onPressed: () {
-                _checkPaymentStatus();
-              },
-              child: Center(
-                child: Text(
-                  'Periksa Status',
-                  style: TextStyle(fontSize: 16, color: Colors.white),
-                ),
-              ),
+            SizedBox(height: 20),
+            Text(
+              'Menunggu konfirmasi pembayaran...',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
-          ),
-        ],
+            SizedBox(height: 8),
+            Text(
+              'Silakan selesaikan pembayaran Anda di halaman berikutnya',
+              textAlign: TextAlign.center,
+              style: TextStyle(fontSize: 13, color: Colors.black54),
+            ),
+          ],
+        ),
       ),
     );
   }

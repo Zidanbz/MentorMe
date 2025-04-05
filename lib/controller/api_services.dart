@@ -176,4 +176,57 @@ class ApiService {
       };
     }
   }
+
+  static Future<Set<String>> fetchUserLearningIDs() async {
+    try {
+      final response = await http.get(
+        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/my/learning'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        if (responseData['code'] == 200 && responseData['data'] != null) {
+          Set<String> learningIDs = (responseData['data'] as List)
+              .map<String>((item) => item['learning']['IDProject'])
+              .toSet();
+          return learningIDs;
+        }
+      }
+    } catch (e) {
+      print('Error fetching user learning IDs: $e');
+    }
+    return {};
+  }
+
+    Future<Map<String, dynamic>> fetchProfileHistory() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/profile/history'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        if (responseData['code'] == 200) {
+          return responseData['data']; // Kembalikan langsung data history
+        } else {
+          return {"error": responseData['error'] ?? "Unknown error"};
+        }
+      } else {
+        return {"error": "Failed to fetch data: ${response.statusCode}"};
+      }
+    } catch (e) {
+      return {"error": "Internal Server Error: $e"};
+    }
+  }
 }
+
+
+

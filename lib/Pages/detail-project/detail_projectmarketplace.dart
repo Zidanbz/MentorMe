@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/controller/api_services.dart';
 import 'dart:convert';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
 import 'package:http/http.dart' as http;
@@ -23,6 +24,9 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
   bool isLoading = true;
   Map<String, dynamic>? detailProject;
   YoutubePlayerController? _controller;
+  Set<String> userLearningIDs = {};
+  bool isLoadingLearning = true;
+  bool hasProject = false;
 
   @override
   void initState() {
@@ -30,6 +34,20 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
     developer
         .log('DetailProjectPage initialized with project: ${widget.projectId}');
     fetchDetailProject();
+    fetchUserLearningIDs();
+  }
+
+  void fetchUserLearningIDs() {
+    ApiService.fetchUserLearningIDs().then((ids) {
+      setState(() {
+        userLearningIDs = ids;
+        isLoadingLearning = false;
+        hasProject =
+            userLearningIDs.contains(widget.projectId['IDProject'].toString());
+        developer.log(
+            'DetailProjectPage initialized with projectsssssssssss: ${widget.projectId}');
+      });
+    });
   }
 
   @override
@@ -211,8 +229,8 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                   ),
 
                   // Video Pengantar
-                  // Video Pengantar
-                  Container(
+                  // Video Pengantar - Fullscreen Mode
+                  Padding(
                     padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -225,77 +243,22 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                           ),
                         ),
                         const SizedBox(height: 15),
-                        Center(
-                          child: Container(
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            decoration: BoxDecoration(
-                              color: Colors.black87, // Background gelap
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 30,
-                                horizontal: 20), // Padding untuk frame gelap
-                            child: _controller != null
-                                ? AspectRatio(
-                                    aspectRatio: 16 / 9,
-                                    child: Center(
-                                      child: Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.6, // Ukuran video lebih kecil
-                                          maxHeight: 250,
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: YoutubePlayer(
-                                            controller: _controller!,
-                                            aspectRatio: 16 / 9,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    height: 200,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[
-                                          800], // Warna placeholder lebih gelap
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Text(
-                                            'Video tidak tersedia',
-                                            style: TextStyle(
-                                                color:
-                                                    Colors.white), // Teks putih
-                                          ),
-                                          if (detailProject?['linkVideo'] !=
-                                              null)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Link: ${detailProject!['linkVideo']}',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors
-                                                      .white70, // Teks putih transparan
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
+
+                        // Kotak Video (Fullscreen Support)
+                        AspectRatio(
+                          aspectRatio: 16 / 9, // Ukuran standar video
+                          child: _controller != null
+                              ? ClipRRect(
+                                  borderRadius: BorderRadius.circular(10),
+                                  child: YoutubePlayer(
+                                    controller: _controller!,
+                                    aspectRatio:
+                                        16 / 9, // Sesuai ukuran default YouTube
                                   ),
-                          ),
+                                )
+                              : const Center(
+                                  child: Text('Video tidak tersedia'),
+                                ),
                         ),
                       ],
                     ),
@@ -362,33 +325,65 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                   // Di detail-project.dart, bagian tombol Beli Project
                   Padding(
                     padding: const EdgeInsets.all(20),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentDetailPage(
-                              projectId: widget.projectId['ID']
-                                  .toString(), // Sesuaikan dengan nama field yang benar
+                    child: Row(
+                      children: [
+                        // Tombol Beli Project
+                        Expanded(
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => PaymentDetailPage(
+                                    projectId:
+                                        widget.projectId['ID'].toString(),
+                                  ),
+                                ),
+                              );
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xff339989),
+                              minimumSize: const Size(double.infinity, 50),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                            ),
+                            child: Text(
+                              'Beli Project - Rp ${widget.projectId['price'] ?? 0}',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff339989),
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
                         ),
-                      ),
-                      child: Text(
-                        'Beli Project - Rp ${widget.projectId['price'] ?? 0}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
+                        const SizedBox(width: 10), // Jarak antar tombol
+                        // Tombol Lihat Project Saya
+                        if (hasProject == true)
+                          Expanded(
+                            child: ElevatedButton(
+                              onPressed: () {
+                                // Aksi ketika tombol "Lihat Project Saya" ditekan
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blueAccent,
+                                minimumSize: const Size(double.infinity, 50),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                              ),
+                              child: const Text(
+                                'Lihat Project Saya',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                   ),
                 ],

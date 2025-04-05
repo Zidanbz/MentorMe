@@ -28,6 +28,7 @@ class _KegiatankuState extends State<Kegiatanku> {
   Future<void> _fetchLearningData() async {
     setState(() {
       _isLoading = true;
+      _errorMessage = '';
     });
 
     try {
@@ -36,24 +37,24 @@ class _KegiatankuState extends State<Kegiatanku> {
         headers: {'Authorization': 'Bearer $currentUserToken'},
       );
 
-      print("Response dari API: ${response.body}"); // Debug respons API
+      print("Response dari API: ${response.body}");
 
       final data = jsonDecode(response.body);
 
-      // ✅ Pastikan mengambil `learning` dari dalam `data['data']`
-      if (data['data'] is Map && data['data'].containsKey('learning')) {
+      if (data['data'] != null &&
+          data['data'] is Map &&
+          data['data'].containsKey('learning')) {
         List<dynamic> learningData = data['data']['learning'];
         List<Map<String, dynamic>> progressCourses = [];
 
         for (var item in learningData) {
-          var learning = item; // Sudah langsung berisi informasi project
-          String idProject = learning['IDProject'];
+          String idProject = item['ID'];
 
-          if (idProject != null) {
+          if (idProject.isNotEmpty) {
             final progress = await _fetchActivityProgress(idProject);
-            learning['trainActivity']['status'] =
-                progress; // Tambahkan progress ke learning
-            progressCourses.add(learning);
+            item['progress'] =
+                progress; // Simpan progress di item, bukan trainActivity
+            progressCourses.add(item);
           }
         }
 
@@ -62,14 +63,14 @@ class _KegiatankuState extends State<Kegiatanku> {
           _isLoading = false;
         });
       } else {
-        // print("Error: Format data['data'] tidak sesuai!");
+        print("Error: data['data'] tidak sesuai format.");
         setState(() {
           _isLoading = false;
           _errorMessage = "Gagal memuat data.";
         });
       }
     } catch (e) {
-      // print('Error fetching learning data: $e');
+      print('Error fetching learning data: $e');
       setState(() {
         _isLoading = false;
         _errorMessage = "Terjadi kesalahan. Coba lagi nanti.";
@@ -170,6 +171,25 @@ class _KegiatankuState extends State<Kegiatanku> {
   }
 
   Widget _buildProgressList() {
+    if (_progressCourses.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Image.asset(
+              'assets/Maskot.png',
+              height: 150,
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "Kamu belum membeli course",
+              style: TextStyle(fontSize: 16, color: Colors.black54),
+            ),
+          ],
+        ),
+      );
+    }
+
     return ListView.builder(
       itemCount: _progressCourses.length,
       itemBuilder: (context, index) {
@@ -182,7 +202,7 @@ class _KegiatankuState extends State<Kegiatanku> {
   Widget _buildCompletedList() {
     return const Center(
       child: Text(
-        "Belum ada kursus selesai",
+        "Belum ada course yang selesai",
         style: TextStyle(fontSize: 16, color: Colors.black54),
       ),
     );

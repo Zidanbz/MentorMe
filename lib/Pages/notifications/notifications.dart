@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'package:mentorme/models/notif_model.dart';
 
 class NotificationPage extends StatefulWidget {
   @override
@@ -9,8 +8,7 @@ class NotificationPage extends StatefulWidget {
 }
 
 class _NotificationPageState extends State<NotificationPage> {
-  List<AppNotification> notifications =
-      []; // Changed from Notification to AppNotification
+  List<AppNotification> notifications = [];
   bool isLoading = true;
 
   @override
@@ -20,32 +18,32 @@ class _NotificationPageState extends State<NotificationPage> {
   }
 
   Future<void> fetchNotifications() async {
-    final response = await http
-        .get(Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/get/all'));
+    try {
+      final response = await http.get(
+        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/notif/all'),
+      );
 
-    if (response.statusCode == 200) {
-      final data = json.decode(response.body);
-      if (data['code'] == 200) {
-        setState(() {
-          notifications = (data['error'] as List)
-              .map((notification) => AppNotification.fromJson(
-                  notification)) // Changed from Notification to AppNotification
-              .toList();
-          isLoading = false;
-        });
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+
+        if (data['code'] == 200 && data['data'] != null) {
+          setState(() {
+            notifications = (data['data'] as List)
+                .map((notification) => AppNotification.fromJson(notification))
+                .toList();
+            isLoading = false;
+          });
+        } else {
+          print('API Error: ${data['message']}');
+          setState(() => isLoading = false);
+        }
       } else {
-        // Handle API error
-        setState(() {
-          isLoading = false;
-        });
-        print('API Error: ${data['message']}');
+        print('HTTP Error: ${response.statusCode}');
+        setState(() => isLoading = false);
       }
-    } else {
-      // Handle HTTP error
-      setState(() {
-        isLoading = false;
-      });
-      print('HTTP Error: ${response.statusCode}');
+    } catch (e) {
+      print('Fetch Error: $e');
+      setState(() => isLoading = false);
     }
   }
 
@@ -58,34 +56,31 @@ class _NotificationPageState extends State<NotificationPage> {
         elevation: 0,
         leading: IconButton(
           icon: Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Text(
-          'Notifikasi',
-          style: TextStyle(color: Colors.black),
-        ),
+        title: Text('Notifikasi', style: TextStyle(color: Colors.black)),
         centerTitle: true,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
-          : Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: ListView.builder(
-                itemCount: notifications.length,
-                itemBuilder: (context, index) {
-                  return NotificationCard(notification: notifications[index]);
-                },
-              ),
-            ),
+          : notifications.isEmpty
+              ? Center(child: Text('Tidak ada notifikasi'))
+              : Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: ListView.builder(
+                    itemCount: notifications.length,
+                    itemBuilder: (context, index) {
+                      return NotificationCard(
+                          notification: notifications[index]);
+                    },
+                  ),
+                ),
     );
   }
 }
 
 class NotificationCard extends StatelessWidget {
-  final AppNotification
-      notification; // Changed from Notification to AppNotification
+  final AppNotification notification;
 
   NotificationCard({required this.notification});
 
@@ -99,37 +94,80 @@ class NotificationCard extends StatelessWidget {
       elevation: 6,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              notification.title,
-              style: TextStyle(
-                fontSize: 16.0,
-                fontWeight: FontWeight.bold,
+            // Gambar di kiri
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.asset(
+                'assets/Maskot.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
               ),
             ),
-            Text(
-              notification.message,
-              style: TextStyle(fontSize: 14.0, color: Colors.grey[600]),
-            ),
-            Align(
-              alignment: Alignment.centerRight,
-              child: ElevatedButton(
-                onPressed: () {},
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.teal,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(8.0),
+            SizedBox(width: 16), // Jarak antara gambar dan teks
+
+            // Bagian teks
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification.title,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                child: Text('Learn More'),
+                  SizedBox(height: 4),
+                  Text(
+                    notification.message,
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    // child: ElevatedButton(
+                    //   onPressed: () {},
+                    //   style: ElevatedButton.styleFrom(
+                    //     backgroundColor: Colors.teal,
+                    //     foregroundColor: Colors.white,
+                    //     shape: RoundedRectangleBorder(
+                    //       borderRadius: BorderRadius.circular(8.0),
+                    //     ),
+                    //   ),
+                    //   child: Text('Lihat Detail'),
+                    // ),
+                  ),
+                ],
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+}
+
+// Model Notifikasi
+class AppNotification {
+  final String id;
+  final String title;
+  final String message;
+
+  AppNotification(
+      {required this.id, required this.title, required this.message});
+
+  factory AppNotification.fromJson(Map<String, dynamic> json) {
+    return AppNotification(
+      id: json['ID'] ?? '',
+      title: json['title'] ?? 'Tanpa Judul',
+      message: json['message'] ?? 'Tidak ada pesan',
     );
   }
 }

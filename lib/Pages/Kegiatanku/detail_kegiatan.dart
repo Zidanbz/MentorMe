@@ -4,18 +4,41 @@ import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:mentorme/global/global.dart';
 
-class DetailKegiatan extends StatelessWidget {
+class DetailKegiatan extends StatefulWidget {
   final String activityId;
   DetailKegiatan({Key? key, required this.activityId}) : super(key: key);
 
+  @override
+  State<DetailKegiatan> createState() => _DetailKegiatanState();
+}
+
+class _DetailKegiatanState extends State<DetailKegiatan> {
+  int _selectedIndex = 0; // Mulai dengan tidak ada yang dipilih
+
+  void _onBottomNavTap(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+
+    if (index == 1) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Akhiri Course')),
+      );
+    } else if (index == 2) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Hubungi Mentor')),
+      );
+    }
+  }
+
   Future<Map<String, dynamic>> _fetchActivityDetails() async {
-    if (activityId.isEmpty) {
+    if (widget.activityId.isEmpty) {
       throw Exception("Invalid activity ID");
     }
     try {
       final response = await http.get(
         Uri.parse(
-            'https://widgets-catb7yz54a-uc.a.run.app/api/my/activity/$activityId'),
+            'https://widgets-catb7yz54a-uc.a.run.app/api/my/activity/${widget.activityId}'),
         headers: {
           'Authorization': 'Bearer $currentUserToken',
           'Content-Type': 'application/json',
@@ -184,6 +207,11 @@ class DetailKegiatan extends StatelessWidget {
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex == -1 ? 0 : _selectedIndex,
+        onTap: _onBottomNavTap,
+        selectedItemColor: Colors.grey, // Item terpilih tidak terlihat
+        selectedLabelStyle: TextStyle(color: Colors.grey),
+        unselectedItemColor: Colors.grey,
         items: [
           BottomNavigationBarItem(
             icon: Icon(Icons.check),
@@ -194,19 +222,6 @@ class DetailKegiatan extends StatelessWidget {
             label: 'Hubungi Mentor',
           ),
         ],
-        onTap: (index) {
-          if (index == 0) {
-            // Logika untuk mengakhiri course
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Akhiri Course')),
-            );
-          } else if (index == 1) {
-            // Logika untuk menghubungi mentor
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Hubungi Mentor')),
-            );
-          }
-        },
       ),
     );
   }

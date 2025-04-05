@@ -141,6 +141,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 prefixText: '+62 ',
                 keyboardType: TextInputType.phone,
               ),
+              
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,

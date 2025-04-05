@@ -146,11 +146,14 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
         print("📌 Redirect URL: $redirectUrl");
 
         // **Pindahkan ke halaman WaitingPayment sebelum membuka URL**
+        print(
+            "🚀 Navigating to WaitingPaymentScreen with ID: ${widget.projectId}");
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => WaitingPaymentScreen(
-              projectId: widget.projectId,
+              projectId: widget.projectId.trim(),
             ),
           ),
         );

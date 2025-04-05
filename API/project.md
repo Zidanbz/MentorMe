@@ -437,3 +437,115 @@
   "UUID": "1nig9wejwoin"
 }
 ```
+
+## Get All Project Pending By Mentor
+
+##### Done
+#### Endpoint : GET /api/pending/mentor
+
+#### Request Body (Success):
+
+```json
+
+```
+
+#### Response Success
+
+```json
+{
+  "code": 200,
+  "error": null,
+  "data": [
+    {
+      "id": "UUID",
+      "materialName": "HTML Dasar",
+      "student": 500,
+      "price": 500,
+      "picture": "file",
+      "mentor" : "fulan",
+      "status" : "PENDING"
+    },
+    {
+      "id": "UUID",
+      "materialName": "HTML Dasar",
+      "student": 500,
+      "price": 500,
+      "picture": "file",
+      "mentor" : "fulan",
+      "status" : "PENDING"
+    }
+  ],
+  "message": "httpStatusMessage",
+  "time": "second-minute-jam data-month-year",
+  "UUID": "1nig9wejwoin"
+}
+```
+
+#### Response Body (Failed)
+
+```json
+{
+  "code": "?",
+  "error": "Message Error ?",
+  "data": null,
+  "message": "httpStatusMessage",
+  "time": "second-minute-jam data-month-year",
+  "UUID": "1nig9wejwoin"
+}
+```
+
+## Get All Project Pending By Mentor
+
+##### Done
+#### Endpoint : GET /api/pending/mentor
+
+#### Request Body (Success):
+
+```json
+
+```
+
+#### Response Success
+
+```json
+{
+  "code": 200,
+  "error": null,
+  "data": [
+    {
+      "id": "UUID",
+      "materialName": "HTML Dasar",
+      "student": 500,
+      "price": 500,
+      "picture": "file",
+      "mentor" : "fulan",
+      "status" : "Reject"
+    },
+    {
+      "id": "UUID",
+      "materialName": "HTML Dasar",
+      "student": 500,
+      "price": 500,
+      "picture": "file",
+      "mentor" : "fulan",
+      "status" : "Reject"
+    }
+  ],
+  "message": "httpStatusMessage",
+  "time": "second-minute-jam data-month-year",
+  "UUID": "1nig9wejwoin"
+}
+```
+
+#### Response Body (Failed)
+
+```json
+{
+  "code": "?",
+  "error": "Message Error ?",
+  "data": null,
+  "message": "httpStatusMessage",
+  "time": "second-minute-jam data-month-year",
+  "UUID": "1nig9wejwoin"
+}
+```
