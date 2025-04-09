@@ -222,6 +222,7 @@ class _KegiatankuState extends State<Kegiatanku> {
 
     return GestureDetector(
       onTap: () {
+        print("Klik item dengan ID: ${learning['ID']}");
         Navigator.push(
           context,
           MaterialPageRoute(

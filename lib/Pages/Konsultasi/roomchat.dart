@@ -1,6 +1,93 @@
+import 'dart:convert';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:mentorme/global/global.dart'; // pastikan kamu punya token di sini
 
-class RoomchatPage extends StatelessWidget {
+class RoomchatPage extends StatefulWidget {
+  final int roomId;
+  final String currentUserName;
+  final String currentUserEmail;
+  final String currentUserRole; // 'MENTOR' atau 'USER'
+
+  RoomchatPage({
+    required this.roomId,
+    required this.currentUserName,
+    required this.currentUserEmail,
+    required this.currentUserRole,
+  });
+
+  @override
+  _RoomchatPageState createState() => _RoomchatPageState();
+}
+
+class _RoomchatPageState extends State<RoomchatPage> {
+  final TextEditingController _messageController = TextEditingController();
+  Map<String, dynamic>? roomData;
+  bool isLoadingRoom = true;
+
+  @override
+  void initState() {
+    super.initState();
+    fetchRoomData();
+  }
+
+  Future<void> fetchRoomData() async {
+    final url = Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/chat');
+
+    try {
+      final response = await http.get(
+        url,
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final decoded = json.decode(response.body);
+        final List<dynamic> data = decoded['data'];
+
+        final matchedRoom = data.firstWhere(
+          (room) => room['idRoom'] == widget.roomId,
+          orElse: () => null,
+        );
+
+        if (matchedRoom != null) {
+          setState(() {
+            roomData = matchedRoom;
+            isLoadingRoom = false;
+          });
+        } else {
+          print('Room not found');
+          setState(() => isLoadingRoom = false);
+        }
+      } else {
+        print('Failed to fetch room: ${response.body}');
+        setState(() => isLoadingRoom = false);
+      }
+    } catch (e) {
+      print('Error fetching room data: $e');
+      setState(() => isLoadingRoom = false);
+    }
+  }
+
+  void _sendMessage() async {
+    final text = _messageController.text.trim();
+    if (text.isEmpty) return;
+
+    await FirebaseFirestore.instance.collection('messages').add({
+      'roomId': widget.roomId,
+      'sender': widget.currentUserName,
+      'senderEmail': widget.currentUserEmail,
+      'senderRole': widget.currentUserRole.toUpperCase(),
+      'text': text,
+      'timestamp': FieldValue.serverTimestamp(),
+    });
+
+    _messageController.clear();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -8,22 +95,15 @@ class RoomchatPage extends StatelessWidget {
         backgroundColor: Color(0xffE0FFF3),
         leading: IconButton(
           icon: Icon(Icons.arrow_back_sharp, color: Colors.black),
-          onPressed: () {
-            Navigator.pop(context);
-          },
+          onPressed: () => Navigator.pop(context),
         ),
-        title: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              'Zidan',
-              style: TextStyle(color: Colors.black, fontSize: 18),
-            ),
-            Text(
-              'Hari ini',
-              style: TextStyle(color: Colors.grey[700], fontSize: 14),
-            ),
-          ],
+        title: Text(
+          isLoadingRoom
+              ? 'Room Chat'
+              : widget.currentUserRole == 'USER'
+                  ? 'Chat with ${roomData?['nameMentor'] ?? 'Mentor'}'
+                  : 'Chat with ${roomData?['nameCustomer'] ?? 'User'}',
+          style: TextStyle(color: Colors.black, fontSize: 18),
         ),
         centerTitle: true,
       ),
@@ -44,23 +124,45 @@ class RoomchatPage extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: ListView(
-              padding: EdgeInsets.symmetric(horizontal: 10),
-              children: [
-                ChatBubble(
-                  isSender: true,
-                  message: 'Halo, Sulaiman ada yang bisa saya bantu?',
-                  time: '09:41',
-                  avatarUrl: 'assets/mentor_avatar.png',
-                ),
-                SizedBox(height: 8),
-                ChatBubble(
-                  isSender: false,
-                  message: 'Saya sedang kebingungan mengenai sesuatu...',
-                  time: '09:41',
-                  avatarUrl: 'assets/trainee_avatar.png',
-                ),
-              ],
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('messages')
+                  .where('roomId', isEqualTo: widget.roomId)
+                  .orderBy('timestamp')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(child: Text('Terjadi kesalahan'));
+                }
+                if (!snapshot.hasData) {
+                  return Center(child: CircularProgressIndicator());
+                }
+
+                final docs = snapshot.data!.docs;
+
+                return ListView.builder(
+                  padding: EdgeInsets.symmetric(horizontal: 10),
+                  itemCount: docs.length,
+                  itemBuilder: (context, index) {
+                    final data = docs[index].data() as Map<String, dynamic>;
+                    final isSender = data['sender'] == widget.currentUserName;
+
+                    return ChatBubble(
+                      isSender: isSender,
+                      message: data['text'] ?? '',
+                      time: (data['timestamp'] as Timestamp?)
+                              ?.toDate()
+                              .toLocal()
+                              .toString()
+                              .substring(11, 16) ??
+                          '',
+                      avatarUrl: isSender
+                          ? 'assets/trainee_avatar.png'
+                          : 'assets/mentor_avatar.png',
+                    );
+                  },
+                );
+              },
             ),
           ),
           Padding(
@@ -73,6 +175,7 @@ class RoomchatPage extends StatelessWidget {
                 ),
                 Expanded(
                   child: TextField(
+                    controller: _messageController,
                     decoration: InputDecoration(
                       hintText: 'Ketik pesan...',
                       filled: true,
@@ -85,9 +188,12 @@ class RoomchatPage extends StatelessWidget {
                   ),
                 ),
                 SizedBox(width: 10),
-                CircleAvatar(
-                  backgroundColor: Color(0xff80CBC4),
-                  child: Icon(Icons.send, color: Colors.white),
+                GestureDetector(
+                  onTap: _sendMessage,
+                  child: CircleAvatar(
+                    backgroundColor: Color(0xff80CBC4),
+                    child: Icon(Icons.send, color: Colors.white),
+                  ),
                 ),
               ],
             ),
@@ -115,14 +221,10 @@ class ChatBubble extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment:
-          isSender ? MainAxisAlignment.start : MainAxisAlignment.end,
+          isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
       children: [
-        if (isSender) ...[
-          CircleAvatar(
-            backgroundImage: AssetImage(avatarUrl),
-          ),
-          SizedBox(width: 10),
-        ],
+        if (!isSender) CircleAvatar(backgroundImage: AssetImage(avatarUrl)),
+        if (!isSender) SizedBox(width: 10),
         Flexible(
           child: Container(
             padding: EdgeInsets.all(10),
@@ -132,9 +234,9 @@ class ChatBubble extends StatelessWidget {
               borderRadius: BorderRadius.only(
                 topLeft: Radius.circular(12),
                 topRight: Radius.circular(12),
-                bottomLeft: isSender ? Radius.circular(0) : Radius.circular(12),
+                bottomLeft: isSender ? Radius.circular(12) : Radius.circular(0),
                 bottomRight:
-                    isSender ? Radius.circular(12) : Radius.circular(0),
+                    isSender ? Radius.circular(0) : Radius.circular(12),
               ),
             ),
             child: Column(
@@ -153,12 +255,8 @@ class ChatBubble extends StatelessWidget {
             ),
           ),
         ),
-        if (!isSender) ...[
-          SizedBox(width: 10),
-          CircleAvatar(
-            backgroundImage: AssetImage(avatarUrl),
-          ),
-        ],
+        if (isSender) SizedBox(width: 10),
+        if (isSender) CircleAvatar(backgroundImage: AssetImage(avatarUrl)),
       ],
     );
   }

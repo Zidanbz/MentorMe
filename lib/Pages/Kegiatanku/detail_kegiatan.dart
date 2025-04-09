@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
+import 'package:mentorme/Pages/Konsultasi/roomchat.dart';
 import 'package:mentorme/global/global.dart';
 
 class DetailKegiatan extends StatefulWidget {
@@ -14,20 +16,41 @@ class DetailKegiatan extends StatefulWidget {
 
 class _DetailKegiatanState extends State<DetailKegiatan> {
   int _selectedIndex = 0; // Mulai dengan tidak ada yang dipilih
+  late Future<Map<String, dynamic>> _activityFuture;
 
-  void _onBottomNavTap(int index) {
+  @override
+  void initState() {
+    super.initState();
+    print("Masuk ke DetailKegiatan dengan ID: ${widget.activityId}");
+    _activityFuture = _fetchActivityDetails();
+  }
+
+  void _onBottomNavTap(int index) async {
     setState(() {
       _selectedIndex = index;
     });
 
-    if (index == 1) {
+    if (index == 0) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Akhiri Course')),
       );
-    } else if (index == 2) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Hubungi Mentor')),
-      );
+    } else if (index == 1) {
+      try {
+        final activityDetails = await _fetchActivityDetails();
+        final mentorEmail = activityDetails['mentor']; // sesuaikan key-nya
+
+        if (mentorEmail != null && mentorEmail.isNotEmpty) {
+          _startChatWithMentor(mentorEmail);
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Email mentor tidak tersedia')),
+          );
+        }
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal mengambil data aktivitas: $e')),
+        );
+      }
     }
   }
 
@@ -46,7 +69,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
       );
 
       final responseData = json.decode(response.body);
-
+      print(responseData);
       if (response.statusCode == 200 && responseData.containsKey('data')) {
         return responseData['data'];
       } else {
@@ -54,6 +77,80 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
       }
     } catch (e) {
       throw Exception('Failed to load activity details: $e');
+    }
+  }
+
+  Future<void> _startChatWithMentor(String emailMentor) async {
+    try {
+      // Step 1: GET history chat
+      final historyResponse = await http.get(
+        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/chat'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+          'Content-Type': 'application/json',
+        },
+      );
+
+      final historyData = json.decode(historyResponse.body);
+      print(historyResponse);
+      if (historyResponse.statusCode == 200 && historyData['data'] != null) {
+        final chats = historyData['data'] as List<dynamic>;
+
+        // Cek apakah sudah ada room dengan email mentor ini
+        final existingRoom = chats.firstWhere(
+          (chat) => chat['emailMentor'] == emailMentor,
+          orElse: () => null,
+        );
+
+        if (existingRoom != null) {
+          final idRoom = existingRoom['idRoom'];
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => RoomchatPage(
+                  roomId: idRoom,
+                  currentUserName: '',
+                  currentUserEmail: '',
+                  currentUserRole: ''),
+            ),
+          );
+          return;
+        }
+      }
+
+      // Step 2: Kalau belum ada → POST buat chat baru
+      final postResponse = await http.post(
+        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/chat'),
+        headers: {
+          'Authorization': 'Bearer $currentUserToken',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({'email': emailMentor}),
+      );
+
+      final postData = json.decode(postResponse.body);
+
+      if ((postResponse.statusCode == 200 || postResponse.statusCode == 201) &&
+          postData['data'] != null) {
+        final idRoom = postData['data'];
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => RoomchatPage(
+                roomId: idRoom,
+                currentUserName: '',
+                currentUserEmail: '',
+                currentUserRole: ''),
+          ),
+        );
+      } else {
+        throw Exception(postData['error'] ?? 'Gagal memulai chat baru');
+      }
+    } catch (e) {
+      print('Error starting chat: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Terjadi kesalahan saat chat: $e')),
+      );
     }
   }
 
@@ -68,7 +165,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
         iconTheme: IconThemeData(color: Colors.black),
       ),
       body: FutureBuilder<Map<String, dynamic>>(
-        future: _fetchActivityDetails(),
+        future: _activityFuture,
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return Center(child: CircularProgressIndicator());
@@ -84,6 +181,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
           final trainActivities = activityDetails['train'] ?? [];
           final totalProgress = (activityDetails['totalProgress'] ?? 0.0) / 100;
           final pictureBase64 = activityDetails['picture'] ?? '';
+          final email = activityDetails['mentor'] ?? "Unknown";
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -116,7 +214,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
                       Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Pemrograman Web',
+                          Text('Nama Course: $materialName',
                               style: TextStyle(
                                   fontSize: 18, fontWeight: FontWeight.bold)),
                           Text('Nama Mentor: $fullName'),
@@ -207,7 +305,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
         },
       ),
       bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex == -1 ? 0 : _selectedIndex,
+        currentIndex: _selectedIndex == 0 ? 1 : _selectedIndex,
         onTap: _onBottomNavTap,
         selectedItemColor: Colors.grey, // Item terpilih tidak terlihat
         selectedLabelStyle: TextStyle(color: Colors.grey),
