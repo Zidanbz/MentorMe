@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart' as http;
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/global/global.dart';
@@ -9,7 +8,7 @@ import 'package:mentorme/models/mainScreen_models.dart';
 
 class ApiService {
   final String baseUrl =
-      'https://widgets-catb7yz54a-uc.a.run.app/api'; // Ganti dengan URL API Anda
+      'https://widgets22-catb7yz54a-et.a.run.app/api'; // Ganti dengan URL API Anda
 
   Future<Profile?> fetchProfile() async {
     try {
@@ -26,9 +25,18 @@ class ApiService {
 
         if (responseData['code'] == 200 && responseData['data'] != null) {
           final profileData = responseData['data'];
+
+          // Pastikan picture URL yang diterima benar
+          final pictureUrl = profileData['picture'] ?? '';
+
+          // Cek apakah URL valid atau tidak
+          final validPictureUrl = Uri.tryParse(pictureUrl)?.isAbsolute == true
+              ? pictureUrl
+              : 'https://storage.googleapis.com/mentorme-aaa37.firebasestorage.app/uploads/1745224459754-1000367816.jpg'; // Gambar default
+
           return Profile(
             fullName: profileData['fullName'] ?? '',
-            picture: profileData['picture'] ?? '', // Mengambil URL gambar
+            picture: validPictureUrl, // Gunakan URL yang valid
           );
         } else {
           print('Error: ${responseData['message']}');
@@ -180,7 +188,7 @@ class ApiService {
   static Future<Set<String>> fetchUserLearningIDs() async {
     try {
       final response = await http.get(
-        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/my/learning'),
+        Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/my/learning'),
         headers: {
           'Authorization': 'Bearer $currentUserToken',
         },
@@ -202,7 +210,7 @@ class ApiService {
     return {};
   }
 
-    Future<Map<String, dynamic>> fetchProfileHistory() async {
+  Future<Map<String, dynamic>> fetchProfileHistory() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/profile/history'),
@@ -227,6 +235,3 @@ class ApiService {
     }
   }
 }
-
-
-

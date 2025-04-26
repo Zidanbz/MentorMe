@@ -53,7 +53,7 @@ class _HelpPageState extends State<HelpPage> {
     try {
       print('🔍 Cek riwayat chat...');
       final response = await http.get(
-        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/chat'),
+        Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
         headers: {'Authorization': 'Bearer $currentUserToken'},
       );
 
@@ -76,7 +76,7 @@ class _HelpPageState extends State<HelpPage> {
 
       print('🆕 Membuat room baru ke admin...');
       final postResponse = await http.post(
-        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/chat'),
+        Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
         headers: {
           'Content-Type': 'application/json',
           'Authorization': 'Bearer $currentUserToken',

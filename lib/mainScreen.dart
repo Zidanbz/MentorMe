@@ -1,16 +1,14 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
-import 'package:mentorme/Pages/Beranda/beranda.dart';
-import 'package:mentorme/Pages/Kegiatanku/kegiatanku.dart';
 import 'package:mentorme/Pages/Profile/profile.dart';
-import 'package:mentorme/Pages/Projectku/project_marketplace.dart';
 import 'package:mentorme/Pages/Konsultasi/konsultasi.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mentorme/Pages/notifications/notifications.dart';
-import 'package:mentorme/Pages/topup/topupcoin.dart';
-import 'package:mentorme/models/mainScreen_models.dart';
+import 'package:mentorme/features/Pelajaranku/pelajaranku_page.dart';
+import 'package:mentorme/features/Project_Marketplace/project_marketplace.dart';
+import 'package:mentorme/features/beranda/beranda_page.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/controller/api_services.dart';
 
@@ -188,11 +186,9 @@ class _MainStateScreen extends State<MainScreen>
                           },
                           child: CircleAvatar(
                             radius: 24,
-                            backgroundImage: (_profile?.picture != null &&
-                                    _profile!.picture != '' &&
-                                    _profile!.picture != 'No Picture')
-                                ? Image.memory(
-                                    base64Decode(_profile!.picture!),
+                            backgroundImage: (_profile?.picture != null)
+                                ? Image.network(
+                                    _profile!.picture,
                                     fit: BoxFit.cover,
                                     errorBuilder: (context, error, stackTrace) {
                                       return Image.asset(

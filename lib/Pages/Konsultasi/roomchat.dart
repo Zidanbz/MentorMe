@@ -8,13 +8,13 @@ class RoomchatPage extends StatefulWidget {
   final int roomId;
   final String currentUserName;
   final String currentUserEmail;
-  final String currentUserRole; // 'MENTOR' atau 'USER'
+  // final String currentUserRole; // 'MENTOR' atau 'USER'
 
   RoomchatPage({
     required this.roomId,
     required this.currentUserName,
     required this.currentUserEmail,
-    required this.currentUserRole,
+    // required this.currentUserRole,
   });
 
   @override
@@ -23,6 +23,8 @@ class RoomchatPage extends StatefulWidget {
 
 class _RoomchatPageState extends State<RoomchatPage> {
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController =
+      ScrollController(); // Tambahkan ScrollController
   Map<String, dynamic>? roomData;
   bool isLoadingRoom = true;
 
@@ -33,7 +35,7 @@ class _RoomchatPageState extends State<RoomchatPage> {
   }
 
   Future<void> fetchRoomData() async {
-    final url = Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/chat');
+    final url = Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat');
 
     try {
       final response = await http.get(
@@ -80,12 +82,24 @@ class _RoomchatPageState extends State<RoomchatPage> {
       'roomId': widget.roomId,
       'sender': widget.currentUserName,
       'senderEmail': widget.currentUserEmail,
-      'senderRole': widget.currentUserRole.toUpperCase(),
+      // 'senderRole': widget.currentUserRole.toUpperCase(),
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
     });
-
     _messageController.clear();
+    // Scroll ke bawah setelah mengirim pesan
+    _scrollToBottom();
+  }
+
+  // Fungsi untuk scroll otomatis ke bawah
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        _scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
   }
 
   @override
@@ -100,9 +114,7 @@ class _RoomchatPageState extends State<RoomchatPage> {
         title: Text(
           isLoadingRoom
               ? 'Room Chat'
-              : widget.currentUserRole == 'USER'
-                  ? 'Chat with ${roomData?['nameMentor'] ?? 'Mentor'}'
-                  : 'Chat with ${roomData?['nameCustomer'] ?? 'User'}',
+              : 'Chat with ${roomData?['nameMentor'] ?? 'Mentor'}',
           style: TextStyle(color: Colors.black, fontSize: 18),
         ),
         centerTitle: true,
@@ -140,7 +152,15 @@ class _RoomchatPageState extends State<RoomchatPage> {
 
                 final docs = snapshot.data!.docs;
 
+                // Scroll otomatis ke bawah setelah data berhasil dimuat
+                if (docs.isNotEmpty) {
+                  Future.delayed(Duration(milliseconds: 100), () {
+                    _scrollToBottom();
+                  });
+                }
+
                 return ListView.builder(
+                  controller: _scrollController, // Set controller di ListView
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
@@ -156,9 +176,8 @@ class _RoomchatPageState extends State<RoomchatPage> {
                               .toString()
                               .substring(11, 16) ??
                           '',
-                      avatarUrl: isSender
-                          ? 'assets/trainee_avatar.png'
-                          : 'assets/mentor_avatar.png',
+                      avatarUrl:
+                          isSender ? 'assets/person.png' : 'assets/person.png',
                     );
                   },
                 );

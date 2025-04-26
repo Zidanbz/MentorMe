@@ -4,7 +4,7 @@ import 'package:http/http.dart' as http;
 import 'package:mentorme/global/global.dart';
 
 class GetProjectProvider extends ChangeNotifier {
-  static const String baseUrl = 'https://widgets-catb7yz54a-uc.a.run.app';
+  static const String baseUrl = 'https://widgets22-catb7yz54a-et.a.run.app';
 
   List<dynamic> _projects = [];
   bool _isLoading = false;

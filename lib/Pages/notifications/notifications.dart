@@ -20,7 +20,7 @@ class _NotificationPageState extends State<NotificationPage> {
   Future<void> fetchNotifications() async {
     try {
       final response = await http.get(
-        Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/notif/all'),
+        Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/notif/all'),
       );
 
       if (response.statusCode == 200) {

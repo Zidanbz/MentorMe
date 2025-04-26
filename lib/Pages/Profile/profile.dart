@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mentorme/Pages/Konsultasi/help.dart';
-import 'package:mentorme/Pages/Login/login_page.dart';
 import 'package:mentorme/Pages/notifications/notifications.dart';
-import 'package:mentorme/Pages/topup/historytopup.dart';
-import 'package:mentorme/Pages/topup/topupcoin.dart';
+import 'package:mentorme/features/auth/Login/login_page.dart';
 import 'edit_profile.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/controller/api_services.dart';
-import 'dart:convert';
 import 'package:mentorme/models/learning_model.dart';
 
 class ProfileScreen extends StatefulWidget {
@@ -25,10 +22,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   void _handleLogout(BuildContext context) async {
     await FirebaseAuth.instance.signOut();
-    print("User signed out");
     Navigator.pushReplacement(
       context,
-      MaterialPageRoute(builder: (context) => LoginPage()),
+      MaterialPageRoute(builder: (context) => const LoginPage()),
     );
   }
 
@@ -41,7 +37,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  void _navigateTohelpPage(BuildContext context) {
+  void _navigateToHelpPage(BuildContext context) {
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -54,6 +50,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     try {
       final profile = await ApiService().fetchProfile();
       final learningData = await ApiService().fetchUserLearning();
+      print(_profile);
+      print('Picture URL: ${_profile?.picture}');
       if (mounted) {
         setState(() {
           _profile = profile;
@@ -85,7 +83,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
         child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : SingleChildScrollView(
-                // Tambahkan SingleChildScrollView di sini
                 child: Column(
                   children: [
                     _buildHeader(context),
@@ -152,11 +149,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 height: 80,
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child: (_profile?.picture != null &&
-                          _profile!.picture!.isNotEmpty &&
-                          _profile!.picture! != "No Picture")
-                      ? Image.memory(
-                          base64Decode(_profile!.picture!),
+                  child: (_profile?.picture != null)
+                      ? Image.network(
+                          _profile!.picture,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return const Icon(
@@ -219,16 +214,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       children: [
         _buildActionButton(
             'Edit Profil', () => _navigateToEditProfile(context)),
-        // _buildActionButton(
-        //   'Top Up Koin',
-        //   () {
-        //     Navigator.push(
-        //       context,
-        //       MaterialPageRoute(builder: (context) => TopUpCoinMeScreen()),
-        //     );
-        //   },
-        // ),
-        _buildActionButton('Bantuan', () => _navigateTohelpPage(context)),
+        _buildActionButton('Bantuan', () => _navigateToHelpPage(context)),
       ],
     );
   }
@@ -241,11 +227,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
           height: 36,
           child: ElevatedButton(
             style: ElevatedButton.styleFrom(
-              backgroundColor: label == 'Top Up Koin'
-                  ? Colors.white
-                  : const Color(0xFFffffff),
-              foregroundColor:
-                  label == 'Top Up Koin' ? Colors.black87 : Colors.black,
+              backgroundColor: const Color(0xFF339989),
+              foregroundColor: Colors.white,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),
@@ -331,7 +314,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const SizedBox(width: 12),
-          const SizedBox(height: 60),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,

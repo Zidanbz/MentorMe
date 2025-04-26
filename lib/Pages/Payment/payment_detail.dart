@@ -55,7 +55,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
             materialName =
                 response['data']['materialName'] ?? 'Material tidak tersedia';
             syllabus = response['data']['syllabus'] ?? 0;
-            price = response['data']['price'] ?? 0;
+            price = int.tryParse(response['data']['price'].toString()) ?? 0;
             // error = null; // Reset error jika data berhasil diambil
           } else {
             // Tangani kasus ketika code bukan 200 atau data null
@@ -114,7 +114,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
       orElse: () => {'piece': 0},
     );
 
-    final discount = selectedVoucherData['piece'] as int;
+    final discount = int.tryParse(selectedVoucherData['piece']) ?? 0;
     return price! - (price! * discount ~/ 100);
   }
 
@@ -127,6 +127,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
     }
 
     if (price == null) return;
+    print("📦 Payment data yang dikirim: $paymentData");
 
     setState(() {
       isLoading = true;
@@ -149,11 +150,13 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
         print(
             "🚀 Navigating to WaitingPaymentScreen with ID: ${widget.projectId}");
 
+        final String transactionId = response['data']['transactionID'];
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
             builder: (context) => WaitingPaymentScreen(
-              projectId: widget.projectId.trim(),
+              transactionId: transactionId,
             ),
           ),
         );
@@ -260,7 +263,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                     const SizedBox(height: 15),
                     _buildDetailItem(
                       Icons.people,
-                      '1x Konsultasi Online Gratis',
+                      'Konsultasi Online Gratis',
                       const Color(0xff339989),
                     ),
                     const SizedBox(height: 20),

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:mentorme/Pages/Konsultasi/roomchat.dart';
 import 'package:mentorme/global/global.dart';
-import 'package:firebase_auth/firebase_auth.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class KonsultasiPage extends StatefulWidget {
   @override
@@ -14,22 +14,30 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
   List<dynamic> chatRooms = [];
   bool isLoading = true;
 
-  String get currentUserName =>
-      FirebaseAuth.instance.currentUser?.displayName ?? '-';
-  String get currentUserEmail =>
-      FirebaseAuth.instance.currentUser?.email ?? '-';
-  String get currentUserRole => 'customer'; // atau bisa kamu ubah sesuai login
+  String currentUserName = '-';
+  String currentUserEmail = '-';
+  String currentUserRole = 'customer';
+
+  Set<int> readRooms = {}; // ✅ Untuk menandai sudah dibaca
 
   @override
   void initState() {
     super.initState();
+    loadUserData();
+    loadReadRooms(); // ✅ Load read rooms dari SharedPreferences
+  }
+
+  Future<void> loadUserData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      currentUserName = prefs.getString('nameUser') ?? '-';
+      currentUserEmail = prefs.getString('emailUser') ?? '-';
+    });
     fetchChatRooms();
   }
 
   Future<void> fetchChatRooms() async {
-    final url = Uri.parse(
-      'https://widgets-catb7yz54a-uc.a.run.app/api/chat',
-    );
+    final url = Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat');
 
     try {
       final response = await http.get(
@@ -40,7 +48,6 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
         },
       );
       final body = json.decode(response.body);
-      print(body);
       if (response.statusCode == 200 && body['data'] != null) {
         setState(() {
           chatRooms = body['data'];
@@ -54,6 +61,33 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
       print('Error fetching chat: $e');
       setState(() => isLoading = false);
     }
+  }
+
+  // ✅ Simpan readRooms ke SharedPreferences
+  Future<void> saveReadRooms() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setStringList(
+        'readRooms', readRooms.map((e) => e.toString()).toList());
+  }
+
+  // ✅ Load readRooms dari SharedPreferences
+  Future<void> loadReadRooms() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    List<String>? savedRooms = prefs.getStringList('readRooms');
+    if (savedRooms != null) {
+      setState(() {
+        readRooms = savedRooms.map((e) => int.tryParse(e) ?? 0).toSet();
+      });
+    }
+  }
+
+  // 🔥 (Optional) Reset readRooms untuk testing
+  Future<void> resetReadRooms() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('readRooms');
+    setState(() {
+      readRooms.clear();
+    });
   }
 
   @override
@@ -97,39 +131,48 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
                       itemBuilder: (context, index) {
                         final room = chatRooms[index];
 
-                        final isCurrentUserCustomer =
-                            room['nameCustomer'] == currentUserName;
-                        final myName = isCurrentUserCustomer
+                        final isCurrentUserMentor =
+                            room['nameMentor'] == currentUserName;
+                        final myName = isCurrentUserMentor
                             ? room['nameMentor']
                             : room['nameCustomer'];
+                        final myEmail = isCurrentUserMentor
+                            ? room['emailMentor']
+                            : room['emailCustomer'];
                         final myRole =
-                            isCurrentUserCustomer ? 'customer' : 'mentor';
-                        final otherUserName = isCurrentUserCustomer
+                            isCurrentUserMentor ? 'mentor' : 'customer';
+                        final otherUserName = isCurrentUserMentor
                             ? room['nameCustomer']
                             : room['nameMentor'];
-                        final otherUserRole = isCurrentUserCustomer
-                            ? 'Customer'
-                            : 'Mentor'; // ✅ Tambahan
+                        final otherUserRole =
+                            isCurrentUserMentor ? 'Customer' : 'Mentor';
+
+                        final isNewMessage =
+                            room['lastSender'] != currentUserEmail &&
+                                !readRooms.contains(room['idRoom']);
 
                         return Column(
                           children: [
                             _buildHistoryItem(
                               context,
                               otherUserName,
-                              otherUserRole, // ✅ Gunakan ini
-                              'Riwayat chat',
+                              otherUserRole,
+                              isNewMessage ? 'Pesan Baru' : 'Riwayat chat',
                               'assets/default.png',
                               room['idRoom'],
                               myName,
-                              currentUserEmail,
+                              myEmail,
                               myRole,
                             ),
                             SizedBox(height: 8),
                           ],
                         );
-                      }),
+                      },
+                    ),
             ),
           ),
+          SizedBox(height: 8),
+          // 🔥 Tombol Reset untuk Testing (bisa dihapus kalau gak perlu)
         ],
       ),
     );
@@ -147,18 +190,23 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
     String currentUserRole,
   ) {
     return InkWell(
-      onTap: () {
-        Navigator.push(
+      onTap: () async {
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => RoomchatPage(
               roomId: idRoom,
               currentUserName: currentUserName,
               currentUserEmail: currentUserEmail,
-              currentUserRole: currentUserRole,
             ),
           ),
         );
+
+        // ✅ Setelah kembali dari RoomchatPage, tandai sudah dibaca
+        setState(() {
+          readRooms.add(idRoom);
+        });
+        saveReadRooms(); // ✅ Simpan ke SharedPreferences
       },
       borderRadius: BorderRadius.circular(10),
       child: Container(
@@ -198,8 +246,13 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
                   Text(
                     status,
                     style: TextStyle(
-                      color: Colors.grey[500],
+                      color: status == 'Pesan Baru'
+                          ? Colors.red
+                          : Colors.grey[500],
                       fontSize: 12,
+                      fontWeight: status == 'Pesan Baru'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                     ),
                   ),
                 ],

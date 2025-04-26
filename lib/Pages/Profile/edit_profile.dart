@@ -34,7 +34,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       try {
         var request = http.MultipartRequest(
           'PUT',
-          Uri.parse('https://widgets-catb7yz54a-uc.a.run.app/api/profile/edit'),
+          Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/profile/edit'),
         );
 
         // Tambahkan field yang dibutuhkan

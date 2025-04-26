@@ -4,9 +4,9 @@ import 'package:mentorme/Pages/Payment/succes_payment.dart';
 import 'package:mentorme/controller/api_services.dart';
 
 class WaitingPaymentScreen extends StatefulWidget {
-  final String projectId;
+  final String transactionId;
 
-  const WaitingPaymentScreen({Key? key, required this.projectId})
+  const WaitingPaymentScreen({Key? key, required this.transactionId})
       : super(key: key);
 
   @override
@@ -24,7 +24,7 @@ class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
   }
 
   void _startPolling() {
-    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
       _checkPaymentStatus();
     });
   }
@@ -41,27 +41,40 @@ class _WaitingPaymentScreenState extends State<WaitingPaymentScreen> {
         return;
       }
 
-      final projectIdTarget = widget.projectId.trim().toLowerCase();
+      final transactionIdTarget = widget.transactionId.trim().toLowerCase();
 
       for (var item in history) {
         final status = item['status']?.toString().toLowerCase();
-        final projectIdFromApi =
-            item['project']?['ID']?.toString().trim().toLowerCase();
+        final transactionIdFromApi =
+            item['transactionID']?.toString().trim().toLowerCase();
 
-        debugPrint("🧩 Cek Project: $projectIdFromApi | Status: $status");
+        debugPrint(
+            "🧩 Cek TransactionID: $transactionIdFromApi | Status: $status");
 
-        if (projectIdFromApi == projectIdTarget && status == 'accept') {
-          _pollingTimer?.cancel();
+        if (transactionIdFromApi == transactionIdTarget) {
+          if (status == 'accept') {
+            _pollingTimer?.cancel();
 
-          if (!_isNavigated) {
-            _isNavigated = true;
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (_) => const PaymentSuccessScreen(),
-              ),
-            );
+            if (!_isNavigated && mounted) {
+              _isNavigated = true;
+              debugPrint(
+                  "🎉 Pembayaran berhasil! Navigasi ke PaymentSuccessScreen...");
+              Navigator.of(context).pushReplacement(
+                MaterialPageRoute(
+                  builder: (_) => const PaymentSuccessScreen(),
+                ),
+              );
+            }
+          } else if (status == 'pending') {
+            debugPrint("🕐 Pembayaran masih pending, akan dicek kembali...");
+            // Biarkan polling berjalan terus
+          } else {
+            debugPrint(
+                "⚠️ Status transaksi tidak dikenal atau tidak diproses: $status");
+            // Tambahkan penanganan lain jika dibutuhkan (misalnya failed, expired, dll)
           }
-          break;
+
+          break; // Keluar dari loop setelah menemukan transaksi yang sesuai
         }
       }
     } catch (e) {

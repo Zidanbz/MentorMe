@@ -3,7 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:mentorme/global/global.dart';
 
 class PaymentProvider {
-  static const String baseUrl = 'https://widgets-catb7yz54a-uc.a.run.app';
+  static const String baseUrl = 'https://widgets22-catb7yz54a-et.a.run.app';
 
   /// **1. Get History Transaction**
   Future<Map<String, dynamic>> getHistoryTransaction(String paymentId) async {

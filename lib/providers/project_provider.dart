@@ -1,6 +1,5 @@
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
+import 'package:mentorme/core/services/project_services.dart';
 import 'package:mentorme/global/global.dart';
 
 class ProjectProvider extends ChangeNotifier {
@@ -12,15 +11,16 @@ class ProjectProvider extends ChangeNotifier {
   List<Map<String, dynamic>> get projects => _projects;
   bool get isLoading => _isLoading;
 
-  void setSelectedLearningPathId(String ID) {
-    _selectedLearningPathId = ID;
+  get errorMessage => null;
+
+  void setSelectedLearningPathId(String id) {
+    _selectedLearningPathId = id;
     fetchProjects();
   }
 
   Future<void> fetchProjects() async {
-    if (_selectedLearningPathId == null) return;
-    if (currentUserToken == null) {
-      print('No auth token available');
+    if (_selectedLearningPathId == null || currentUserToken == null) {
+      print('Learning Path atau Token kosong');
       return;
     }
 
@@ -28,36 +28,13 @@ class ProjectProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // print('Fetching projects for learning path: $_selectedLearningPathId');
-      // print('Using token: $currentUserToken');
-
-      final response = await http.get(
-        Uri.parse(
-            'https://widgets-catb7yz54a-uc.a.run.app/api/learn/$_selectedLearningPathId'),
-        headers: {
-          'Authorization': 'Bearer $currentUserToken',
-          'Content-Type': 'application/json',
-        },
+      final data = await ProjectService.fetchLearnPath(
+        learningPathId: _selectedLearningPathId!,
+        token: currentUserToken!,
       );
-
-      // print('Response status: ${response.statusCode}');
-      // print('Response body: ${response.body}');
-
-      if (response.statusCode == 200) {
-        final jsonData = json.decode(response.body);
-        if (jsonData['code'] == 200) {
-          _projects = List<Map<String, dynamic>>.from(jsonData['data']);
-          // print('Projects loaded successfully: ${_projects.length}');
-        } else {
-          // print('API returned error code: ${jsonData['code']}');
-          _projects = [];
-        }
-      } else {
-        // print('HTTP request failed with status: ${response.statusCode}');
-        _projects = [];
-      }
+      _projects = data;
     } catch (e) {
-      // print('Error fetching projects: $e');
+      print('Error: $e');
       _projects = [];
     } finally {
       _isLoading = false;
