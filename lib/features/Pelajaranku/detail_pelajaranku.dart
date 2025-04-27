@@ -196,6 +196,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
           final materialName = activityDetails['materialName'] ?? 'N/A';
           final trainActivities = activityDetails['train'] ?? [];
           final totalTrain = trainActivities.length;
+          final pictureUrl = activityDetails['picture'] ?? '';
           final completedTrain = trainActivities.where((t) {
             final train = t['trainActivity'] ?? {};
             return train['status'] == true;
@@ -204,7 +205,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
               totalTrain == 0 ? 0.0 : completedTrain / totalTrain;
 
           // final totalProgress = (activityDetails['totalProgress'] ?? 0.0) / 100;
-          final pictureUrl = activityDetails['picture'] ?? '';
+
           final email = activityDetails['mentor'] ?? "Unknown";
 
           return SingleChildScrollView(
@@ -232,7 +233,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
                         radius: 30,
                         backgroundImage: pictureUrl.isNotEmpty
                             ? NetworkImage(pictureUrl)
-                            : AssetImage('assets/mentor.png') as ImageProvider,
+                            : AssetImage('assets/person.png') as ImageProvider,
                       ),
                       SizedBox(width: 12),
                       Expanded(
@@ -337,22 +338,22 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
           );
         },
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        currentIndex: _selectedIndex == 0 ? 1 : _selectedIndex,
-        onTap: _onBottomNavTap,
-        selectedItemColor: Colors.grey, // Item terpilih tidak terlihat
-        selectedLabelStyle: TextStyle(color: Colors.grey),
-        unselectedItemColor: Colors.grey,
-        items: [
-          BottomNavigationBarItem(
-            icon: Icon(Icons.check),
-            label: 'Akhiri Course',
+      bottomNavigationBar: Container(
+        padding: EdgeInsets.all(16),
+        color: Colors.white,
+        child: ElevatedButton(
+          onPressed: () {
+            // Aksi untuk hubungi mentor
+          },
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.contact_mail),
+              SizedBox(width: 8),
+              Text('Hubungi Mentor'),
+            ],
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.contact_mail),
-            label: 'Hubungi Mentor',
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -395,7 +396,15 @@ void showProjectPopup(BuildContext context, {required IDActivity}) {
                     FilePickerResult? result =
                         await FilePicker.platform.pickFiles(
                       type: FileType.custom,
-                      allowedExtensions: ['zip', 'pdf', 'doc', 'docx', 'png'],
+                      allowedExtensions: [
+                        'zip',
+                        'pdf',
+                        'doc',
+                        'docx',
+                        'png',
+                        'jpg',
+                        'jpeg'
+                      ],
                     );
 
                     if (result != null) {
@@ -421,8 +430,8 @@ void showProjectPopup(BuildContext context, {required IDActivity}) {
                   ),
                 ],
                 SizedBox(height: 5),
-                Text("Format: ZIP, Maks: 10 MB",
-                    style: TextStyle(fontSize: 12, color: Colors.white)),
+                // Text("Format: ZIP, Maks: 10 MB",
+                //     style: TextStyle(fontSize: 12, color: Colors.white)),
                 SizedBox(height: 20),
                 Text(
                   "Kritik, Saran dan Masukan (Opsional)",

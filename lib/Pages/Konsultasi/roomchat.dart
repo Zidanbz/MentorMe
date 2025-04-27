@@ -190,7 +190,15 @@ class _RoomchatPageState extends State<RoomchatPage> {
               children: [
                 IconButton(
                   icon: Icon(Icons.attach_file, color: Colors.grey[700]),
-                  onPressed: () {},
+                  onPressed: () {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Coming Soon'),
+                        duration:
+                            Duration(seconds: 2), // Durasi tampil SnackBar
+                      ),
+                    );
+                  },
                 ),
                 Expanded(
                   child: TextField(

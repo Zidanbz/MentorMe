@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:mentorme/Pages/Konsultasi/help.dart';
 import 'package:mentorme/Pages/notifications/notifications.dart';
 import 'package:mentorme/features/auth/Login/login_page.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'edit_profile.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/controller/api_services.dart';
@@ -26,6 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       context,
       MaterialPageRoute(builder: (context) => const LoginPage()),
     );
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    prefs.setBool('isLoggedIn', false);
   }
 
   void _navigateToEditProfile(BuildContext context) {

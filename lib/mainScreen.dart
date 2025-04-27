@@ -1,11 +1,10 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Profile/profile.dart';
 import 'package:mentorme/Pages/Konsultasi/konsultasi.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mentorme/Pages/notifications/notifications.dart';
+import 'package:mentorme/core/services/refresh_services.dart';
 import 'package:mentorme/features/Pelajaranku/pelajaranku_page.dart';
 import 'package:mentorme/features/Project_Marketplace/project_marketplace.dart';
 import 'package:mentorme/features/beranda/beranda_page.dart';
@@ -34,31 +33,8 @@ class _MainStateScreen extends State<MainScreen>
   String selectedLearningPathId = '';
   Profile? _profile;
   bool _isLoading = true;
-  int _coinBalance = 0;
-  bool _isCoinLoading = true;
-
-  // Future<void> _fetchCoinBalance() async {
-  //   try {
-  //     final coin = await ApiService().fetchCoin();
-
-  //     if (mounted) {
-  //       setState(() {
-  //         _coinBalance = coin;
-  //         // print(" $_coinBalance");
-  //         _isCoinLoading = false;
-  //       });
-  //     }
-  //     print("Coin balance fetched successfully: $_coinBalance");
-  //   } catch (e) {
-  //     if (mounted) {
-  //       setState(() {
-  //         // _coinBalance = 0;
-  //         _isCoinLoading = false;
-  //       });
-  //     }
-  //     print("Error fetching coin balance: $e");
-  //   }
-  // }
+  // int _coinBalance = 0;
+  // bool _isCoinLoading = true;
 
   void handleTabChange(int index, {String? learningPathId}) {
     if (tabController != null) {
@@ -71,6 +47,7 @@ class _MainStateScreen extends State<MainScreen>
       });
     }
   }
+  
 
   Future<void> _fetchProfile() async {
     try {
@@ -89,6 +66,15 @@ class _MainStateScreen extends State<MainScreen>
         });
       }
       print("Error fetching profile: $e");
+    }
+  }
+
+  Future<void> _refreshData() async {
+    final profile = await RefreshService.refreshProfile();
+    if (profile != null && mounted) {
+      setState(() {
+        _profile = profile;
+      });
     }
   }
 
@@ -178,11 +164,7 @@ class _MainStateScreen extends State<MainScreen>
                       children: [
                         GestureDetector(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const ProfileScreen()),
-                            );
+                            onItemClicked(4);
                           },
                           child: CircleAvatar(
                             radius: 24,
@@ -229,51 +211,6 @@ class _MainStateScreen extends State<MainScreen>
                             );
                           },
                         ),
-                        // Container(
-                        //   height: 40,
-                        //   padding: const EdgeInsets.symmetric(horizontal: 8),
-                        //   decoration: BoxDecoration(
-                        //     color: const Color(0xff7DE2D1),
-                        //     borderRadius: BorderRadius.circular(8),
-                        //   ),
-                        //   child: Row(
-                        //     mainAxisSize: MainAxisSize.min,
-                        //     children: [
-                        //       Image.asset(
-                        //         'assets/Coin.png',
-                        //         height: 24,
-                        //         width: 24,
-                        //       ),
-                        //       const SizedBox(width: 4),
-                        //       _isCoinLoading
-                        //           ? const CircularProgressIndicator() // Loader saat koin di-fetch
-                        //           : Text(
-                        //               '$_coinBalance',
-                        //               style: const TextStyle(
-                        //                 color: Colors.white,
-                        //                 fontWeight: FontWeight.bold,
-                        //                 fontSize: 20,
-                        //               ),
-                        //             ),
-                        //       const SizedBox(width: 4),
-                        //       GestureDetector(
-                        //         onTap: () {
-                        //           Navigator.push(
-                        //             context,
-                        //             MaterialPageRoute(
-                        //                 builder: (context) =>
-                        //                     TopUpCoinMeScreen()),
-                        //           );
-                        //         },
-                        //         child: const Icon(
-                        //           Icons.add_box,
-                        //           color: Color(0xff339989),
-                        //           size: 24,
-                        //         ),
-                        //       ),
-                        //     ],
-                        //   ),
-                        // ),
                       ],
                     ),
                   ],
@@ -282,20 +219,23 @@ class _MainStateScreen extends State<MainScreen>
             ),
           // Content
           Expanded(
-            child: TabBarView(
-              physics: const NeverScrollableScrollPhysics(),
-              controller: tabController,
-              children: [
-                BerandaPage(
-                  categories: widget.categories,
-                  learningPaths: widget.learningPaths,
-                  onTabChange: handleTabChange,
-                ),
-                const ProjectPage(),
-                const Kegiatanku(),
-                KonsultasiPage(),
-                const ProfileScreen(),
-              ],
+            child: RefreshIndicator(
+              onRefresh: _refreshData,
+              child: TabBarView(
+                physics: const NeverScrollableScrollPhysics(),
+                controller: tabController,
+                children: [
+                  BerandaPage(
+                    categories: widget.categories,
+                    learningPaths: widget.learningPaths,
+                    onTabChange: handleTabChange,
+                  ),
+                  const ProjectPage(),
+                  const Kegiatanku(),
+                  KonsultasiPage(),
+                  const ProfileScreen(),
+                ],
+              ),
             ),
           ),
         ],
@@ -321,7 +261,7 @@ class _MainStateScreen extends State<MainScreen>
           ),
           BottomNavigationBarItem(
             icon: _buildNavigationBarItem(Icons.person, 'Profil', 4),
-            label: 'Profil',
+            label: 'Profile',
           ),
         ],
         type: BottomNavigationBarType.shifting,

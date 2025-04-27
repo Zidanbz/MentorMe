@@ -30,7 +30,9 @@ class _NotificationPageState extends State<NotificationPage> {
           setState(() {
             notifications = (data['data'] as List)
                 .map((notification) => AppNotification.fromJson(notification))
-                .toList();
+                .toList()
+              ..sort((a, b) =>
+                  b.createdAt.compareTo(a.createdAt)); // Urutkan dari terbaru
             isLoading = false;
           });
         } else {
@@ -58,21 +60,32 @@ class _NotificationPageState extends State<NotificationPage> {
           icon: Icon(Icons.arrow_back, color: Colors.black),
           onPressed: () => Navigator.pop(context),
         ),
-        title: Text('Notifikasi', style: TextStyle(color: Colors.black)),
+        title: Text(
+          'Notifikasi',
+          style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
+        ),
         centerTitle: true,
       ),
       body: isLoading
           ? Center(child: CircularProgressIndicator())
           : notifications.isEmpty
-              ? Center(child: Text('Tidak ada notifikasi'))
-              : Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: ListView.builder(
-                    itemCount: notifications.length,
-                    itemBuilder: (context, index) {
-                      return NotificationCard(
-                          notification: notifications[index]);
-                    },
+              ? Center(
+                  child: Text(
+                    'Tidak ada notifikasi',
+                    style: TextStyle(fontSize: 16),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: fetchNotifications,
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: ListView.builder(
+                      itemCount: notifications.length,
+                      itemBuilder: (context, index) {
+                        return NotificationCard(
+                            notification: notifications[index]);
+                      },
+                    ),
                   ),
                 ),
     );
@@ -84,6 +97,25 @@ class NotificationCard extends StatelessWidget {
 
   NotificationCard({required this.notification});
 
+  String _formatTime(DateTime time) {
+    final now = DateTime.now();
+    final difference = now.difference(time);
+
+    if (difference.inDays > 365) {
+      return '${(difference.inDays / 365).floor()} tahun yang lalu';
+    } else if (difference.inDays > 30) {
+      return '${(difference.inDays / 30).floor()} bulan yang lalu';
+    } else if (difference.inDays > 0) {
+      return '${difference.inDays} hari yang lalu';
+    } else if (difference.inHours > 0) {
+      return '${difference.inHours} jam yang lalu';
+    } else if (difference.inMinutes > 0) {
+      return '${difference.inMinutes} menit yang lalu';
+    } else {
+      return 'Baru saja';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -94,58 +126,73 @@ class NotificationCard extends StatelessWidget {
       elevation: 6,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Row(
+        child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gambar di kiri
-            ClipRRect(
-              borderRadius: BorderRadius.circular(8.0),
-              child: Image.asset(
-                'assets/Maskot.png',
-                width: 60,
-                height: 60,
-                fit: BoxFit.cover,
+            Text(
+              _formatTime(notification.createdAt),
+              style: TextStyle(
+                fontSize: 12,
+                color: Colors.grey[600],
               ),
             ),
-            SizedBox(width: 16), // Jarak antara gambar dan teks
-
-            // Bagian teks
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    notification.title,
-                    style: TextStyle(
-                      fontSize: 16.0,
-                      fontWeight: FontWeight.bold,
-                    ),
+            SizedBox(height: 8),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8.0),
+                  child: Image.asset(
+                    'assets/Maskot.png',
+                    width: 60,
+                    height: 60,
+                    fit: BoxFit.cover,
                   ),
-                  SizedBox(height: 4),
-                  Text(
-                    notification.message,
-                    style: TextStyle(
-                      fontSize: 14.0,
-                      color: Colors.grey[700],
-                    ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        notification.title,
+                        style: TextStyle(
+                          fontSize: 16.0,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        notification.message,
+                        style: TextStyle(
+                          fontSize: 14.0,
+                          color: Colors.grey[700],
+                        ),
+                      ),
+                      SizedBox(height: 8),
+                      if (notification.actionText != null)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              // Aksi ketika tombol diklik
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Color(0xff339989),
+                              foregroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(8.0),
+                              ),
+                              padding: EdgeInsets.symmetric(
+                                  horizontal: 16, vertical: 8),
+                            ),
+                            child: Text(notification.actionText!),
+                          ),
+                        ),
+                    ],
                   ),
-                  SizedBox(height: 8),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    // child: ElevatedButton(
-                    //   onPressed: () {},
-                    //   style: ElevatedButton.styleFrom(
-                    //     backgroundColor: Colors.teal,
-                    //     foregroundColor: Colors.white,
-                    //     shape: RoundedRectangleBorder(
-                    //       borderRadius: BorderRadius.circular(8.0),
-                    //     ),
-                    //   ),
-                    //   child: Text('Lihat Detail'),
-                    // ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
           ],
         ),
@@ -154,20 +201,30 @@ class NotificationCard extends StatelessWidget {
   }
 }
 
-// Model Notifikasi
 class AppNotification {
   final String id;
   final String title;
   final String message;
+  final DateTime createdAt;
+  final String? actionText;
 
-  AppNotification(
-      {required this.id, required this.title, required this.message});
+  AppNotification({
+    required this.id,
+    required this.title,
+    required this.message,
+    required this.createdAt,
+    this.actionText,
+  });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
     return AppNotification(
-      id: json['ID'] ?? '',
-      title: json['title'] ?? 'Tanpa Judul',
-      message: json['message'] ?? 'Tidak ada pesan',
+      id: json['ID']?.toString() ?? '',
+      title: json['title']?.toString() ?? 'Tanpa Judul',
+      message: json['message']?.toString() ?? 'Tidak ada pesan',
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'].toString())
+          : DateTime.now(),
+      actionText: json['actionText']?.toString(),
     );
   }
 }

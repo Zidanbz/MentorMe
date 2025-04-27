@@ -98,17 +98,17 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 10),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16),
-            child: Text(
-              'KONSULTASI',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Colors.black,
-              ),
-            ),
-          ),
+          // Padding(
+          //   padding: EdgeInsets.symmetric(horizontal: 16),
+          //   child: Text(
+          //     'KONSULTASI',
+          //     style: TextStyle(
+          //       fontSize: 20,
+          //       fontWeight: FontWeight.bold,
+          //       color: Colors.black,
+          //     ),
+          //   ),
+          // ),
           SizedBox(height: 16),
           Center(
             child: Text(
@@ -130,7 +130,12 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
                       itemCount: chatRooms.length,
                       itemBuilder: (context, index) {
                         final room = chatRooms[index];
-
+                        // Cek jika nama mentor atau customer adalah 'admin', skip item
+                        if (room['nameMentor'] == 'admin' ||
+                            room['nameCustomer'] == 'admin') {
+                          return SizedBox
+                              .shrink(); // Tidak menampilkan apapun jika nama 'admin'
+                        }
                         final isCurrentUserMentor =
                             room['nameMentor'] == currentUserName;
                         final myName = isCurrentUserMentor

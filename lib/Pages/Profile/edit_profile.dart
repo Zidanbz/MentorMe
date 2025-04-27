@@ -34,7 +34,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       try {
         var request = http.MultipartRequest(
           'PUT',
-          Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/profile/edit'),
+          Uri.parse(
+              'https://widgets22-catb7yz54a-et.a.run.app/api/profile/edit'),
         );
 
         // Tambahkan field yang dibutuhkan
@@ -128,11 +129,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              _buildTextField(
-                label: 'Nama Lengkap',
-                controller: _nameController,
-                required: true,
-              ),
+              // _buildTextField(
+              //   label: 'Nama Lengkap',
+              //   controller: _nameController,
+              //   required: true,
+              // ),
               const SizedBox(height: 16),
               _buildTextField(
                 label: 'Nomor Telepon',
@@ -141,7 +142,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 prefixText: '+62 ',
                 keyboardType: TextInputType.phone,
               ),
-              
+
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,

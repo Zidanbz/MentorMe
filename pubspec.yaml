@@ -53,6 +53,7 @@ dependencies:
   shared_preferences: ^2.5.3
   local_auth: ^2.1.7
   flutter_local_notifications: ^19.1.0
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:

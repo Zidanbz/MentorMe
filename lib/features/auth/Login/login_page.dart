@@ -85,6 +85,10 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('emailUser', emailUser);
         await prefs.setString(
             'passwordUser', passwordTextEditingController.text.trim());
+          await prefs.setBool('isLoggedIn', true);
+        print('🔥 isLoggedIn set ke true');
+
+        
 
         User? firebaseUser = FirebaseAuth.instance.currentUser;
         if (firebaseUser != null && nameUser.isNotEmpty) {
@@ -95,14 +99,20 @@ class _LoginPageState extends State<LoginPage> {
 
         List<Map<String, dynamic>> categories =
             responseData['data']['categories'] != null
-                ? List<Map<String, dynamic>>.from(responseData['data']['categories'])
+                ? List<Map<String, dynamic>>.from(
+                    responseData['data']['categories'])
                 : [];
 
         List<Map<String, dynamic>> learningPaths =
             responseData['data']['learningPath'] != null
-                ? List<Map<String, dynamic>>.from(responseData['data']['learningPath'])
+                ? List<Map<String, dynamic>>.from(
+                    responseData['data']['learningPath'])
                 : [];
+              // Menyimpan ke SharedPreferences
+        await prefs.setString('categories', categories.toString());
+        await prefs.setString('learningPaths', learningPaths.toString());
 
+        
         Fluttertoast.showToast(msg: "Login berhasil");
         Navigator.pushReplacement(
           context,
@@ -144,6 +154,8 @@ class _LoginPageState extends State<LoginPage> {
         final prefs = await SharedPreferences.getInstance();
         String? savedEmail = prefs.getString('emailUser');
         String? savedPassword = prefs.getString('passwordUser');
+        prefs.setBool('isLoggedIn', true);
+        print('🔥 isLoggedIn set ke true');
 
         if (savedEmail != null && savedPassword != null) {
           emailTextEditingController.text = savedEmail;

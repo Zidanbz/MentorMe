@@ -32,7 +32,7 @@ class ApiService {
           // Cek apakah URL valid atau tidak
           final validPictureUrl = Uri.tryParse(pictureUrl)?.isAbsolute == true
               ? pictureUrl
-              : 'https://storage.googleapis.com/mentorme-aaa37.firebasestorage.app/uploads/1745224459754-1000367816.jpg'; // Gambar default
+              : 'assets/person.png'; // Gambar default
 
           return Profile(
             fullName: profileData['fullName'] ?? '',

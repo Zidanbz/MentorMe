@@ -55,7 +55,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
             materialName =
                 response['data']['materialName'] ?? 'Material tidak tersedia';
             syllabus = response['data']['syllabus'] ?? 0;
-            price = int.tryParse(response['data']['price'].toString()) ?? 0;
+            price = int.tryParse(response['data']['price']) ?? 0;
             // error = null; // Reset error jika data berhasil diambil
           } else {
             // Tangani kasus ketika code bukan 200 atau data null
@@ -114,7 +114,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
       orElse: () => {'piece': 0},
     );
 
-    final discount = int.tryParse(selectedVoucherData['piece']) ?? 0;
+    final discount = (selectedVoucherData['piece'] as num?)?.toInt() ?? 0;
     return price! - (price! * discount ~/ 100);
   }
 
@@ -345,7 +345,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                         ),
                         ...voucherList.map((voucher) {
                           return DropdownMenuItem<String>(
-                            value: voucher['ID'].toString(),
+                            value: voucher['ID'],
                             child: Text(
                                 '${voucher['name']} - Diskon ${voucher['piece']}%'),
                           );
