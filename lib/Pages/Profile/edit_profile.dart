@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'package:http/http.dart' as http;
+import 'package:mentorme/controller/api_services.dart';
 import 'dart:convert';
 import 'package:mentorme/global/global.dart';
+import 'package:mentorme/models/Profile_models.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({Key? key}) : super(key: key);
@@ -17,6 +20,8 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
+  bool _isLoading = true;
+  Profile? _profile;
 
   Future<void> _pickImage() async {
     final ImagePicker picker = ImagePicker();
@@ -26,6 +31,56 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
       setState(() {
         _image = File(image.path);
       });
+
+      SharedPreferences prefs = await SharedPreferences.getInstance();
+      prefs.setString('imagePath', image.path);
+    }
+  }
+
+  // Fungsi untuk mengambil data dari SharedPreferences dan File
+  Future<void> _loadProfileData() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? name = prefs.getString('name');
+    String? phone = prefs.getString('phone');
+    String? imagePath = prefs.getString('imagePath'); // Path gambar jika ada
+
+    setState(() {
+      if (name != null) {
+        _nameController.text = name;
+      }
+      if (phone != null) {
+        _phoneController.text = phone;
+      }
+      if (imagePath != null) {
+        _image = File(imagePath);
+      }
+    });
+  }
+
+  Future<void> _fetchProfile() async {
+    try {
+      final profile = await ApiService().fetchProfile();
+
+      if (mounted && profile != null) {
+        setState(() {
+          _profile = profile;
+          _nameController.text = profile.fullName ?? '';
+          _phoneController.text = profile.phone ?? '';
+
+          if ((profile.picture ?? '').isNotEmpty) {
+            _image = null; // Jangan pakai File jika hanya URL
+          }
+
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
+      print("Error fetching profile: $e");
     }
   }
 
@@ -63,6 +118,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profil berhasil disimpan')),
           );
+
+          // Simpan data ke SharedPreferences setelah berhasil disimpan
+          SharedPreferences prefs = await SharedPreferences.getInstance();
+          prefs.setString('name', _nameController.text);
+          prefs.setString('phone', _phoneController.text);
         } else {
           print(
               'Gagal menyimpan profil. Status: ${response.statusCode}, Response: $responseBody');
@@ -87,6 +147,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
   }
 
   @override
+  void initState() {
+    super.initState();
+    _fetchProfile();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
@@ -94,7 +160,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           icon: const Icon(Icons.arrow_back),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text('Edit Profil'),
+        title: const Text('Edit Profile'),
         backgroundColor: Colors.white,
         foregroundColor: Colors.black,
         elevation: 0,
@@ -107,7 +173,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const Text(
-                'Foto Profil',
+                'Foto Profile',
                 style: TextStyle(
                   color: Color(0xFF40B59F),
                   fontSize: 16,
@@ -120,8 +186,13 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                   child: CircleAvatar(
                     radius: 50,
                     backgroundColor: Colors.grey[200],
-                    backgroundImage: _image != null ? FileImage(_image!) : null,
-                    child: _image == null
+                    backgroundImage: _image != null
+                        ? FileImage(_image!)
+                        : (_profile != null && _profile!.picture.isNotEmpty)
+                            ? NetworkImage(_profile!.picture)
+                            : null,
+                    child: (_image == null &&
+                            (_profile == null || _profile!.picture.isEmpty))
                         ? const Icon(Icons.camera_alt,
                             size: 30, color: Colors.grey)
                         : null,
@@ -129,11 +200,11 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 ),
               ),
               const SizedBox(height: 24),
-              // _buildTextField(
-              //   label: 'Nama Lengkap',
-              //   controller: _nameController,
-              //   required: true,
-              // ),
+              _buildTextField(
+                label: 'Nama Lengkap',
+                controller: _nameController,
+                required: true,
+              ),
               const SizedBox(height: 16),
               _buildTextField(
                 label: 'Nomor Telepon',
@@ -142,7 +213,6 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
                 prefixText: '+62 ',
                 keyboardType: TextInputType.phone,
               ),
-
               const SizedBox(height: 32),
               SizedBox(
                 width: double.infinity,

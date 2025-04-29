@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/core/services/kegiatanku_services.dart';
 import 'package:mentorme/features/Project_Marketplace/detail_project_markertplace.dart';
-import 'package:mentorme/providers/getProject_provider.dart';
+import 'package:mentorme/providers/getProject_provider.dart'; // Tambahkan import ini
 import 'package:provider/provider.dart';
 import 'dart:convert';
 import 'dart:developer' as developer;
@@ -13,27 +14,51 @@ class ProjectPage extends StatefulWidget {
 }
 
 class _ProjectPageState extends State<ProjectPage> {
+  Set<String> purchasedProjectIds =
+      {}; // Menyimpan ID project yang sudah dibeli
+  bool isLoadingLearning = true;
+
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<GetProjectProvider>(context, listen: false)
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await Provider.of<GetProjectProvider>(context, listen: false)
           .fetchAllProjects();
+      await loadLearningData();
     });
   }
 
+  Future<void> loadLearningData() async {
+    try {
+      final learningData = await ActivityService.fetchLearningData();
+      setState(() {
+        purchasedProjectIds = learningData
+            .map((learning) => learning['IDProject']?.toString() ?? '')
+            .toSet();
+        isLoadingLearning = false;
+      });
+      developer.log('Purchased Projects: $purchasedProjectIds');
+    } catch (e) {
+      developer.log('Error loading learning data: $e');
+      setState(() {
+        isLoadingLearning = false;
+      });
+    }
+  }
+
   Widget _buildProjectCard(
-      BuildContext context, Map<String, dynamic> projectId) {
-    // Tambahkan parameter context
+      BuildContext context, Map<String, dynamic> projectData) {
+    final String projectId = projectData['ID'].toString();
+    final bool isPurchased = purchasedProjectIds.contains(projectId);
+    developer.log('Project Data: ${projectData.toString()}');
+
     return InkWell(
-      // Wrap Card dengan InkWell
       onTap: () {
-        developer.log('Project data: ${projectId.toString()}');
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => DetailProjectmarketplacePage(
-              projectId: projectId,
+              projectId: projectData,
             ),
           ),
         );
@@ -52,9 +77,9 @@ class _ProjectPageState extends State<ProjectPage> {
               // Gambar project
               ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: projectId['picture'] != null
+                child: projectData['picture'] != null
                     ? Image.network(
-                        projectId['picture'],
+                        projectData['picture'],
                         height: 200,
                         width: double.infinity,
                         fit: BoxFit.cover,
@@ -75,14 +100,13 @@ class _ProjectPageState extends State<ProjectPage> {
               const SizedBox(height: 16),
               // Nama material
               Text(
-                projectId['materialName'] ?? 'Untitled',
+                projectData['materialName'] ?? 'Untitled',
                 style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: Color(0xff339989),
                 ),
               ),
-
               const SizedBox(height: 8),
               // Nama mentor
               Row(
@@ -90,7 +114,7 @@ class _ProjectPageState extends State<ProjectPage> {
                   const Icon(Icons.person, size: 16, color: Colors.grey),
                   const SizedBox(width: 4),
                   Text(
-                    'Mentor: ${projectId['mentor'] ?? 'Unknown'}',
+                    'Mentor: ${projectData['mentor'] ?? 'Unknown'}',
                     style: const TextStyle(
                       fontSize: 14,
                       color: Colors.grey,
@@ -108,7 +132,7 @@ class _ProjectPageState extends State<ProjectPage> {
                       const Icon(Icons.school, size: 16, color: Colors.grey),
                       const SizedBox(width: 4),
                       Text(
-                        projectId['learningMethod'] ?? 'Untitled',
+                        projectData['learningMethod'] ?? 'Untitled',
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -118,7 +142,7 @@ class _ProjectPageState extends State<ProjectPage> {
                     ],
                   ),
                   Text(
-                    'Rp ${projectId['price']?.toString().replaceAllMapped(
+                    'Rp ${projectData['price']?.toString().replaceAllMapped(
                           RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
                           (Match m) => '${m[1]}.',
                         ) ?? '0'}',
@@ -130,6 +154,23 @@ class _ProjectPageState extends State<ProjectPage> {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              if (isPurchased)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Sudah Dibeli',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -143,48 +184,54 @@ class _ProjectPageState extends State<ProjectPage> {
       builder: (context, GetProjectProvider, child) {
         return Scaffold(
           backgroundColor: const Color(0xffE0FFF3),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  'PROJECTS',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+          body: isLoadingLearning
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xff339989),
                   ),
-                ),
-              ),
-              Expanded(
-                child: GetProjectProvider.isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xff339989),
+                )
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Padding(
+                      padding: EdgeInsets.all(16.0),
+                      child: Text(
+                        'PROJECTS',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
                         ),
-                      )
-                    : GetProjectProvider.projects.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No projects available',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
+                      ),
+                    ),
+                    Expanded(
+                      child: GetProjectProvider.isLoading
+                          ? const Center(
+                              child: CircularProgressIndicator(
+                                color: Color(0xff339989),
                               ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: GetProjectProvider.projects.length,
-                            itemBuilder: (context, index) {
-                              return _buildProjectCard(
-                                context, // Tambahkan context sebagai parameter
-                                GetProjectProvider.projects[index],
-                              );
-                            },
-                          ),
-              ),
-            ],
-          ),
+                            )
+                          : GetProjectProvider.projects.isEmpty
+                              ? const Center(
+                                  child: Text(
+                                    'No projects available',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      color: Colors.grey,
+                                    ),
+                                  ),
+                                )
+                              : ListView.builder(
+                                  itemCount: GetProjectProvider.projects.length,
+                                  itemBuilder: (context, index) {
+                                    return _buildProjectCard(
+                                      context,
+                                      GetProjectProvider.projects[index],
+                                    );
+                                  },
+                                ),
+                    ),
+                  ],
+                ),
         );
       },
     );

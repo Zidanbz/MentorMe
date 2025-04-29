@@ -97,6 +97,7 @@ class _HelpPageState extends State<HelpPage> {
     return null;
   }
 
+// Di bagian _sendMessage, pastikan menggunakan email sebagai pengenal
   void _sendMessage() {
     if (localDisplayName == null || localEmail == null || roomId == null) {
       print('❗ Display name, email, atau room belum siap');
@@ -105,18 +106,13 @@ class _HelpPageState extends State<HelpPage> {
 
     if (_messageController.text.isNotEmpty) {
       _firestore.collection('messages').add({
-        'roomId': roomId, // 👈 Ini yang dipakai untuk filter
+        'roomId': roomId,
         'text': _messageController.text,
-        'sender': localDisplayName,
-        'senderEmail': localEmail,
+        'sender': localDisplayName, // 👈 Tetap simpan nama untuk ditampilkan
+        'senderEmail': localEmail, // 👈 Tapi gunakan email sebagai pengenal
         'senderRole': 'CUSTOMER',
         'timestamp': FieldValue.serverTimestamp(),
-      }).then((doc) {
-        print('✅ Pesan dikirim ke messages/${doc.id}');
-      }).catchError((e) {
-        print('❌ Gagal kirim pesan: $e');
       });
-
       _messageController.clear();
     }
   }
@@ -139,36 +135,36 @@ class _HelpPageState extends State<HelpPage> {
           : Column(
               children: [
                 Expanded(
-                  child: StreamBuilder<QuerySnapshot>(
-                    stream: _firestore
-                        .collection('messages')
-                        .where('roomId', isEqualTo: roomId)
-                        .orderBy('timestamp', descending: true)
-                        .snapshots(),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return Center(child: CircularProgressIndicator());
-                      }
-                      final messages = snapshot.data!.docs;
-                      return ListView.builder(
-                        reverse: true,
-                        itemCount: messages.length,
-                        itemBuilder: (context, index) {
-                          var message = messages[index];
-                          final isSender =
-                              message['sender'] == localDisplayName;
+                    child: StreamBuilder<QuerySnapshot>(
+                  stream: _firestore
+                      .collection('messages')
+                      .where('roomId', isEqualTo: roomId)
+                      .orderBy('timestamp', descending: true)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (!snapshot.hasData)
+                      return Center(child: CircularProgressIndicator());
 
-                          return ChatBubble(
-                            isSender: isSender,
-                            message: message['text'],
-                            senderName: message['sender'],
-                            avatarUrl: 'assets/trainee_avatar.png',
-                          );
-                        },
-                      );
-                    },
-                  ),
-                ),
+                    final messages = snapshot.data!.docs;
+                    return ListView.builder(
+                      reverse: true,
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        var message = messages[index];
+                        // 👇 Gunakan email untuk menentukan isSender, bukan nama
+                        final isSender = message['senderEmail'] == localEmail;
+
+                        return ChatBubble(
+                          isSender: isSender,
+                          message: message['text'],
+                          senderName: message[
+                              'sender'], // 👈 Tetap tampilkan nama terbaru
+                          avatarUrl: 'assets/trainee_avatar.png',
+                        );
+                      },
+                    );
+                  },
+                )),
                 Padding(
                   padding: EdgeInsets.all(10),
                   child: Row(

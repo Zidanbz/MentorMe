@@ -229,24 +229,6 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
                     ),
                   ),
 
-                  // Jumlah Siswa
-                  // Container(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  //   child: Row(
-                  //     children: [
-                  //       const Icon(Icons.people, color: Color(0xff339989)),
-                  //       const SizedBox(width: 10),
-                  //       // Text(
-                  //       //   '${detailProject?['student'] ?? 0} Students',
-                  //       //   style: const TextStyle(
-                  //       //     fontSize: 16,
-                  //       //     fontWeight: FontWeight.bold,
-                  //       //   ),
-                  //       // ),
-                  //     ],
-                  //   ),
-                  // ),
-
                   // Tombol Beli Project
                   Padding(
                     padding: const EdgeInsets.all(20),

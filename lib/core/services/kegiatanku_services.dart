@@ -96,4 +96,20 @@ class ActivityService {
       rethrow; // Re-throw the error after logging it
     }
   }
+
+  static Future<bool> hasUserPurchasedProject(String projectId) async {
+    try {
+      final learningData = await fetchLearningData(); // Ambil data learning
+      // Cek apakah IDProject ada dalam data learning
+      for (var learningItem in learningData) {
+        if (learningItem['IDProject'] == projectId) {
+          return true; // Proyek sudah dibeli
+        }
+      }
+      return false; // Proyek belum dibeli
+    } catch (e) {
+      print('Error checking if project is purchased: $e');
+      return false; // Jika gagal, anggap belum dibeli
+    }
+  }
 }

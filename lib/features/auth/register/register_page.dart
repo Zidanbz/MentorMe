@@ -249,6 +249,34 @@ class _RegisterPageState extends State<RegisterPage> {
                     ),
                   ),
                 ),
+                const SizedBox(height: 20),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      "Sudah Punya Akun? ",
+                      style: TextStyle(fontSize: 16),
+                    ),
+                    GestureDetector(
+                      onTap: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(
+                              builder: (context) => const LoginPage()),
+                        );
+                      },
+                      child: const Text(
+                        "Login disini!",
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Color(0xFF339989),
+                          fontWeight: FontWeight.bold,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ],
             ),
           ),

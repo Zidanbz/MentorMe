@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:intl/intl.dart';
 
 class NotificationPage extends StatefulWidget {
   @override
@@ -97,27 +98,12 @@ class NotificationCard extends StatelessWidget {
 
   NotificationCard({required this.notification});
 
-  String _formatTime(DateTime time) {
-    final now = DateTime.now();
-    final difference = now.difference(time);
-
-    if (difference.inDays > 365) {
-      return '${(difference.inDays / 365).floor()} tahun yang lalu';
-    } else if (difference.inDays > 30) {
-      return '${(difference.inDays / 30).floor()} bulan yang lalu';
-    } else if (difference.inDays > 0) {
-      return '${difference.inDays} hari yang lalu';
-    } else if (difference.inHours > 0) {
-      return '${difference.inHours} jam yang lalu';
-    } else if (difference.inMinutes > 0) {
-      return '${difference.inMinutes} menit yang lalu';
-    } else {
-      return 'Baru saja';
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
+    // Format the date
+    String formattedDate =
+        DateFormat('dd MMM yyyy, HH:mm').format(notification.createdAt);
+
     return Card(
       margin: EdgeInsets.only(bottom: 12.0),
       shape: RoundedRectangleBorder(
@@ -126,73 +112,69 @@ class NotificationCard extends StatelessWidget {
       elevation: 6,
       child: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: Column(
+        child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              _formatTime(notification.createdAt),
-              style: TextStyle(
-                fontSize: 12,
-                color: Colors.grey[600],
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.asset(
+                'assets/Maskot.png',
+                width: 60,
+                height: 60,
+                fit: BoxFit.cover,
               ),
             ),
-            SizedBox(height: 8),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                ClipRRect(
-                  borderRadius: BorderRadius.circular(8.0),
-                  child: Image.asset(
-                    'assets/Maskot.png',
-                    width: 60,
-                    height: 60,
-                    fit: BoxFit.cover,
+            SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    notification.title,
+                    style: TextStyle(
+                      fontSize: 16.0,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
-                ),
-                SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        notification.title,
-                        style: TextStyle(
-                          fontSize: 16.0,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        notification.message,
-                        style: TextStyle(
-                          fontSize: 14.0,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      SizedBox(height: 8),
-                      if (notification.actionText != null)
-                        Align(
-                          alignment: Alignment.centerRight,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              // Aksi ketika tombol diklik
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Color(0xff339989),
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(8.0),
-                              ),
-                              padding: EdgeInsets.symmetric(
-                                  horizontal: 16, vertical: 8),
-                            ),
-                            child: Text(notification.actionText!),
+                  SizedBox(height: 4),
+                  Text(
+                    notification.message,
+                    style: TextStyle(
+                      fontSize: 14.0,
+                      color: Colors.grey[700],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  // Display the formatted date
+                  Text(
+                    formattedDate,
+                    style: TextStyle(
+                      fontSize: 12.0,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                  SizedBox(height: 8),
+                  if (notification.actionText != null)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Aksi ketika tombol diklik
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Color(0xff339989),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8.0),
                           ),
+                          padding:
+                              EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                         ),
-                    ],
-                  ),
-                ),
-              ],
+                        child: Text(notification.actionText!),
+                      ),
+                    ),
+                ],
+              ),
             ),
           ],
         ),
@@ -217,13 +199,23 @@ class AppNotification {
   });
 
   factory AppNotification.fromJson(Map<String, dynamic> json) {
+    DateTime parsedDate;
+
+    if (json['timestamp'] is String) {
+      parsedDate = DateTime.parse(json['timestamp']);
+    } else if (json['timestamp'] != null &&
+        json['timestamp']['_seconds'] != null) {
+      parsedDate = DateTime.fromMillisecondsSinceEpoch(
+          json['timestamp']['_seconds'] * 1000);
+    } else {
+      parsedDate = DateTime.now();
+    }
+
     return AppNotification(
       id: json['ID']?.toString() ?? '',
       title: json['title']?.toString() ?? 'Tanpa Judul',
       message: json['message']?.toString() ?? 'Tidak ada pesan',
-      createdAt: json['createdAt'] != null
-          ? DateTime.parse(json['createdAt'].toString())
-          : DateTime.now(),
+      createdAt: parsedDate,
       actionText: json['actionText']?.toString(),
     );
   }

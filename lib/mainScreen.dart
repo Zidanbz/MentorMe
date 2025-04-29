@@ -47,7 +47,6 @@ class _MainStateScreen extends State<MainScreen>
       });
     }
   }
-  
 
   Future<void> _fetchProfile() async {
     try {
@@ -168,18 +167,32 @@ class _MainStateScreen extends State<MainScreen>
                           },
                           child: CircleAvatar(
                             radius: 24,
-                            backgroundImage: (_profile?.picture != null)
-                                ? Image.network(
-                                    _profile!.picture,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      return Image.asset(
-                                        'assets/person.png',
-                                        fit: BoxFit.cover,
-                                      );
-                                    },
-                                  ).image
-                                : const AssetImage('assets/person.png'),
+                            backgroundColor: Colors.grey[200],
+                            child: ClipOval(
+                              child: _profile?.picture != null &&
+                                      _profile!.picture.isNotEmpty
+                                  ? Image.network(
+                                      _profile!.picture,
+                                      fit: BoxFit.cover,
+                                      width: 48,
+                                      height: 48,
+                                      errorBuilder:
+                                          (context, error, stackTrace) {
+                                        return Image.asset(
+                                          'assets/person.png',
+                                          fit: BoxFit.cover,
+                                          width: 48,
+                                          height: 48,
+                                        );
+                                      },
+                                    )
+                                  : Image.asset(
+                                      'assets/person.png',
+                                      fit: BoxFit.cover,
+                                      width: 48,
+                                      height: 48,
+                                    ),
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),

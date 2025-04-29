@@ -342,8 +342,25 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
         padding: EdgeInsets.all(16),
         color: Colors.white,
         child: ElevatedButton(
-          onPressed: () {
-            // Aksi untuk hubungi mentor
+          onPressed: () async {
+            try {
+              final activityDetails = await _fetchActivityDetails();
+              final mentorEmail =
+                  activityDetails['mentor']; // sesuaikan key-nya
+
+              if (mentorEmail != null && mentorEmail.isNotEmpty) {
+                _startChatWithMentor(
+                    mentorEmail); // Panggil fungsi _startChatWithMentor
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text('Email mentor tidak tersedia')),
+                );
+              }
+            } catch (e) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text('Gagal mengambil data aktivitas: $e')),
+              );
+            }
           },
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,

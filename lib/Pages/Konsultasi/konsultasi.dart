@@ -98,17 +98,6 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SizedBox(height: 10),
-          // Padding(
-          //   padding: EdgeInsets.symmetric(horizontal: 16),
-          //   child: Text(
-          //     'KONSULTASI',
-          //     style: TextStyle(
-          //       fontSize: 20,
-          //       fontWeight: FontWeight.bold,
-          //       color: Colors.black,
-          //     ),
-          //   ),
-          // ),
           SizedBox(height: 16),
           Center(
             child: Text(
@@ -163,7 +152,7 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
                               otherUserName,
                               otherUserRole,
                               isNewMessage ? 'Pesan Baru' : 'Riwayat chat',
-                              'assets/default.png',
+                              'assets/person.png',
                               room['idRoom'],
                               myName,
                               myEmail,
@@ -201,8 +190,8 @@ class _KonsultasiPageState extends State<KonsultasiPage> {
           MaterialPageRoute(
             builder: (context) => RoomchatPage(
               roomId: idRoom,
-              currentUserName: currentUserName,
-              currentUserEmail: currentUserEmail,
+              currentUserName: this.currentUserName,
+              currentUserEmail: this.currentUserEmail,
             ),
           ),
         );

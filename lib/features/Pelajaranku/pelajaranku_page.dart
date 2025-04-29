@@ -14,6 +14,7 @@ class _KegiatankuState extends State<Kegiatanku> {
   List<dynamic> _progressCourses = [];
   bool _isLoading = true;
   String _errorMessage = '';
+  List<Map<String, dynamic>> _completedCourses = [];
 
   @override
   void initState() {
@@ -31,6 +32,7 @@ class _KegiatankuState extends State<Kegiatanku> {
       final learningData = await ActivityService.fetchLearningData();
 
       List<Map<String, dynamic>> progressCourses = [];
+      List<Map<String, dynamic>> completedCourses = [];
 
       for (var item in learningData) {
         String idProject = item['ID'];
@@ -39,12 +41,19 @@ class _KegiatankuState extends State<Kegiatanku> {
           final progress =
               await ActivityService.fetchActivityProgress(idProject);
           item['progress'] = progress;
-          progressCourses.add(item);
+
+          if (progress == 1.0) {
+            completedCourses.add(item); // Kursus selesai
+          } else {
+            progressCourses.add(item); // Kursus dalam progress
+          }
         }
       }
 
       setState(() {
         _progressCourses = progressCourses;
+        _completedCourses =
+            completedCourses; // Menambahkan daftar kursus selesai
         _isLoading = false;
       });
     } catch (e) {
@@ -149,11 +158,21 @@ class _KegiatankuState extends State<Kegiatanku> {
   }
 
   Widget _buildCompletedList() {
-    return const Center(
-      child: Text(
-        "Belum ada course yang selesai",
-        style: TextStyle(fontSize: 16, color: Colors.black54),
-      ),
+    if (_completedCourses.isEmpty) {
+      return const Center(
+        child: Text(
+          "Belum ada course yang selesai",
+          style: TextStyle(fontSize: 16, color: Colors.black54),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      itemCount: _completedCourses.length,
+      itemBuilder: (context, index) {
+        var course = _completedCourses[index];
+        return _buildCard(course);
+      },
     );
   }
 
