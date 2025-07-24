@@ -85,10 +85,8 @@ class _LoginPageState extends State<LoginPage> {
         await prefs.setString('emailUser', emailUser);
         await prefs.setString(
             'passwordUser', passwordTextEditingController.text.trim());
-          await prefs.setBool('isLoggedIn', true);
+        await prefs.setBool('isLoggedIn', true);
         print('🔥 isLoggedIn set ke true');
-
-        
 
         User? firebaseUser = FirebaseAuth.instance.currentUser;
         if (firebaseUser != null && nameUser.isNotEmpty) {
@@ -108,11 +106,10 @@ class _LoginPageState extends State<LoginPage> {
                 ? List<Map<String, dynamic>>.from(
                     responseData['data']['learningPath'])
                 : [];
-              // Menyimpan ke SharedPreferences
+        // Menyimpan ke SharedPreferences
         await prefs.setString('categories', categories.toString());
         await prefs.setString('learningPaths', learningPaths.toString());
 
-        
         Fluttertoast.showToast(msg: "Login berhasil");
         Navigator.pushReplacement(
           context,
@@ -132,43 +129,43 @@ class _LoginPageState extends State<LoginPage> {
     }
   }
 
-  Future<void> _loginWithFingerprint() async {
-    try {
-      final isSupported = await auth.isDeviceSupported();
-      final canCheckBiometrics = await auth.canCheckBiometrics;
+  // Future<void> _loginWithFingerprint() async {
+  //   try {
+  //     final isSupported = await auth.isDeviceSupported();
+  //     final canCheckBiometrics = await auth.canCheckBiometrics;
 
-      if (!isSupported || !canCheckBiometrics) {
-        Fluttertoast.showToast(msg: "Perangkat tidak mendukung biometrik");
-        return;
-      }
+  //     if (!isSupported || !canCheckBiometrics) {
+  //       Fluttertoast.showToast(msg: "Perangkat tidak mendukung biometrik");
+  //       return;
+  //     }
 
-      final isAuthenticated = await auth.authenticate(
-        localizedReason: 'Gunakan sidik jari untuk masuk',
-        options: const AuthenticationOptions(
-          biometricOnly: true,
-          stickyAuth: true,
-        ),
-      );
+  //     final isAuthenticated = await auth.authenticate(
+  //       localizedReason: 'Gunakan sidik jari untuk masuk',
+  //       options: const AuthenticationOptions(
+  //         biometricOnly: true,
+  //         stickyAuth: true,
+  //       ),
+  //     );
 
-      if (isAuthenticated) {
-        final prefs = await SharedPreferences.getInstance();
-        String? savedEmail = prefs.getString('emailUser');
-        String? savedPassword = prefs.getString('passwordUser');
-        prefs.setBool('isLoggedIn', true);
-        print('🔥 isLoggedIn set ke true');
+  //     if (isAuthenticated) {
+  //       final prefs = await SharedPreferences.getInstance();
+  //       String? savedEmail = prefs.getString('emailUser');
+  //       String? savedPassword = prefs.getString('passwordUser');
+  //       prefs.setBool('isLoggedIn', true);
+  //       print('🔥 isLoggedIn set ke true');
 
-        if (savedEmail != null && savedPassword != null) {
-          emailTextEditingController.text = savedEmail;
-          passwordTextEditingController.text = savedPassword;
-          await loginUser();
-        } else {
-          Fluttertoast.showToast(msg: "Data login tidak ditemukan");
-        }
-      }
-    } catch (e) {
-      Fluttertoast.showToast(msg: "Autentikasi gagal: $e");
-    }
-  }
+  //       if (savedEmail != null && savedPassword != null) {
+  //         emailTextEditingController.text = savedEmail;
+  //         passwordTextEditingController.text = savedPassword;
+  //         await loginUser();
+  //       } else {
+  //         Fluttertoast.showToast(msg: "Data login tidak ditemukan");
+  //       }
+  //     }
+  //   } catch (e) {
+  //     Fluttertoast.showToast(msg: "Autentikasi gagal: $e");
+  //   }
+  // }
 
   @override
   Widget build(BuildContext context) {

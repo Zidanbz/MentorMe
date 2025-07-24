@@ -234,4 +234,69 @@ class ApiService {
       return {"error": "Internal Server Error: $e"};
     }
   }
+
+  Future<List<Map<String, dynamic>>> fetchCategories() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/categories'),
+        headers: {
+          'Authorization':
+              'Bearer $currentUserToken', // Sesuaikan token yang digunakan
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        if (responseData['code'] == 200 && responseData['data'] != null) {
+          // Mengembalikan data categories
+          List<Map<String, dynamic>> categories =
+              List<Map<String, dynamic>>.from(responseData['data']);
+          return categories;
+        } else {
+          print('Error: ${responseData['message']}');
+          return [];
+        }
+      } else {
+        print('Failed to load categories: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error: $e');
+      return [];
+    }
+  }
+
+Future<List<Map<String, dynamic>>> fetchLearnPaths() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/all/learnpath'),
+        headers: {
+          'Authorization':
+              'Bearer $currentUserToken', // Sesuaikan token yang digunakan
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseData = json.decode(response.body);
+
+        if (responseData['code'] == 200 && responseData['data'] != null) {
+          // Mengembalikan data learnpath
+          List<Map<String, dynamic>> learnPaths =
+              List<Map<String, dynamic>>.from(responseData['data']);
+          return learnPaths;
+        } else {
+          print('Error: ${responseData['message']}');
+          return [];
+        }
+      } else {
+        print('Failed to load learn paths: ${response.statusCode}');
+        return [];
+      }
+    } catch (e) {
+      print('Error: $e');
+      return [];
+    }
+  }
+
 }

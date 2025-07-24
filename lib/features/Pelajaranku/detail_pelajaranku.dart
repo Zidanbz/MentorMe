@@ -18,6 +18,7 @@ class DetailKegiatan extends StatefulWidget {
 class _DetailKegiatanState extends State<DetailKegiatan> {
   int _selectedIndex = 0; // Mulai dengan tidak ada yang dipilih
   late Future<Map<String, dynamic>> _activityFuture;
+  bool _isLoading = false;
 
   @override
   void initState() {
@@ -192,7 +193,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
           }
 
           final activityDetails = snapshot.data!;
-          final fullName = activityDetails['fullName'] ?? 'N/A';
+          // final fullName = activityDetails['fullName'] ?? 'N/A';
           final materialName = activityDetails['materialName'] ?? 'N/A';
           final trainActivities = activityDetails['train'] ?? [];
           final totalTrain = trainActivities.length;
@@ -206,7 +207,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
 
           // final totalProgress = (activityDetails['totalProgress'] ?? 0.0) / 100;
 
-          final email = activityDetails['mentor'] ?? "Unknown";
+          // final email = activityDetails['mentor'] ?? "Unknown";
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -267,7 +268,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
                   itemBuilder: (context, index) {
                     final activity =
                         trainActivities[index]['trainActivity'] ?? {};
-                    final meeting = activity['meeting'] ?? 'N/A';
+                    // final meeting = activity['meeting'] ?? 'N/A';
                     final syllabus = activity['materialNameSyllabus'] ?? 'N/A';
                     final status = activity['status'] ?? false;
                     final isReport = activity['status'] ?? false;
@@ -342,34 +343,61 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
         padding: EdgeInsets.all(16),
         color: Colors.white,
         child: ElevatedButton(
-          onPressed: () async {
-            try {
-              final activityDetails = await _fetchActivityDetails();
-              final mentorEmail =
-                  activityDetails['mentor']; // sesuaikan key-nya
+          onPressed: _isLoading
+              ? null
+              : () async {
+                  setState(() {
+                    _isLoading = true;
+                  });
 
-              if (mentorEmail != null && mentorEmail.isNotEmpty) {
-                _startChatWithMentor(
-                    mentorEmail); // Panggil fungsi _startChatWithMentor
-              } else {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text('Email mentor tidak tersedia')),
-                );
-              }
-            } catch (e) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Gagal mengambil data aktivitas: $e')),
-              );
-            }
-          },
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.contact_mail),
-              SizedBox(width: 8),
-              Text('Hubungi Mentor'),
-            ],
-          ),
+                  try {
+                    final activityDetails = await _fetchActivityDetails();
+                    final mentorEmail = activityDetails['mentor'];
+
+                    if (mentorEmail != null && mentorEmail.isNotEmpty) {
+                      await _startChatWithMentor(mentorEmail);
+                    } else {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('Email mentor tidak tersedia')),
+                      );
+                    }
+                  } catch (e) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                          content: Text('Gagal mengambil data aktivitas: $e')),
+                    );
+                  } finally {
+                    if (mounted) {
+                      setState(() {
+                        _isLoading = false;
+                      });
+                    }
+                  }
+                },
+          child: _isLoading
+              ? Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    SizedBox(
+                      height: 20,
+                      width: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    ),
+                    SizedBox(width: 10),
+                    Text('Memuat...'),
+                  ],
+                )
+              : Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.contact_mail),
+                    SizedBox(width: 8),
+                    Text('Hubungi Mentor'),
+                  ],
+                ),
         ),
       ),
     );

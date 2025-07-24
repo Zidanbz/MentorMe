@@ -19,6 +19,13 @@ class BerandaPage extends StatefulWidget {
   State<BerandaPage> createState() => _BerandaPageState();
 }
 
+String cleanPictureUrl(String url) {
+  final regex = RegExp(
+      r'(https:\/\/storage\.googleapis\.com\/mentorme-aaa37\.firebasestorage\.app\/uploads\/[^\/]+\.(jpg|png|jpeg))');
+  final match = regex.firstMatch(url);
+  return match != null ? match.group(0)! : '';
+}
+
 class _BerandaPageState extends State<BerandaPage> {
   @override
   Widget build(BuildContext context) {
@@ -71,8 +78,9 @@ class _BerandaPageState extends State<BerandaPage> {
                             learningPath['ID']?.toString() ?? '';
                         final learningPathName =
                             learningPath['name'] ?? 'Learning Path';
-                        final pictureUrl = learningPath['picture'] ?? '';
-
+                        final rawUrl = learningPath['picture'] ?? '';
+                        final pictureUrl = cleanPictureUrl(rawUrl);
+                        print("📌 Picture URLlllllllllllllll: $pictureUrl");
                         return InkWell(
                           onTap: () {
                             if (learningPathId.isNotEmpty) {
@@ -116,7 +124,9 @@ class _BerandaPageState extends State<BerandaPage> {
                                         ? Image.network(
                                             pictureUrl,
                                             width: double.infinity,
-                                            fit: BoxFit.cover,
+                                            height: 120, // Atur tinggi tetap
+                                            fit: BoxFit
+                                                .cover, // Menjaga rasio, crop yang berlebih
                                             errorBuilder:
                                                 (context, error, stackTrace) {
                                               return const Icon(
@@ -128,18 +138,19 @@ class _BerandaPageState extends State<BerandaPage> {
                                         : const Icon(Icons.image, size: 48),
                                   ),
                                 ),
-                                Padding(
-                                  padding: const EdgeInsets.all(8.0),
-                                  child: Text(
-                                    learningPathName,
-                                    style: const TextStyle(
-                                      fontSize: 16,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
+
+                                // Padding(
+                                //   padding: const EdgeInsets.all(8.0),
+                                //   child: Text(
+                                //     learningPathName,
+                                //     style: const TextStyle(
+                                //       fontSize: 16,
+                                //       fontWeight: FontWeight.bold,
+                                //     ),
+                                //     maxLines: 2,
+                                //     overflow: TextOverflow.ellipsis,
+                                //   ),
+                                // ),
                               ],
                             ),
                           ),

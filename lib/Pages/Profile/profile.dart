@@ -28,7 +28,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
       MaterialPageRoute(builder: (context) => const LoginPage()),
     );
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    prefs.setBool('isLoggedIn', false);
+    await prefs.remove('isLoggedIn');
+    await prefs.remove('nameUser');
+    await prefs.remove('emailUser');
+    await prefs.remove('passwordUser');
+    await prefs.remove('categories');
+    await prefs.remove('learningPaths');
   }
 
   void _navigateToEditProfile(BuildContext context) {

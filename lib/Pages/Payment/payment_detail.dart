@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mentorme/Pages/Payment/waiting_payment.dart';
 import 'package:mentorme/providers/payment_provider.dart';
-import 'package:mentorme/controller/api_services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PaymentDetailPage extends StatefulWidget {

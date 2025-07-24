@@ -33,17 +33,15 @@ class _MainStateScreen extends State<MainScreen>
   String selectedLearningPathId = '';
   Profile? _profile;
   bool _isLoading = true;
+
   // int _coinBalance = 0;
   // bool _isCoinLoading = true;
 
   void handleTabChange(int index, {String? learningPathId}) {
-    if (tabController != null) {
+    tabController?.animateTo(index);
+    if (learningPathId != null) {
       setState(() {
-        selectedIndex = index;
-        tabController!.index = selectedIndex;
-        if (learningPathId != null) {
-          selectedLearningPathId = learningPathId;
-        }
+        selectedLearningPathId = learningPathId;
       });
     }
   }
@@ -81,8 +79,23 @@ class _MainStateScreen extends State<MainScreen>
   void initState() {
     super.initState();
     tabController = TabController(length: 5, vsync: this);
-    _fetchProfile();
-    // _fetchCoinBalance();
+
+    // Tambahkan listener untuk deteksi tab berpindah
+    tabController!.addListener(() {
+      if (!tabController!.indexIsChanging) {
+        final newIndex = tabController!.index;
+        setState(() {
+          selectedIndex = newIndex;
+        });
+
+        // Fetch ulang profile jika pindah ke Beranda (0) atau Profil (4)
+        if (newIndex == 0 || newIndex == 4) {
+          getUserName();
+        }
+      }
+    });
+
+    _fetchProfile(); // initial fetch
   }
 
   Future<void> getUserName() async {
@@ -108,11 +121,14 @@ class _MainStateScreen extends State<MainScreen>
   }
 
   void onItemClicked(int index) {
-    if (tabController != null) {
-      setState(() {
-        selectedIndex = index;
-        tabController!.index = selectedIndex;
-      });
+    setState(() {
+      selectedIndex = index;
+      tabController!.index = index;
+    });
+
+    // Fetch ulang profile jika tab beranda atau profile
+    if (index == 0 || index == 4 || index == 3 || index == 2 || index == 1) {
+      _fetchProfile();
     }
   }
 
@@ -140,6 +156,9 @@ class _MainStateScreen extends State<MainScreen>
 
   @override
   Widget build(BuildContext context) {
+    print("Current profile name in build: ${_profile?.fullName}");
+// print("Fetched full name: ${Profile.fullName}");
+
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
@@ -200,13 +219,15 @@ class _MainStateScreen extends State<MainScreen>
                           mainAxisAlignment: MainAxisAlignment.center,
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(
-                              'Hi! ${_profile?.fullName ?? 'User'}',
-                              style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
+                            _isLoading
+                                ? const CircularProgressIndicator()
+                                : Text(
+                                    'Hi! ${_profile?.fullName ?? 'User'}',
+                                    style: const TextStyle(
+                                      fontSize: 18,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
                           ],
                         ),
                       ],

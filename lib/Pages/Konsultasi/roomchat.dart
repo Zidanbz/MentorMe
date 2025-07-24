@@ -165,7 +165,8 @@ class _RoomchatPageState extends State<RoomchatPage> {
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
-                    final isSender = data['sender'] == widget.currentUserName;
+                    final isSender =
+                        data['senderEmail'] == widget.currentUserEmail;
 
                     return ChatBubble(
                       isSender: isSender,

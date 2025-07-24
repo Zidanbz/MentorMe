@@ -1,23 +1,56 @@
 import 'package:flutter/material.dart';
+import 'package:mentorme/core/services/kegiatanku_services.dart';
 import 'package:mentorme/features/beranda/detail_project_inLearnPath.dart';
 import 'package:provider/provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
 
-class ProjectPageInLearningPath extends StatelessWidget {
+class ProjectPageInLearningPath extends StatefulWidget {
   const ProjectPageInLearningPath({Key? key, required this.learningPathId})
       : super(key: key);
 
   final learningPathId;
 
+  @override
+  State<ProjectPageInLearningPath> createState() =>
+      _ProjectPageInLearningPathState();
+}
+
+class _ProjectPageInLearningPathState extends State<ProjectPageInLearningPath> {
+  Set<String> purchasedProjectIds = {};
+  bool isLoadingLearning = true;
+
+  @override
+  void initState() {
+    super.initState();
+    loadLearningData();
+  }
+
+  Future<void> loadLearningData() async {
+    try {
+      final learningData = await ActivityService.fetchLearningData();
+      setState(() {
+        purchasedProjectIds = learningData
+            .map((learning) => learning['IDProject']?.toString() ?? '')
+            .toSet();
+        isLoadingLearning = false;
+      });
+    } catch (e) {
+      setState(() {
+        isLoadingLearning = false;
+      });
+    }
+  }
+
   Widget _buildProjectCard(BuildContext context, Map<String, dynamic> project) {
+    final projectId = project['ID']?.toString() ?? '';
+    final isPurchased = purchasedProjectIds.contains(projectId);
+
     return InkWell(
       onTap: () {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (context) => DetailProjectPage(
-              project: project,
-            ),
+            builder: (context) => DetailProjectPage(project: project),
           ),
         );
       },
@@ -112,6 +145,24 @@ class ProjectPageInLearningPath extends StatelessWidget {
                   ),
                 ],
               ),
+              const SizedBox(height: 12),
+              // Label jika sudah dibeli
+              if (isPurchased)
+                Container(
+                  padding:
+                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[100],
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Text(
+                    'Sudah Dibeli',
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
             ],
           ),
         ),
@@ -148,11 +199,10 @@ class ProjectPageInLearningPath extends StatelessWidget {
                 ),
               ),
               Expanded(
-                child: projectProvider.isLoading
+                child: projectProvider.isLoading || isLoadingLearning
                     ? const Center(
-                        child: CircularProgressIndicator(
-                          color: Color(0xff339989),
-                        ),
+                        child:
+                            CircularProgressIndicator(color: Color(0xff339989)),
                       )
                     : projectProvider.projects.isEmpty
                         ? const Center(

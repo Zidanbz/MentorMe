@@ -191,8 +191,8 @@ class _RegisterPageState extends State<RegisterPage> {
                     if (text == null || text.isEmpty) {
                       return 'Password tidak boleh kosong';
                     }
-                    if (text.length < 6) {
-                      return 'Password minimal 6 karakter';
+                    if (text.length < 8) {
+                      return 'Password minimal 8 karakter';
                     }
                     return null;
                   },
