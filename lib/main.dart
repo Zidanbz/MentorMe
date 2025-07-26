@@ -133,7 +133,7 @@ class _MyAppState extends State<MyApp> {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
-            fontFamily: 'SFPro',
+            fontFamily: 'OpenSans',
             textTheme: const TextTheme(
               bodyMedium: TextStyle(fontWeight: FontWeight.w400),
             ),

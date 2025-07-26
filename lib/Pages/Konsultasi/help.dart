@@ -19,6 +19,8 @@ class _HelpPageState extends State<HelpPage> {
   String? localDisplayName;
   String? localEmail;
   int? roomId;
+  // Variabel untuk menyimpan data room lengkap, termasuk URL gambar
+  Map<String, dynamic>? _chatRoomData;
 
   @override
   void initState() {
@@ -32,49 +34,49 @@ class _HelpPageState extends State<HelpPage> {
     final prefs = await SharedPreferences.getInstance();
     localDisplayName = prefs.getString('nameUser');
     localEmail = prefs.getString('emailUser');
-    print('👤 Display name (local): $localDisplayName');
   }
 
   Future<void> _initChat() async {
-    roomId = await _getOrCreateChatRoom();
-    setState(() {});
+    // Panggil _getOrCreateChatRoom dan simpan hasilnya
+    final roomData = await _getOrCreateChatRoom();
+    if (mounted && roomData != null) {
+      setState(() {
+        _chatRoomData = roomData;
+        roomId = roomData['idRoom']; // Ambil idRoom dari data yang disimpan
+      });
+    }
   }
 
-  Future<int?> _getOrCreateChatRoom() async {
+  // Mengubah fungsi untuk mengembalikan Map, bukan hanya ID
+  Future<Map<String, dynamic>?> _getOrCreateChatRoom() async {
     final email = localEmail;
     final displayName = localDisplayName;
     final emailAdmin = 'adminn@gmail.com';
 
     if (email == null || displayName == null) {
-      print('❌ Email atau displayName pengguna tidak ditemukan');
       return null;
     }
-
     try {
-      print('🔍 Cek riwayat chat...');
-      final response = await http.get(
+      // 1. Cek apakah room sudah ada
+      var response = await http.get(
         Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
         headers: {'Authorization': 'Bearer $currentUserToken'},
       );
-
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         final chatRooms = data['data'] as List;
-
         final existingRoom = chatRooms.firstWhere(
           (room) =>
               room['nameCustomer'] == displayName &&
               room['nameMentor'].toString().toLowerCase() == 'admin',
           orElse: () => null,
         );
-
         if (existingRoom != null) {
-          print('📌 Room ditemukan: ${existingRoom['idRoom']}');
-          return existingRoom['idRoom'];
+          return existingRoom; // Kembalikan data room yang sudah ada
         }
       }
 
-      print('🆕 Membuat room baru ke admin...');
+      // 2. Jika tidak ada, buat room baru
       final postResponse = await http.post(
         Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
         headers: {
@@ -86,30 +88,38 @@ class _HelpPageState extends State<HelpPage> {
 
       if (postResponse.statusCode == 200) {
         final result = jsonDecode(postResponse.body);
-        print('✅ Room baru dibuat: ${result['data']}');
-        return result['data'];
+        final newRoomId = result['data'];
+
+        // 3. Ambil lagi data chat untuk mendapatkan detail room yang baru dibuat
+        response = await http.get(
+          Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
+          headers: {'Authorization': 'Bearer $currentUserToken'},
+        );
+        if (response.statusCode == 200) {
+          final data = jsonDecode(response.body);
+          final chatRooms = data['data'] as List;
+          final newRoomData = chatRooms.firstWhere(
+              (room) => room['idRoom'] == newRoomId,
+              orElse: () => null);
+          if (newRoomData != null) return newRoomData;
+        }
       }
     } catch (e) {
       print('❌ Error saat ambil/membuat room: $e');
     }
-
-    print('❌ Gagal mendapatkan atau membuat room');
     return null;
   }
 
-// Di bagian _sendMessage, pastikan menggunakan email sebagai pengenal
   void _sendMessage() {
-    if (localDisplayName == null || localEmail == null || roomId == null) {
-      print('❗ Display name, email, atau room belum siap');
+    if (localDisplayName == null || localEmail == null || roomId == null)
       return;
-    }
 
     if (_messageController.text.isNotEmpty) {
       _firestore.collection('messages').add({
         'roomId': roomId,
         'text': _messageController.text,
-        'sender': localDisplayName, // 👈 Tetap simpan nama untuk ditampilkan
-        'senderEmail': localEmail, // 👈 Tapi gunakan email sebagai pengenal
+        'sender': localDisplayName,
+        'senderEmail': localEmail,
         'senderRole': 'CUSTOMER',
         'timestamp': FieldValue.serverTimestamp(),
       });
@@ -142,8 +152,9 @@ class _HelpPageState extends State<HelpPage> {
                       .orderBy('timestamp', descending: true)
                       .snapshots(),
                   builder: (context, snapshot) {
-                    if (!snapshot.hasData)
+                    if (!snapshot.hasData) {
                       return Center(child: CircularProgressIndicator());
+                    }
 
                     final messages = snapshot.data!.docs;
                     return ListView.builder(
@@ -151,15 +162,21 @@ class _HelpPageState extends State<HelpPage> {
                       itemCount: messages.length,
                       itemBuilder: (context, index) {
                         var message = messages[index];
-                        // 👇 Gunakan email untuk menentukan isSender, bukan nama
                         final isSender = message['senderEmail'] == localEmail;
 
+                        String? avatarUrl;
+                        if (isSender) {
+                          // Jika pengirim adalah user, gunakan URL dari data room
+                          avatarUrl = _chatRoomData?['pictureCustomer'];
+                        } else {
+                          // Jika pengirim adalah admin, gunakan aset lokal
+                          avatarUrl = 'assets/Maskot.png';
+                        }
                         return ChatBubble(
                           isSender: isSender,
                           message: message['text'],
-                          senderName: message[
-                              'sender'], // 👈 Tetap tampilkan nama terbaru
-                          avatarUrl: 'assets/trainee_avatar.png',
+                          senderName: message['sender'],
+                          avatarUrl: avatarUrl,
                         );
                       },
                     );
@@ -201,24 +218,39 @@ class ChatBubble extends StatelessWidget {
   final bool isSender;
   final String message;
   final String senderName;
-  final String avatarUrl;
+  final String? avatarUrl;
 
   ChatBubble({
     required this.isSender,
     required this.message,
     required this.senderName,
-    required this.avatarUrl,
+    this.avatarUrl,
   });
 
   @override
   Widget build(BuildContext context) {
+    // Logika untuk memilih ImageProvider berdasarkan sumber gambar
+    ImageProvider imageProvider;
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      if (avatarUrl!.startsWith('http')) {
+        // Jika URL dari internet
+        imageProvider = NetworkImage(avatarUrl!);
+      } else {
+        // Jika path dari aset lokal
+        imageProvider = AssetImage(avatarUrl!);
+      }
+    } else {
+      // Gambar fallback jika tidak ada URL atau path
+      imageProvider = AssetImage('assets/trainee_avatar.png');
+    }
+
     return Column(
       crossAxisAlignment:
           isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
       children: [
         if (!isSender)
           Padding(
-            padding: const EdgeInsets.only(left: 16, top: 4),
+            padding: const EdgeInsets.only(left: 65, top: 4),
             child: Text(
               senderName,
               style: TextStyle(fontSize: 12, color: Colors.grey[600]),
@@ -229,16 +261,24 @@ class ChatBubble extends StatelessWidget {
               isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
           children: [
             if (!isSender) ...[
-              CircleAvatar(backgroundImage: AssetImage(avatarUrl)),
+              CircleAvatar(backgroundImage: imageProvider),
               SizedBox(width: 10),
             ],
             Flexible(
               child: Container(
-                padding: EdgeInsets.all(10),
+                padding: EdgeInsets.all(12),
                 margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                 decoration: BoxDecoration(
                   color: isSender ? Colors.teal : Colors.white,
                   borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.3),
+                      spreadRadius: 1,
+                      blurRadius: 2,
+                      offset: Offset(0, 1),
+                    ),
+                  ],
                 ),
                 child: Text(
                   message,
@@ -249,10 +289,7 @@ class ChatBubble extends StatelessWidget {
                 ),
               ),
             ),
-            if (isSender) ...[
-              SizedBox(width: 10),
-              CircleAvatar(backgroundImage: AssetImage(avatarUrl)),
-            ],
+            if (isSender) SizedBox(width: 10),
           ],
         ),
       ],

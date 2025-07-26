@@ -54,6 +54,7 @@ dependencies:
   local_auth: ^2.1.7
   flutter_local_notifications: ^19.1.0
   open_filex: ^4.7.0
+  google_nav_bar: ^5.0.7
 
 dev_dependencies:
   flutter_test:
@@ -101,9 +102,13 @@ flutter:
   # list giving the asset and other descriptors for the font. For
   # example:
   fonts:
-    - family: SFPro
+    - family: OpenSans # Nama keluarga font
       fonts:
-        - asset: assets/Fonts/SF-Pro.ttf
+        - asset: assets/Fonts/OpenSans-Regular.ttf
+        - asset: assets/Fonts/OpenSans-Italic.ttf
+          style: italic
+        - asset: assets/Fonts/OpenSans-Bold.ttf
+          weight: 700
   #       - asset: fonts/Schyler-Italic.ttf
   #         style: italic
   #   - family: Trajan Pro

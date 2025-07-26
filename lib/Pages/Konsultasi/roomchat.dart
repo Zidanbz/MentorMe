@@ -2,19 +2,18 @@ import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mentorme/global/global.dart'; // pastikan kamu punya token di sini
+import 'package:mentorme/global/global.dart';
 
 class RoomchatPage extends StatefulWidget {
+  // PERBAIKAN: Menghapus spasi pada nama variabel
   final int roomId;
   final String currentUserName;
   final String currentUserEmail;
-  // final String currentUserRole; // 'MENTOR' atau 'USER'
 
   RoomchatPage({
     required this.roomId,
     required this.currentUserName,
     required this.currentUserEmail,
-    // required this.currentUserRole,
   });
 
   @override
@@ -23,8 +22,7 @@ class RoomchatPage extends StatefulWidget {
 
 class _RoomchatPageState extends State<RoomchatPage> {
   final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController =
-      ScrollController(); // Tambahkan ScrollController
+  final ScrollController _scrollController = ScrollController();
   Map<String, dynamic>? roomData;
   bool isLoadingRoom = true;
 
@@ -34,43 +32,49 @@ class _RoomchatPageState extends State<RoomchatPage> {
     fetchRoomData();
   }
 
+  // PERBAIKAN: Menghapus spasi pada nama getter
+  String get otherUserName {
+    if (roomData == null) return '...';
+    // PERBAIKAN: Menggunakan nama variabel yang benar
+    if (widget.currentUserName == roomData!['nameMentor']) {
+      return roomData!['nameCustomer'] ?? 'Customer';
+    }
+    return roomData!['nameMentor'] ?? 'Mentor';
+  }
+
   Future<void> fetchRoomData() async {
     final url = Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat');
-
     try {
       final response = await http.get(
         url,
         headers: {
+          // PERBAIKAN: Menghapus spasi pada nama variabel
           'Authorization': 'Bearer $currentUserToken',
           'Content-Type': 'application/json',
         },
       );
-
       if (response.statusCode == 200) {
         final decoded = json.decode(response.body);
         final List<dynamic> data = decoded['data'];
-
         final matchedRoom = data.firstWhere(
           (room) => room['idRoom'] == widget.roomId,
           orElse: () => null,
         );
-
-        if (matchedRoom != null) {
+        if (mounted && matchedRoom != null) {
           setState(() {
             roomData = matchedRoom;
             isLoadingRoom = false;
           });
-        } else {
-          print('Room not found');
+        } else if (mounted) {
           setState(() => isLoadingRoom = false);
         }
-      } else {
-        print('Failed to fetch room: ${response.body}');
+      } else if (mounted) {
         setState(() => isLoadingRoom = false);
       }
     } catch (e) {
-      print('Error fetching room data: $e');
-      setState(() => isLoadingRoom = false);
+      if (mounted) {
+        setState(() => isLoadingRoom = false);
+      }
     }
   }
 
@@ -78,20 +82,41 @@ class _RoomchatPageState extends State<RoomchatPage> {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
 
+    // Menambahkan pesan ke Firestore
     await FirebaseFirestore.instance.collection('messages').add({
       'roomId': widget.roomId,
+      // PERBAIKAN: Menggunakan nama variabel yang benar
       'sender': widget.currentUserName,
       'senderEmail': widget.currentUserEmail,
-      // 'senderRole': widget.currentUserRole.toUpperCase(),
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
     });
+
+    // Mengupdate lastSender di API backend
+    final url = Uri.parse(
+        'https://widgets22-catb7yz54a-et.a.run.app/api/chat/lastsender');
+    try {
+      await http.put(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          // PERBAIKAN: Menghapus spasi pada nama variabel
+          'Authorization': 'Bearer $currentUserToken',
+        },
+        body: json.encode({
+          'idRoom': widget.roomId,
+          // PERBAIKAN: Menggunakan nama variabel yang benar
+          'lastSender': widget.currentUserEmail,
+        }),
+      );
+    } catch (e) {
+      print("Failed to update last sender: $e");
+    }
+
     _messageController.clear();
-    // Scroll ke bawah setelah mengirim pesan
     _scrollToBottom();
   }
 
-  // Fungsi untuk scroll otomatis ke bawah
   void _scrollToBottom() {
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
@@ -112,10 +137,10 @@ class _RoomchatPageState extends State<RoomchatPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: Text(
-          isLoadingRoom
-              ? 'Room Chat'
-              : 'Chat with ${roomData?['nameMentor'] ?? 'Mentor'}',
-          style: TextStyle(color: Colors.black, fontSize: 18),
+          // PERBAIKAN: Menggunakan nama getter yang benar
+          isLoadingRoom ? 'Room Chat' : 'Chat with $otherUserName',
+          style: TextStyle(
+              color: Colors.black, fontSize: 20, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
@@ -146,27 +171,37 @@ class _RoomchatPageState extends State<RoomchatPage> {
                 if (snapshot.hasError) {
                   return Center(child: Text('Terjadi kesalahan'));
                 }
-                if (!snapshot.hasData) {
+                if (snapshot.connectionState == ConnectionState.waiting &&
+                    !snapshot.hasData) {
                   return Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(child: Text('Belum ada pesan'));
                 }
 
                 final docs = snapshot.data!.docs;
 
-                // Scroll otomatis ke bawah setelah data berhasil dimuat
-                if (docs.isNotEmpty) {
-                  Future.delayed(Duration(milliseconds: 100), () {
-                    _scrollToBottom();
-                  });
-                }
+                WidgetsBinding.instance
+                    .addPostFrameCallback((_) => _scrollToBottom());
 
                 return ListView.builder(
-                  controller: _scrollController, // Set controller di ListView
+                  controller: _scrollController,
                   padding: EdgeInsets.symmetric(horizontal: 10),
                   itemCount: docs.length,
                   itemBuilder: (context, index) {
                     final data = docs[index].data() as Map<String, dynamic>;
+                    // PERBAIKAN: Menggunakan nama variabel yang benar
                     final isSender =
                         data['senderEmail'] == widget.currentUserEmail;
+
+                    String? avatarUrl;
+                    if (roomData != null) {
+                      if (data['senderEmail'] == roomData!['emailMentor']) {
+                        avatarUrl = roomData!['pictureMentor'];
+                      } else {
+                        avatarUrl = roomData!['pictureCustomer'];
+                      }
+                    }
 
                     return ChatBubble(
                       isSender: isSender,
@@ -177,8 +212,7 @@ class _RoomchatPageState extends State<RoomchatPage> {
                               .toString()
                               .substring(11, 16) ??
                           '',
-                      avatarUrl:
-                          isSender ? 'assets/person.png' : 'assets/person.png',
+                      avatarUrl: avatarUrl,
                     );
                   },
                 );
@@ -186,21 +220,9 @@ class _RoomchatPageState extends State<RoomchatPage> {
             ),
           ),
           Padding(
-            padding: EdgeInsets.all(10),
+            padding: const EdgeInsets.all(10.0),
             child: Row(
               children: [
-                IconButton(
-                  icon: Icon(Icons.attach_file, color: Colors.grey[700]),
-                  onPressed: () {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('Coming Soon'),
-                        duration:
-                            Duration(seconds: 2), // Durasi tampil SnackBar
-                      ),
-                    );
-                  },
-                ),
                 Expanded(
                   child: TextField(
                     controller: _messageController,
@@ -209,9 +231,12 @@ class _RoomchatPageState extends State<RoomchatPage> {
                       filled: true,
                       fillColor: Colors.white,
                       border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(20),
+                        borderRadius: BorderRadius.circular(30),
                         borderSide: BorderSide.none,
                       ),
+                      contentPadding:
+                          EdgeInsets.symmetric(vertical: 10, horizontal: 20),
+                      prefixIcon: Icon(Icons.message, color: Colors.grey),
                     ),
                   ),
                 ),
@@ -236,56 +261,88 @@ class ChatBubble extends StatelessWidget {
   final bool isSender;
   final String message;
   final String time;
-  final String avatarUrl;
+  final String? avatarUrl;
 
   ChatBubble({
     required this.isSender,
     required this.message,
     required this.time,
-    required this.avatarUrl,
+    this.avatarUrl,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment:
-          isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
-      children: [
-        if (!isSender) CircleAvatar(backgroundImage: AssetImage(avatarUrl)),
-        if (!isSender) SizedBox(width: 10),
-        Flexible(
-          child: Container(
-            padding: EdgeInsets.all(10),
-            margin: EdgeInsets.only(bottom: 10),
-            decoration: BoxDecoration(
-              color: isSender ? Color(0xff80CBC4) : Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(12),
-                topRight: Radius.circular(12),
-                bottomLeft: isSender ? Radius.circular(12) : Radius.circular(0),
-                bottomRight:
-                    isSender ? Radius.circular(0) : Radius.circular(12),
+    final ImageProvider<Object> imageProvider =
+        (avatarUrl != null && avatarUrl!.isNotEmpty)
+            ? NetworkImage(avatarUrl!)
+            : AssetImage('assets/person.png') as ImageProvider;
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10.0),
+      child: Row(
+        mainAxisAlignment:
+            isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end,
+        children: [
+          if (!isSender)
+            CircleAvatar(
+              backgroundImage: imageProvider,
+              backgroundColor: Colors.grey[200],
+              radius: 20,
+            ),
+          if (!isSender) SizedBox(width: 10),
+          Flexible(
+            child: Container(
+              padding: EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: isSender ? Color(0xff80CBC4) : Colors.white,
+                borderRadius: BorderRadius.only(
+                  topLeft: Radius.circular(15),
+                  topRight: Radius.circular(15),
+                  bottomLeft:
+                      isSender ? Radius.circular(15) : Radius.circular(0),
+                  bottomRight:
+                      isSender ? Radius.circular(0) : Radius.circular(15),
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.1),
+                    blurRadius: 4,
+                    offset: Offset(1, 1),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message,
+                    style: TextStyle(fontSize: 16, color: Colors.black),
+                  ),
+                  SizedBox(height: 5),
+                  Align(
+                    alignment: Alignment.bottomRight,
+                    child: Text(
+                      time,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: isSender ? Colors.white70 : Colors.grey[600],
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  message,
-                  style: TextStyle(fontSize: 16, color: Colors.black),
-                ),
-                SizedBox(height: 5),
-                Text(
-                  time,
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
-                ),
-              ],
-            ),
           ),
-        ),
-        if (isSender) SizedBox(width: 10),
-        if (isSender) CircleAvatar(backgroundImage: AssetImage(avatarUrl)),
-      ],
+          if (isSender) SizedBox(width: 10),
+          if (isSender)
+            CircleAvatar(
+              backgroundImage: imageProvider,
+              backgroundColor: Colors.grey[200],
+              radius: 20,
+            ),
+        ],
+      ),
     );
   }
 }

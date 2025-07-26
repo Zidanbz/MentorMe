@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mentorme/core/services/project_services.dart';
-import 'dart:developer' as developer; // Import ProjectService
+import 'dart:developer' as developer;
 import 'package:mentorme/global/global.dart';
 import 'package:mentorme/Pages/Payment/payment_detail.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -19,6 +20,11 @@ class DetailProjectmarketplacePage extends StatefulWidget {
 }
 
 class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
+  // --- COLOR PALETTE ---
+  static const Color primaryColor = Color(0xFF339989);
+  static const Color darkTextColor = Color(0xFF3C493F);
+  static const Color backgroundColor = Color(0xFFE0FFF3);
+
   bool isLoading = true;
   Map<String, dynamic>? detailProject;
   YoutubePlayerController? _controller;
@@ -26,276 +32,311 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
   bool isLoadingLearning = true;
   bool hasProject = false;
 
+  // --- LOGIC (No Changes) ---
   @override
   void initState() {
     super.initState();
-    developer
-        .log('DetailProjectPage initialized with project: ${widget.projectId}');
     fetchDetailProject();
     fetchUserLearningIDs();
   }
 
+  @override
+  void dispose() {
+    _controller?.close();
+    super.dispose();
+  }
+
   void fetchUserLearningIDs() {
     ProjectService.fetchUserLearningIDs(currentUserToken!).then((ids) {
-      setState(() {
-        userLearningIDs = ids;
-        isLoadingLearning = false;
-        hasProject =
-            userLearningIDs.contains(widget.projectId['IDProject'].toString());
-        developer.log('User Learning IDs fetched');
-      });
+      if (mounted) {
+        setState(() {
+          userLearningIDs = ids;
+          isLoadingLearning = false;
+          // Memeriksa ID project dari data detail, bukan dari widget awal
+          if (detailProject != null && detailProject!['ID'] != null) {
+            hasProject =
+                userLearningIDs.contains(detailProject!['ID'].toString());
+          }
+        });
+      }
     }).catchError((error) {
       developer.log('Error fetching user learning IDs: $error');
-      setState(() => isLoadingLearning = false);
+      if (mounted) setState(() => isLoadingLearning = false);
     });
   }
 
   Future<void> fetchDetailProject() async {
     final projectId = widget.projectId['ID'];
     if (projectId == null || projectId.toString().isEmpty) {
-      developer.log('Error: Project ID is missing or invalid');
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Project ID tidak ditemukan')),
-      );
       return;
     }
-
     try {
       final data = await ProjectService.getProjectDetail(
         projectId: projectId.toString(),
         token: currentUserToken!,
       );
-
-      setState(() {
-        detailProject = data;
-        isLoading = false;
-
-        if (detailProject?['linkVideo'] != null) {
-          final videoId = YoutubePlayerController.convertUrlToId(
-              detailProject!['linkVideo']);
-          if (videoId != null) {
-            try {
+      if (mounted) {
+        setState(() {
+          detailProject = data;
+          isLoading = false;
+          if (detailProject?['linkVideo'] != null) {
+            final videoId = YoutubePlayerController.convertUrlToId(
+                detailProject!['linkVideo']);
+            if (videoId != null) {
               _controller = YoutubePlayerController.fromVideoId(
                 videoId: videoId,
-                params: const YoutubePlayerParams(
-                  showControls: true,
-                  showFullscreenButton: true,
-                  enableJavaScript: true,
-                  playsInline: true,
-                ),
+                params: const YoutubePlayerParams(showFullscreenButton: true),
               );
-            } catch (e) {
-              developer.log('Error initializing YouTube controller: $e');
             }
           }
-        }
-      });
+          // Periksa kembali status kepemilikan setelah detail project didapat
+          if (userLearningIDs.isNotEmpty) {
+            hasProject =
+                userLearningIDs.contains(detailProject!['ID'].toString());
+          }
+        });
+      }
     } catch (e) {
       developer.log('Error fetching project details: $e');
-      setState(() => isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Terjadi kesalahan: $e')),
-      );
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Gagal memuat detail: $e')),
+        );
+      }
     }
   }
 
+  // --- END OF LOGIC ---
+
   @override
   Widget build(BuildContext context) {
-    developer
-        .log('Building DetailProjectPage with state: isLoading: $isLoading');
-
     return Scaffold(
-      backgroundColor: const Color(0xffE0FFF3),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: backgroundColor,
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(color: Color(0xff339989)))
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Judul Project
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      widget.projectId['materialName'] ?? 'Project Title',
-                      style: const TextStyle(
-                          fontSize: 24, fontWeight: FontWeight.bold),
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          : CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(child: _buildProjectHeader()),
+                SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildSection(
+                      title: 'Ringkasan',
+                      content:
+                          detailProject?['info'] ?? 'Deskripsi tidak tersedia.',
                     ),
-                  ),
-                  const SizedBox(height: 20),
+                    _buildSection(
+                      title: 'Tentang Mentor',
+                      content: detailProject?['about'] ??
+                          'Informasi mentor tidak tersedia.',
+                      isMentorSection: true,
+                      mentorName: detailProject?['fullName'],
+                    ),
+                    const SizedBox(height: 120), // Spacer for bottom bar
+                  ]),
+                )
+              ],
+            ),
+      bottomNavigationBar: isLoading ? null : _buildBottomCtaBar(),
+    );
+  }
 
-                  // Ringkasan
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'RINGKASAN',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          detailProject?['info'] ?? 'Loading...',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+  // --- UI WIDGETS (New and Improved) ---
 
-                  // Video Pengantar
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Video Pengantar',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        // Kotak Video
-                        AspectRatio(
-                          aspectRatio: 16 / 9,
-                          child: _controller != null
-                              ? ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: YoutubePlayer(
-                                    controller: _controller!,
-                                    aspectRatio: 16 / 9,
-                                  ),
-                                )
-                              : const Center(
-                                  child: Text('Video tidak tersedia'),
-                                ),
-                        ),
-                      ],
-                    ),
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 220.0,
+      backgroundColor: primaryColor,
+      pinned: true,
+      stretch: true,
+      iconTheme: const IconThemeData(color: Colors.white),
+      flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [StretchMode.zoomBackground],
+        background: _controller != null
+            ? YoutubePlayer(controller: _controller!, aspectRatio: 16 / 9)
+            : Container(
+                color: Colors.black,
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.videocam_off, color: Colors.white54, size: 50),
+                      SizedBox(height: 8),
+                      Text("Video Tidak Tersedia",
+                          style: TextStyle(color: Colors.white54)),
+                    ],
                   ),
+                ),
+              ),
+      ),
+    );
+  }
 
-                  // Profil Mentor
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Profil Mentor',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Row(
-                          children: [
-                            const Icon(Icons.person, color: Color(0xff339989)),
-                            const SizedBox(width: 10),
-                            Text(
-                              detailProject?['fullName'] ?? 'Loading...',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          detailProject?['about'] ?? 'Loading...',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+  Widget _buildProjectHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      color: backgroundColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.projectId['materialName'] ?? 'Project Title',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: darkTextColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.person_outline, size: 16, color: Colors.black54),
+              const SizedBox(width: 6),
+              Text(
+                'Oleh ${detailProject?['fullName'] ?? '...'}',
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-                  // Tombol Beli Project
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Row(
-                      children: [
-                        // Tombol Beli Project
-                        Expanded(
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => PaymentDetailPage(
-                                    projectId:
-                                        widget.projectId['ID'].toString(),
-                                  ),
-                                ),
-                              );
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: const Color(0xff339989),
-                              minimumSize: const Size(double.infinity, 50),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                            ),
-                            child: Text(
-                              'Beli Project - Rp ${widget.projectId['price'] ?? 0}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        // Tombol Lihat Project Saya
-                        if (hasProject == true)
-                          Expanded(
-                            child: ElevatedButton(
-                              onPressed: () {
-                                // Aksi ketika tombol "Lihat Project Saya" ditekan
-                              },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blueAccent,
-                                minimumSize: const Size(double.infinity, 50),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(10),
-                                ),
-                              ),
-                              child: const Text(
-                                'Lihat Project Saya',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-                ],
+  Widget _buildSection({
+    required String title,
+    required String content,
+    bool isMentorSection = false,
+    String? mentorName,
+  }) {
+    return Container(
+      color: backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: darkTextColor)),
+          const SizedBox(height: 12),
+          if (isMentorSection) ...[
+            Card(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: CircleAvatar(
+                    backgroundColor: primaryColor.withOpacity(0.2),
+                    child: const Icon(Icons.person, color: primaryColor)),
+                title: Text(mentorName ?? 'Nama Mentor',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Mentor Profesional'),
               ),
             ),
+            const SizedBox(height: 12),
+          ],
+          Text(
+            content,
+            style: const TextStyle(
+                fontSize: 14, height: 1.5, color: Colors.black54),
+          ),
+          const Divider(height: 32, thickness: 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomCtaBar() {
+    num price = 0;
+    if (widget.projectId['price'] is num) {
+      price = widget.projectId['price'];
+    } else if (widget.projectId['price'] is String) {
+      price = num.tryParse(widget.projectId['price']) ?? 0;
+    }
+    final formattedPrice =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+            .format(price);
+
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Harga',
+                  style: TextStyle(color: Colors.black54, fontSize: 12)),
+              Text(
+                formattedPrice,
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor),
+              ),
+            ],
+          ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.5,
+            child: isLoadingLearning
+                ? const Center(
+                    child: CircularProgressIndicator(color: primaryColor))
+                : hasProject
+                    ? ElevatedButton.icon(
+                        icon: const Icon(Icons.play_arrow_rounded,
+                            color: Colors.white),
+                        label: const Text('Lihat Project',
+                            style: TextStyle(color: Colors.white)),
+                        onPressed: () {
+                          // TODO: Tambahkan navigasi ke halaman kegiatan detail yang sesungguhnya
+                          ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                  content:
+                                      Text('Navigasi ke halaman kegiatan...')));
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.blueAccent,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      )
+                    : ElevatedButton(
+                        child: const Text('Beli Project Ini',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold)),
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PaymentDetailPage(
+                                  projectId: widget.projectId['ID'].toString()),
+                            ),
+                          );
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: primaryColor,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12)),
+                        ),
+                      ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -22,7 +22,7 @@ class ApiService {
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = json.decode(response.body);
-
+        print("Response Data: $responseData");
         if (responseData['code'] == 200 && responseData['data'] != null) {
           final profileData = responseData['data'];
 
@@ -267,7 +267,7 @@ class ApiService {
     }
   }
 
-Future<List<Map<String, dynamic>>> fetchLearnPaths() async {
+  Future<List<Map<String, dynamic>>> fetchLearnPaths() async {
     try {
       final response = await http.get(
         Uri.parse('$baseUrl/all/learnpath'),
@@ -298,5 +298,4 @@ Future<List<Map<String, dynamic>>> fetchLearnPaths() async {
       return [];
     }
   }
-
 }

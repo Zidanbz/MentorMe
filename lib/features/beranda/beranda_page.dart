@@ -27,142 +27,167 @@ String cleanPictureUrl(String url) {
 }
 
 class _BerandaPageState extends State<BerandaPage> {
+  // --- COLOR PALETTE ---
+  static const Color primaryColor = Color(0xFF339989);
+  static const Color darkTextColor = Color(0xFF3C493F);
+  static const Color backgroundColor = Color(0xFFE0FFF3);
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xffE0FFF3),
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Padding(
-            padding: EdgeInsets.all(16.0),
-            child: Text(
-              'BERANDA',
-              style: TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
+      backgroundColor: backgroundColor,
+      body: SafeArea(
+        // Menggunakan CustomScrollView agar lebih fleksibel
+        child: CustomScrollView(
+          slivers: [
+            // Header "Selamat Datang" dihapus dari sini
+            SliverToBoxAdapter(child: _buildSectionTitle("Kategori")),
+            SliverToBoxAdapter(child: _buildCategoryList()),
+            SliverToBoxAdapter(
+                child: _buildSectionTitle("Learning Path Populer")),
+            _buildLearningPathGrid(),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // --- UI WIDGETS ---
+
+  Widget _buildSectionTitle(String title) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Text(
+        title,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+          color: darkTextColor,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryList() {
+    return SizedBox(
+      height: 45,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        padding: const EdgeInsets.symmetric(horizontal: 20),
+        itemCount: widget.categories.length,
+        itemBuilder: (context, index) {
+          final category = widget.categories[index];
+          return Padding(
+            padding: const EdgeInsets.only(right: 10),
+            child: ActionChip(
+              onPressed: () {
+                widget.onTabChange(1);
+              },
+              label: Text(category['name'] ?? 'Kategori'),
+              backgroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(20),
+                side: BorderSide(color: Colors.grey.shade300),
               ),
             ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Learning Path',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    GridView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate:
-                          const SliverGridDelegateWithFixedCrossAxisCount(
-                        crossAxisCount: 2,
-                        crossAxisSpacing: 16,
-                        mainAxisSpacing: 16,
-                        childAspectRatio: 0.75,
-                      ),
-                      itemCount: widget.learningPaths.length,
-                      itemBuilder: (context, index) {
-                        final learningPath = widget.learningPaths[index];
+          );
+        },
+      ),
+    );
+  }
 
-                        // Pastikan learningPathId adalah String
-                        final learningPathId =
-                            learningPath['ID']?.toString() ?? '';
-                        final learningPathName =
-                            learningPath['name'] ?? 'Learning Path';
-                        final rawUrl = learningPath['picture'] ?? '';
-                        final pictureUrl = cleanPictureUrl(rawUrl);
-                        print("📌 Picture URLlllllllllllllll: $pictureUrl");
-                        return InkWell(
-                          onTap: () {
-                            if (learningPathId.isNotEmpty) {
-                              // Set selected LearningPathId sebelum navigasi
-                              Provider.of<ProjectProvider>(context,
-                                      listen: false)
-                                  .setSelectedLearningPathId(learningPathId);
+  Widget _buildLearningPathGrid() {
+    return SliverPadding(
+      padding: const EdgeInsets.all(20),
+      sliver: SliverGrid(
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 2,
+          crossAxisSpacing: 16,
+          mainAxisSpacing: 16,
+          childAspectRatio: 0.8,
+        ),
+        delegate: SliverChildBuilderDelegate(
+          (context, index) {
+            final learningPath = widget.learningPaths[index];
+            return _buildLearningPathCard(learningPath);
+          },
+          childCount: widget.learningPaths.length,
+        ),
+      ),
+    );
+  }
 
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) =>
-                                      ProjectPageInLearningPath(
-                                    learningPathId: learningPathId,
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                          borderRadius: BorderRadius.circular(7),
-                          child: Container(
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(7),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black12,
-                                  blurRadius: 4,
-                                  offset: const Offset(2, 2),
-                                )
-                              ],
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  child: ClipRRect(
-                                    borderRadius: const BorderRadius.vertical(
-                                        top: Radius.circular(7)),
-                                    child: pictureUrl.isNotEmpty
-                                        ? Image.network(
-                                            pictureUrl,
-                                            width: double.infinity,
-                                            height: 120, // Atur tinggi tetap
-                                            fit: BoxFit
-                                                .cover, // Menjaga rasio, crop yang berlebih
-                                            errorBuilder:
-                                                (context, error, stackTrace) {
-                                              return const Icon(
-                                                  Icons.broken_image,
-                                                  size: 48,
-                                                  color: Colors.grey);
-                                            },
-                                          )
-                                        : const Icon(Icons.image, size: 48),
-                                  ),
-                                ),
+  Widget _buildLearningPathCard(Map<String, dynamic> learningPath) {
+    final learningPathId = learningPath['ID']?.toString() ?? '';
+    final learningPathName = learningPath['name'] ?? 'Learning Path';
+    final pictureUrl = cleanPictureUrl(learningPath['picture'] ?? '');
 
-                                // Padding(
-                                //   padding: const EdgeInsets.all(8.0),
-                                //   child: Text(
-                                //     learningPathName,
-                                //     style: const TextStyle(
-                                //       fontSize: 16,
-                                //       fontWeight: FontWeight.bold,
-                                //     ),
-                                //     maxLines: 2,
-                                //     overflow: TextOverflow.ellipsis,
-                                //   ),
-                                // ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+    return InkWell(
+      onTap: () {
+        if (learningPathId.isNotEmpty) {
+          Provider.of<ProjectProvider>(context, listen: false)
+              .setSelectedLearningPathId(learningPathId);
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  ProjectPageInLearningPath(learningPathId: learningPathId),
+            ),
+          );
+        }
+      },
+      child: Card(
+        clipBehavior: Clip.antiAlias,
+        elevation: 3,
+        shadowColor: primaryColor.withOpacity(0.2),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Stack(
+          alignment: Alignment.bottomLeft,
+          children: [
+            if (pictureUrl.isNotEmpty)
+              Image.network(
+                pictureUrl,
+                width: double.infinity,
+                height: double.infinity,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) =>
+                    _buildImagePlaceholder(),
+              )
+            else
+              _buildImagePlaceholder(),
+            Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [Colors.transparent, Colors.black.withOpacity(0.8)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
                 ),
               ),
             ),
-          ),
-        ],
+            Padding(
+              padding: const EdgeInsets.all(12.0),
+              child: Text(
+                learningPathName,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      color: Colors.grey.shade200,
+      child: const Center(
+        child: Icon(Icons.school, size: 40, color: Colors.grey),
       ),
     );
   }

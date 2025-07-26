@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:mentorme/core/services/kegiatanku_services.dart';
 import 'package:mentorme/features/beranda/detail_project_inLearnPath.dart';
 import 'package:provider/provider.dart';
@@ -8,7 +9,7 @@ class ProjectPageInLearningPath extends StatefulWidget {
   const ProjectPageInLearningPath({Key? key, required this.learningPathId})
       : super(key: key);
 
-  final learningPathId;
+  final String learningPathId;
 
   @override
   State<ProjectPageInLearningPath> createState() =>
@@ -16,9 +17,15 @@ class ProjectPageInLearningPath extends StatefulWidget {
 }
 
 class _ProjectPageInLearningPathState extends State<ProjectPageInLearningPath> {
+  // --- COLOR PALETTE ---
+  static const Color primaryColor = Color(0xFF339989);
+  static const Color darkTextColor = Color(0xFF3C493F);
+  static const Color backgroundColor = Color(0xFFE0FFF3);
+
   Set<String> purchasedProjectIds = {};
   bool isLoadingLearning = true;
 
+  // --- LOGIC (Dikembalikan ke Asli) ---
   @override
   void initState() {
     super.initState();
@@ -28,22 +35,78 @@ class _ProjectPageInLearningPathState extends State<ProjectPageInLearningPath> {
   Future<void> loadLearningData() async {
     try {
       final learningData = await ActivityService.fetchLearningData();
-      setState(() {
-        purchasedProjectIds = learningData
-            .map((learning) => learning['IDProject']?.toString() ?? '')
-            .toSet();
-        isLoadingLearning = false;
-      });
+      if (mounted) {
+        setState(() {
+          purchasedProjectIds = learningData
+              .map((learning) => learning['IDProject']?.toString() ?? '')
+              .toSet();
+          isLoadingLearning = false;
+        });
+      }
     } catch (e) {
-      setState(() {
-        isLoadingLearning = false;
-      });
+      if (mounted) {
+        setState(() {
+          isLoadingLearning = false;
+        });
+      }
     }
   }
+  // --- END OF LOGIC ---
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: const Text(
+          "Proyek Learning Path",
+          style: TextStyle(color: darkTextColor, fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: backgroundColor,
+        elevation: 0,
+        centerTitle: true,
+        iconTheme: const IconThemeData(color: darkTextColor),
+      ),
+      body: Consumer<ProjectProvider>(
+        builder: (context, projectProvider, child) {
+          if (isLoadingLearning || projectProvider.isLoading) {
+            return const Center(
+                child: CircularProgressIndicator(color: primaryColor));
+          }
+          if (projectProvider.projects.isEmpty) {
+            return _buildEmptyState();
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(8),
+            itemCount: projectProvider.projects.length,
+            itemBuilder: (context, index) {
+              return _buildProjectCard(
+                  context, projectProvider.projects[index]);
+            },
+          );
+        },
+      ),
+    );
+  }
+
+  // --- UI WIDGETS (Sesuai dengan ProjectPage sebelumnya) ---
 
   Widget _buildProjectCard(BuildContext context, Map<String, dynamic> project) {
-    final projectId = project['ID']?.toString() ?? '';
-    final isPurchased = purchasedProjectIds.contains(projectId);
+    final String projectId = project['ID']?.toString() ?? '';
+    final bool isPurchased = purchasedProjectIds.contains(projectId);
+
+    // Logic konversi harga yang aman
+    final priceData = project['price'];
+    num priceAsNum = 0;
+    if (priceData is num) {
+      priceAsNum = priceData;
+    } else if (priceData is String) {
+      priceAsNum = num.tryParse(priceData) ?? 0;
+    }
+    final formattedPrice =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+            .format(priceAsNum);
 
     return InkWell(
       onTap: () {
@@ -55,179 +118,177 @@ class _ProjectPageInLearningPathState extends State<ProjectPageInLearningPath> {
         );
       },
       child: Card(
-        elevation: 3,
-        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Container(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Gambar project dari URL
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: project['picture'] != null
-                    ? Image.network(
-                        project['picture'],
-                        height: 200,
-                        width: double.infinity,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            height: 150,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.broken_image, size: 50),
-                          );
-                        },
-                      )
-                    : Container(
-                        height: 150,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.image, size: 50),
-                      ),
-              ),
-              const SizedBox(height: 16),
-              // Nama material
-              Text(
-                project['materialName'] ?? 'Untitled',
-                style: const TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
-                  color: Color(0xff339989),
-                ),
-              ),
-              const SizedBox(height: 8),
-              // Nama mentor
-              Row(
-                children: [
-                  const Icon(Icons.person, size: 16, color: Colors.grey),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Mentor: ${project['fullName'] ?? 'Unknown'}',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      color: Colors.grey,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Jumlah siswa dan harga
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.school, size: 16, color: Colors.grey),
-                      const SizedBox(width: 4),
-                      Text(
-                        project['learningMethod'] ?? 'Untitled',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                    ],
-                  ),
-                  Text(
-                    'Rp ${project['price']?.toString().replaceAllMapped(
-                          RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
-                          (Match m) => '${m[1]}.',
-                        ) ?? '0'}',
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                      color: Color(0xff339989),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              // Label jika sudah dibeli
-              if (isPurchased)
-                Container(
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 6, horizontal: 12),
-                  decoration: BoxDecoration(
-                    color: Colors.green[100],
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: const Text(
-                    'Sudah Dibeli',
-                    style: TextStyle(
-                      color: Colors.green,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-            ],
-          ),
+        clipBehavior: Clip.antiAlias,
+        elevation: 4,
+        shadowColor: primaryColor.withOpacity(0.2),
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        child: Stack(
+          children: [
+            _buildCardImage(project['picture']),
+            _buildGradientOverlay(),
+            _buildCardContent(
+              title: project['materialName'] ?? 'Untitled',
+              mentor: project['fullName'] ?? 'Unknown',
+            ),
+            _buildPriceBadge(formattedPrice),
+            _buildMethodBadge(project['learningMethod']),
+            if (isPurchased) _buildPurchasedRibbon(),
+          ],
         ),
       ),
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    return Consumer<ProjectProvider>(
-      builder: (context, projectProvider, child) {
-        return Scaffold(
-          backgroundColor: const Color(0xffE0FFF3),
-          appBar: AppBar(
-            backgroundColor: const Color(0xff27DEBF),
-            title: const Text('Projects'),
-            centerTitle: true,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
+  Widget _buildCardImage(String? imageUrl) {
+    return imageUrl != null && imageUrl.isNotEmpty
+        ? Image.network(
+            imageUrl,
+            height: 220,
+            width: double.infinity,
+            fit: BoxFit.cover,
+            errorBuilder: (context, error, stackTrace) =>
+                _buildImagePlaceholder(),
+          )
+        : _buildImagePlaceholder();
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      height: 220,
+      width: double.infinity,
+      color: Colors.grey.shade300,
+      child: const Center(
+        child: Icon(Icons.school_outlined, size: 60, color: Colors.grey),
+      ),
+    );
+  }
+
+  Widget _buildGradientOverlay() {
+    return Container(
+      height: 220,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Colors.black.withOpacity(0.7),
+            Colors.transparent,
+            Colors.black.withOpacity(0.8)
+          ],
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          stops: const [0.0, 0.5, 1.0],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCardContent({required String title, required String mentor}) {
+    return Positioned(
+      bottom: 12,
+      left: 16,
+      right: 16,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+              color: Colors.white,
+              shadows: [Shadow(blurRadius: 2, color: Colors.black54)],
             ),
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
-          body: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
+          const SizedBox(height: 4),
+          Row(
             children: [
-              const Padding(
-                padding: EdgeInsets.all(16.0),
-                child: Text(
-                  'PROJECTS',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-              Expanded(
-                child: projectProvider.isLoading || isLoadingLearning
-                    ? const Center(
-                        child:
-                            CircularProgressIndicator(color: Color(0xff339989)),
-                      )
-                    : projectProvider.projects.isEmpty
-                        ? const Center(
-                            child: Text(
-                              'No projects available',
-                              style: TextStyle(
-                                fontSize: 16,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          )
-                        : ListView.builder(
-                            itemCount: projectProvider.projects.length,
-                            itemBuilder: (context, index) {
-                              return _buildProjectCard(
-                                context,
-                                projectProvider.projects[index],
-                              );
-                            },
-                          ),
+              const Icon(Icons.person, size: 16, color: Colors.white70),
+              const SizedBox(width: 6),
+              Text(
+                mentor,
+                style: const TextStyle(fontSize: 14, color: Colors.white70),
               ),
             ],
           ),
-        );
-      },
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPriceBadge(String price) {
+    return Positioned(
+      top: 12,
+      left: 12,
+      child: Chip(
+        label: Text(price,
+            style: const TextStyle(
+                color: Colors.white, fontWeight: FontWeight.bold)),
+        backgroundColor: primaryColor.withOpacity(0.9),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
+    );
+  }
+
+  Widget _buildMethodBadge(String? method) {
+    if (method == null) return const SizedBox.shrink();
+    return Positioned(
+      top: 12,
+      right: 12,
+      child: Chip(
+        label: Text(method,
+            style: const TextStyle(
+                color: darkTextColor, fontWeight: FontWeight.bold)),
+        avatar: Icon(
+            method == 'Online'
+                ? Icons.videocam_rounded
+                : Icons.people_alt_rounded,
+            size: 16,
+            color: darkTextColor),
+        backgroundColor: Colors.white.withOpacity(0.9),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      ),
+    );
+  }
+
+  Widget _buildPurchasedRibbon() {
+    return Positioned(
+      top: -2,
+      right: -2,
+      child: ClipRect(
+        child: Banner(
+          message: "✓ Dibeli",
+          location: BannerLocation.topEnd,
+          color: primaryColor,
+          textStyle: const TextStyle(
+              fontSize: 12, fontWeight: FontWeight.bold, color: Colors.white),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade400),
+          const SizedBox(height: 16),
+          const Text(
+            'Belum Ada Proyek',
+            style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: darkTextColor),
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Proyek untuk learning path ini belum tersedia.',
+            style: TextStyle(fontSize: 14, color: Colors.grey),
+          ),
+        ],
+      ),
     );
   }
 }

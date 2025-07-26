@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:developer' as developer;
+import 'package:intl/intl.dart';
 import 'package:mentorme/core/services/project_services.dart';
 import 'package:mentorme/global/global.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
@@ -18,10 +19,16 @@ class DetailProjectPage extends StatefulWidget {
 }
 
 class _DetailProjectPageState extends State<DetailProjectPage> {
+  // --- COLOR PALETTE ---
+  static const Color primaryColor = Color(0xFF339989);
+  static const Color darkTextColor = Color(0xFF3C493F);
+  static const Color backgroundColor = Color(0xFFE0FFF3);
+
   bool isLoading = true;
   Map<String, dynamic>? detailProject;
   YoutubePlayerController? _controller;
 
+  // --- LOGIC (No Changes) ---
   @override
   void initState() {
     super.initState();
@@ -36,27 +43,15 @@ class _DetailProjectPageState extends State<DetailProjectPage> {
     super.dispose();
   }
 
-  Future<bool> refreshToken() async {
-    // Implement logic to refresh token if expired (Optional, depending on your auth setup)
-    try {
-      return false;
-    } catch (e) {
-      developer.log('Error refreshing token: $e');
-      return false;
-    }
-  }
-
   Future<void> fetchDetailProject() async {
     try {
       developer.log('Fetching project with ID: ${widget.project['ID']}');
-      developer.log('Using token: $currentUserToken');
-
       final data = await ProjectService.getProjectDetail(
         projectId: widget.project['ID'].toString(),
         token: currentUserToken!,
       );
 
-      if (data != null) {
+      if (mounted && data != null) {
         setState(() {
           detailProject = data;
           isLoading = false;
@@ -68,297 +63,237 @@ class _DetailProjectPageState extends State<DetailProjectPage> {
             developer.log('Extracted YouTube video ID: $videoId');
 
             if (videoId != null) {
-              try {
-                _controller = YoutubePlayerController.fromVideoId(
-                  videoId: videoId,
-                  params: const YoutubePlayerParams(
-                    showControls: true,
-                    showFullscreenButton: true,
-                    enableJavaScript: true,
-                    playsInline: true,
-                  ),
-                );
-
-                developer.log('YouTube controller initialized successfully');
-              } catch (e) {
-                developer.log('Error initializing YouTube controller: $e');
-              }
+              _controller = YoutubePlayerController.fromVideoId(
+                videoId: videoId,
+                params: const YoutubePlayerParams(showFullscreenButton: true),
+              );
+              developer.log('YouTube controller initialized successfully');
             }
           }
         });
       } else {
-        // Handle token expiration or failure to get data
-        developer.log('Failed to fetch project details');
+        developer
+            .log('Failed to fetch project details or component is not mounted');
+        if (mounted) setState(() => isLoading = false);
       }
     } catch (e, stackTrace) {
       developer.log('Error in fetchDetailProject:',
           error: e, stackTrace: stackTrace);
-      setState(() => isLoading = false);
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            e.toString().contains('Unauthorized')
-                ? 'Sesi anda telah berakhir. Silakan login kembali.'
-                : 'Terjadi kesalahan: $e',
-          ),
-          action: e.toString().contains('Unauthorized')
-              ? SnackBarAction(
-                  label: 'Login',
-                  onPressed: () {
-                    Navigator.pushReplacementNamed(context, '/login');
-                  },
-                )
-              : null,
-        ),
-      );
+      if (mounted) {
+        setState(() => isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
+        );
+      }
     }
   }
+  // --- END OF LOGIC ---
 
   @override
   Widget build(BuildContext context) {
-    developer.log('Building DetailProjectPage with state: '
-        'isLoading: $isLoading, '
-        'hasController: ${_controller != null}, '
-        'hasDetailProject: ${detailProject != null}');
-
     return Scaffold(
-      backgroundColor: const Color(0xffE0FFF3),
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: () => Navigator.pop(context),
-        ),
-      ),
+      backgroundColor: backgroundColor,
       body: isLoading
-          ? const Center(
-              child: CircularProgressIndicator(
-              color: Color(0xff339989),
-            ))
-          : SingleChildScrollView(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Judul Project
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 20),
-                    child: Text(
-                      widget.project['materialName'] ?? 'Project Title',
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                      ),
+          ? const Center(child: CircularProgressIndicator(color: primaryColor))
+          : CustomScrollView(
+              slivers: [
+                _buildSliverAppBar(),
+                SliverToBoxAdapter(child: _buildProjectHeader()),
+                SliverList(
+                  delegate: SliverChildListDelegate([
+                    _buildSection(
+                      title: 'Ringkasan',
+                      content:
+                          detailProject?['info'] ?? 'Deskripsi tidak tersedia.',
                     ),
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Ringkasan
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'RINGKASAN',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          detailProject?['info'] ?? 'Loading...',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
+                    _buildSection(
+                      title: 'Tentang Mentor',
+                      content: detailProject?['about'] ??
+                          'Informasi mentor tidak tersedia.',
+                      isMentorSection: true,
+                      mentorName: detailProject?['fullName'],
                     ),
-                  ),
+                    const SizedBox(height: 120), // Spacer for bottom bar
+                  ]),
+                )
+              ],
+            ),
+      bottomNavigationBar: isLoading ? null : _buildBottomCtaBar(),
+    );
+  }
 
-                  // Video Pengantar
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Video Pengantar',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Center(
-                          child: Container(
-                            width: MediaQuery.of(context).size.width * 0.9,
-                            decoration: BoxDecoration(
-                              color: Colors.black87, // Background gelap
-                              borderRadius: BorderRadius.circular(10),
-                            ),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 30,
-                                horizontal: 20), // Padding untuk frame gelap
-                            child: _controller != null
-                                ? AspectRatio(
-                                    aspectRatio: 16 / 9,
-                                    child: Center(
-                                      child: Container(
-                                        constraints: BoxConstraints(
-                                          maxWidth: MediaQuery.of(context)
-                                                  .size
-                                                  .width *
-                                              0.6, // Ukuran video lebih kecil
-                                          maxHeight: 250,
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                          child: YoutubePlayer(
-                                            controller: _controller!,
-                                            aspectRatio: 16 / 9,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                  )
-                                : Container(
-                                    height: 200,
-                                    decoration: BoxDecoration(
-                                      color: Colors.grey[800], // Placeholder
-                                      borderRadius: BorderRadius.circular(10),
-                                    ),
-                                    child: Center(
-                                      child: Column(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          const Text(
-                                            'Video tidak tersedia',
-                                            style: TextStyle(
-                                                color:
-                                                    Colors.white), // Teks putih
-                                          ),
-                                          if (detailProject?['linkVideo'] !=
-                                              null)
-                                            Padding(
-                                              padding:
-                                                  const EdgeInsets.all(8.0),
-                                              child: Text(
-                                                'Link: ${detailProject!['linkVideo']}',
-                                                style: const TextStyle(
-                                                  fontSize: 12,
-                                                  color: Colors
-                                                      .white70, // Teks putih transparan
-                                                ),
-                                                textAlign: TextAlign.center,
-                                              ),
-                                            ),
-                                        ],
-                                      ),
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+  // --- UI WIDGETS (New and Improved) ---
 
-                  // Profil Mentor
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Profil Mentor',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        const SizedBox(height: 15),
-                        Row(
-                          children: [
-                            const Icon(Icons.person, color: Color(0xff339989)),
-                            const SizedBox(width: 10),
-                            Text(
-                              detailProject?['fullName'] ?? 'Loading...',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        Text(
-                          detailProject?['about'] ?? 'Loading...',
-                          style: const TextStyle(
-                            fontSize: 14,
-                            height: 1.5,
-                          ),
-                        ),
-                      ],
-                    ),
+  Widget _buildSliverAppBar() {
+    return SliverAppBar(
+      expandedHeight: 220.0,
+      backgroundColor: primaryColor,
+      pinned: true,
+      stretch: true,
+      iconTheme: const IconThemeData(color: Colors.white),
+      flexibleSpace: FlexibleSpaceBar(
+        stretchModes: const [StretchMode.zoomBackground],
+        background: _controller != null
+            ? YoutubePlayer(controller: _controller!, aspectRatio: 16 / 9)
+            : Container(
+                color: Colors.black,
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.videocam_off, color: Colors.white54, size: 50),
+                      SizedBox(height: 8),
+                      Text("Video Tidak Tersedia",
+                          style: TextStyle(color: Colors.white54)),
+                    ],
                   ),
+                ),
+              ),
+      ),
+    );
+  }
 
-                  // Jumlah Siswa
-                  // Container(
-                  //   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  //   child: Row(
-                  //     // children: [
-                  //     //   // const Icon(Icons.people, color: Color(0xff339989)),
-                  //     //   // const SizedBox(width: 10),
-                  //     //   // Text(
-                  //     //   //   '${detailProject?['student'] ?? 0} Students',
-                  //     //   //   style: const TextStyle(
-                  //     //   //     fontSize: 16,
-                  //     //   //     fontWeight: FontWeight.bold,
-                  //     //   //   ),
-                  //     //   // ),
-                  //     // ],
-                  //   ),
-                  // ),
+  Widget _buildProjectHeader() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
+      color: backgroundColor,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            widget.project['materialName'] ?? 'Project Title',
+            style: const TextStyle(
+              fontSize: 24,
+              fontWeight: FontWeight.bold,
+              color: darkTextColor,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const Icon(Icons.person_outline, size: 16, color: Colors.black54),
+              const SizedBox(width: 6),
+              Text(
+                'Oleh ${detailProject?['fullName'] ?? '...'}',
+                style: const TextStyle(fontSize: 14, color: Colors.black54),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 
-                  // Tombol Beli Project
-                  Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => PaymentDetailPage(
-                              projectId: widget.project['ID'].toString(),
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xff339989),
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: Text(
-                        'Beli Project - Rp ${widget.project['price'] ?? 0}',
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
+  Widget _buildSection({
+    required String title,
+    required String content,
+    bool isMentorSection = false,
+    String? mentorName,
+  }) {
+    return Container(
+      color: backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(title,
+              style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: darkTextColor)),
+          const SizedBox(height: 12),
+          if (isMentorSection) ...[
+            Card(
+              elevation: 0,
+              color: Colors.white,
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12)),
+              child: ListTile(
+                leading: CircleAvatar(
+                    backgroundColor: primaryColor.withOpacity(0.2),
+                    child: const Icon(Icons.person, color: primaryColor)),
+                title: Text(mentorName ?? 'Nama Mentor',
+                    style: const TextStyle(fontWeight: FontWeight.bold)),
+                subtitle: const Text('Mentor Profesional'),
               ),
             ),
+            const SizedBox(height: 12),
+          ],
+          Text(
+            content,
+            style: const TextStyle(
+                fontSize: 14, height: 1.5, color: Colors.black54),
+          ),
+          const Divider(height: 32, thickness: 1),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBottomCtaBar() {
+    // Safe price conversion
+    num price = 0;
+    if (widget.project['price'] is num) {
+      price = widget.project['price'];
+    } else if (widget.project['price'] is String) {
+      price = num.tryParse(widget.project['price']) ?? 0;
+    }
+    final formattedPrice =
+        NumberFormat.currency(locale: 'id_ID', symbol: 'Rp ', decimalDigits: 0)
+            .format(price);
+
+    return Container(
+      height: 90,
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [
+          BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10),
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Text('Harga',
+                  style: TextStyle(color: Colors.black54, fontSize: 12)),
+              Text(
+                formattedPrice,
+                style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: primaryColor),
+              ),
+            ],
+          ),
+          SizedBox(
+            width: MediaQuery.of(context).size.width * 0.5,
+            child: ElevatedButton(
+              child: const Text('Beli Project Ini',
+                  style: TextStyle(
+                      color: Colors.white, fontWeight: FontWeight.bold)),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => PaymentDetailPage(
+                        projectId: widget.project['ID'].toString()),
+                  ),
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: primaryColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12)),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

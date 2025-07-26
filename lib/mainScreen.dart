@@ -1,8 +1,9 @@
+// main_screen.dart
+
 import 'package:flutter/material.dart';
+import 'package:google_nav_bar/google_nav_bar.dart'; // <-- BARU: Impor package GNav
 import 'package:mentorme/Pages/Profile/profile.dart';
 import 'package:mentorme/Pages/Konsultasi/konsultasi.dart';
-import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:mentorme/Pages/notifications/notifications.dart';
 import 'package:mentorme/core/services/refresh_services.dart';
 import 'package:mentorme/features/Pelajaranku/pelajaranku_page.dart';
@@ -25,28 +26,33 @@ class MainScreen extends StatefulWidget {
   State<MainScreen> createState() => _MainStateScreen();
 }
 
-class _MainStateScreen extends State<MainScreen>
-    with SingleTickerProviderStateMixin {
-  TabController? tabController;
+class _MainStateScreen extends State<MainScreen> {
   int selectedIndex = 0;
-  String userName = '';
-  String selectedLearningPathId = '';
   Profile? _profile;
   bool _isLoading = true;
+  late final List<Widget> _pages; // <-- BARU: List untuk menampung halaman
 
-  // int _coinBalance = 0;
-  // bool _isCoinLoading = true;
-
-  void handleTabChange(int index, {String? learningPathId}) {
-    tabController?.animateTo(index);
-    if (learningPathId != null) {
-      setState(() {
-        selectedLearningPathId = learningPathId;
-      });
-    }
+  @override
+  void initState() {
+    super.initState();
+    _pages = [
+      BerandaPage(
+        key: const ValueKey(
+            'BerandaPage'), // <-- BARU: Key untuk AnimatedSwitcher
+        categories: widget.categories,
+        learningPaths: widget.learningPaths,
+        onTabChange: (index, {learningPathId}) => onItemClicked(index),
+      ),
+      const ProjectPage(key: ValueKey('ProjectPage')),
+      const Kegiatanku(key: ValueKey('KegiatankuPage')),
+      KonsultasiPage(key: const ValueKey('KonsultasiPage')),
+      const ProfileScreen(key: ValueKey('ProfileScreen')),
+    ];
+    _fetchProfile(); // Initial fetch
   }
 
   Future<void> _fetchProfile() async {
+    // Tidak perlu setState isLoading di awal jika sudah ada UI loading
     try {
       final profile = await ApiService().fetchProfile();
       if (mounted) {
@@ -56,7 +62,6 @@ class _MainStateScreen extends State<MainScreen>
         });
       }
     } catch (e) {
-      // Handle error in fetching profile
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -67,244 +72,179 @@ class _MainStateScreen extends State<MainScreen>
   }
 
   Future<void> _refreshData() async {
-    final profile = await RefreshService.refreshProfile();
-    if (profile != null && mounted) {
-      setState(() {
-        _profile = profile;
-      });
-    }
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    tabController = TabController(length: 5, vsync: this);
-
-    // Tambahkan listener untuk deteksi tab berpindah
-    tabController!.addListener(() {
-      if (!tabController!.indexIsChanging) {
-        final newIndex = tabController!.index;
-        setState(() {
-          selectedIndex = newIndex;
-        });
-
-        // Fetch ulang profile jika pindah ke Beranda (0) atau Profil (4)
-        if (newIndex == 0 || newIndex == 4) {
-          getUserName();
-        }
-      }
-    });
-
-    _fetchProfile(); // initial fetch
-  }
-
-  Future<void> getUserName() async {
-    try {
-      final user = FirebaseAuth.instance.currentUser;
-      if (user != null) {
-        final userDoc = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(user.uid)
-            .get();
-
-        if (userDoc.exists) {
-          setState(() {
-            userName = userDoc.data()?['fullName'] ?? 'User';
-          });
-        } else {
-          print('Data pengguna tidak ditemukan');
-        }
-      }
-    } catch (e) {
-      print('Error mengambil nama pengguna: $e');
-    }
+    // Panggil _fetchProfile untuk refresh data
+    await _fetchProfile();
   }
 
   void onItemClicked(int index) {
     setState(() {
       selectedIndex = index;
-      tabController!.index = index;
     });
-
-    // Fetch ulang profile jika tab beranda atau profile
-    if (index == 0 || index == 4 || index == 3 || index == 2 || index == 1) {
-      _fetchProfile();
-    }
+    // Opsi: Anda bisa panggil _fetchProfile() di sini jika ingin data selalu
+    // ter-update setiap pindah tab, tapi pull-to-refresh lebih efisien.
   }
 
-  Widget _buildNavigationBarItem(IconData icon, String label, int index) {
-    final bool isSelected = selectedIndex == index;
-
+  // DIUBAH: Header diekstrak menjadi method sendiri untuk kerapian
+  Widget _buildAnimatedHeader(BuildContext context) {
+    // BARU: Menggunakan AnimatedContainer untuk animasi hide/show
     return AnimatedContainer(
-      duration: const Duration(milliseconds: 200),
+      duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
-      margin: isSelected ? const EdgeInsets.only(bottom: 5) : EdgeInsets.zero,
-      decoration: isSelected
-          ? BoxDecoration(
-              color: const Color(0xffE0FFF3),
-              borderRadius: BorderRadius.circular(8),
-            )
-          : null,
-      padding: const EdgeInsets.all(4),
-      child: Icon(
-        icon,
-        size: isSelected ? 30 : 24, // Ikon lebih besar jika dipilih
-        color: isSelected ? const Color(0xff339989) : Colors.grey,
+      height: selectedIndex == 0 ? 90.0 : 0, // <-- Kunci animasi
+      color: const Color(0xffE0FFF3),
+      child: SingleChildScrollView(
+        // Mencegah overflow saat animasi
+        child: Padding(
+          padding: EdgeInsets.only(
+            top: MediaQuery.of(context).padding.top,
+            left: 16,
+            right: 16,
+            // bottom: 16,
+          ),
+          child: SizedBox(
+            height: 80,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(
+                  children: [
+                    GestureDetector(
+                      onTap: () => onItemClicked(4),
+                      child: CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.grey[300],
+                        child: _isLoading
+                            ? const CircularProgressIndicator(strokeWidth: 2)
+                            : ClipOval(
+                                child: _profile?.picture != null &&
+                                        _profile!.picture.isNotEmpty
+                                    ? Image.network(
+                                        _profile!.picture,
+                                        fit: BoxFit.cover,
+                                        width: 48,
+                                        height: 48,
+                                        errorBuilder:
+                                            (context, error, stackTrace) =>
+                                                Image.asset('assets/person.png',
+                                                    width: 48, height: 48),
+                                      )
+                                    : Image.asset('assets/person.png',
+                                        width: 48, height: 48),
+                              ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          _isLoading
+                              ? 'Loading...'
+                              : 'Hi! ${_profile?.fullName ?? 'User'}',
+                          style: const TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        const Text(
+                          "Selamat Datang!",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        )
+                      ],
+                    ),
+                  ],
+                ),
+                IconButton(
+                  icon: const Icon(Icons.notifications_outlined, size: 28),
+                  color: const Color(0xff339989),
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                          builder: (context) => NotificationPage()),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    print("Current profile name in build: ${_profile?.fullName}");
-// print("Fetched full name: ${Profile.fullName}");
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Header yang hanya muncul jika bukan di Profile page
-          if (selectedIndex != 4)
-            Container(
-              color: const Color(0xffE0FFF3),
-              padding: EdgeInsets.only(
-                top: MediaQuery.of(context).padding.top,
-                left: 16,
-                right: 16,
-                bottom: 16,
-              ),
-              child: SizedBox(
-                height: 80,
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
-                      children: [
-                        GestureDetector(
-                          onTap: () {
-                            onItemClicked(4);
-                          },
-                          child: CircleAvatar(
-                            radius: 24,
-                            backgroundColor: Colors.grey[200],
-                            child: ClipOval(
-                              child: _profile?.picture != null &&
-                                      _profile!.picture.isNotEmpty
-                                  ? Image.network(
-                                      _profile!.picture,
-                                      fit: BoxFit.cover,
-                                      width: 48,
-                                      height: 48,
-                                      errorBuilder:
-                                          (context, error, stackTrace) {
-                                        return Image.asset(
-                                          'assets/person.png',
-                                          fit: BoxFit.cover,
-                                          width: 48,
-                                          height: 48,
-                                        );
-                                      },
-                                    )
-                                  : Image.asset(
-                                      'assets/person.png',
-                                      fit: BoxFit.cover,
-                                      width: 48,
-                                      height: 48,
-                                    ),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _isLoading
-                                ? const CircularProgressIndicator()
-                                : Text(
-                                    'Hi! ${_profile?.fullName ?? 'User'}',
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                          ],
-                        ),
-                      ],
-                    ),
-                    Row(
-                      children: [
-                        IconButton(
-                          icon: const Icon(Icons.notifications),
-                          color: const Color(0xff339989),
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => NotificationPage()),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          // Content
+          _buildAnimatedHeader(context),
           Expanded(
             child: RefreshIndicator(
               onRefresh: _refreshData,
-              child: TabBarView(
-                physics: const NeverScrollableScrollPhysics(),
-                controller: tabController,
-                children: [
-                  BerandaPage(
-                    categories: widget.categories,
-                    learningPaths: widget.learningPaths,
-                    onTabChange: handleTabChange,
-                  ),
-                  const ProjectPage(),
-                  const Kegiatanku(),
-                  KonsultasiPage(),
-                  const ProfileScreen(),
-                ],
+              color: const Color(0xff339989),
+              // DIUBAH: Menggunakan AnimatedSwitcher untuk transisi halaman yang halus
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 350),
+                transitionBuilder: (child, animation) {
+                  return FadeTransition(
+                    opacity: animation,
+                    child: child,
+                  );
+                },
+                child: _pages[selectedIndex],
               ),
             ),
           ),
         ],
       ),
-      bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(
-            icon: _buildNavigationBarItem(Icons.home, 'Beranda', 0),
-            label: 'Beranda',
+      // DIUBAH: Menggunakan GNav untuk bottom navigation yang lebih modern
+      bottomNavigationBar: Container(
+        decoration: BoxDecoration(
+          color: Colors.white,
+          boxShadow: [
+            BoxShadow(
+              blurRadius: 20,
+              color: Colors.black.withOpacity(.1),
+            )
+          ],
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 15.0, vertical: 8.0),
+            child: GNav(
+              rippleColor: Colors.grey[300]!,
+              hoverColor: Colors.grey[100]!,
+              gap: 5, // <-- DIUBAH: Kurangi spasi
+              activeColor: Colors.white,
+              iconSize: 24,
+              padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 12), // <-- DIUBAH: Kurangi padding horizontal
+              duration: const Duration(milliseconds: 400),
+              tabBackgroundColor: const Color(0xff339989),
+              color: Colors.black54,
+              tabs: const [
+                GButton(icon: Icons.home_outlined, text: 'Beranda'),
+                GButton(icon: Icons.layers_outlined, text: 'Project'),
+                GButton(icon: Icons.book_outlined, text: 'Kegiatan'),
+                GButton(icon: Icons.message_outlined, text: 'Konsultasi'),
+                GButton(icon: Icons.person_outline, text: 'Profil'),
+              ],
+              selectedIndex: selectedIndex,
+              onTabChange: (index) {
+                onItemClicked(index);
+              },
+            ),
           ),
-          BottomNavigationBarItem(
-            icon:
-                _buildNavigationBarItem(Icons.layers, 'Project Marketplace', 1),
-            label: 'Project Marketplace',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavigationBarItem(Icons.book, 'Pelajaranku', 2),
-            label: 'Pelajaranku',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavigationBarItem(Icons.message, 'Konsultasi', 3),
-            label: 'Konsultasi',
-          ),
-          BottomNavigationBarItem(
-            icon: _buildNavigationBarItem(Icons.person, 'Profil', 4),
-            label: 'Profile',
-          ),
-        ],
-        type: BottomNavigationBarType.shifting,
-        selectedLabelStyle: const TextStyle(fontSize: 14),
-        showUnselectedLabels: true,
-        currentIndex: selectedIndex,
-        onTap: onItemClicked,
-        selectedItemColor: const Color(0xff339989),
-        unselectedItemColor: Colors.grey,
+        ),
       ),
     );
   }
