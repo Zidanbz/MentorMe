@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:mentorme/core/services/kegiatanku_services.dart';
-import 'package:mentorme/features/Pelajaranku/detail_pelajaranku.dart';
+import 'package:mentorme/features/learning/detail_pelajaranku.dart';
+import 'package:mentorme/shared/widgets/optimized_image.dart';
+import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
+import 'package:mentorme/shared/widgets/optimized_animations.dart';
+import 'package:mentorme/shared/widgets/optimized_list_view.dart';
 
 class Kegiatanku extends StatefulWidget {
   const Kegiatanku({super.key});
@@ -98,11 +102,13 @@ class _KegiatankuState extends State<Kegiatanku> {
             const SizedBox(height: 16),
             Expanded(
               child: _isLoading
-                  ? const Center(
-                      child: CircularProgressIndicator(color: primaryColor))
+                  ? _buildLoadingState()
                   : _errorMessage.isNotEmpty
                       ? _buildErrorState(_errorMessage)
-                      : _buildCurrentList(),
+                      : OptimizedFadeSlide(
+                          duration: const Duration(milliseconds: 600),
+                          child: _buildCurrentList(),
+                        ),
             ),
           ],
         ),
@@ -192,114 +198,151 @@ class _KegiatankuState extends State<Kegiatanku> {
     double progressValue = (course['progress'] as num?)?.toDouble() ?? 0.0;
     bool isCompleted = progressValue >= 1.0;
 
-    return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) =>
-                DetailKegiatan(activityId: course['ID'] ?? ''),
-          ),
-        );
-      },
-      child: Card(
-        elevation: 4,
-        shadowColor: primaryColor.withOpacity(0.2),
-        margin: const EdgeInsets.only(bottom: 20),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            // Background Image
-            if (imageUrl != null)
-              Image.network(
-                imageUrl,
-                height: 200,
-                width: double.infinity,
-                fit: BoxFit.cover,
-                errorBuilder: (context, error, stackTrace) =>
-                    _buildImagePlaceholder(),
-              )
-            else
-              _buildImagePlaceholder(),
+    return OptimizedFadeSlide(
+        delay: Duration(milliseconds: 100),
+        child: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) =>
+                    DetailKegiatan(activityId: course['ID'] ?? ''),
+              ),
+            );
+          },
+          child: Card(
+            elevation: 4,
+            shadowColor: primaryColor.withOpacity(0.2),
+            margin: const EdgeInsets.only(bottom: 20),
+            shape:
+                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            clipBehavior: Clip.antiAlias,
+            child: Stack(
+              children: [
+                // Background Image
+                if (imageUrl != null)
+                  OptimizedImage(
+                    imageUrl: imageUrl,
+                    width: double.infinity,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    placeholder: ShimmerCard(
+                      width: double.infinity,
+                      height: 200,
+                      borderRadius: BorderRadius.circular(0),
+                    ),
+                    errorWidget: _buildImagePlaceholder(),
+                  )
+                else
+                  _buildImagePlaceholder(),
 
-            // Gradient Overlay
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [Colors.black.withOpacity(0.7), Colors.transparent],
-                    begin: Alignment.bottomCenter,
-                    end: Alignment.center,
+                // Gradient Overlay
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          Colors.black.withOpacity(0.7),
+                          Colors.transparent
+                        ],
+                        begin: Alignment.bottomCenter,
+                        end: Alignment.center,
+                      ),
+                    ),
                   ),
                 ),
-              ),
-            ),
 
-            // Content
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      course['project']['materialName'] ?? 'Tanpa Judul',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 18,
-                        color: Colors.white,
-                        shadows: [Shadow(blurRadius: 2, color: Colors.black54)],
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 8),
-                    isCompleted
-                        ? const Chip(
-                            avatar: Icon(Icons.check_circle,
-                                color: Colors.white, size: 16),
-                            label: Text('Selesai'),
-                            backgroundColor: primaryColor,
-                            labelStyle: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold),
-                          )
-                        : Row(
-                            children: [
-                              Expanded(
-                                child: ClipRRect(
-                                  borderRadius: BorderRadius.circular(10),
-                                  child: LinearProgressIndicator(
-                                    value: progressValue,
-                                    backgroundColor:
-                                        Colors.white.withOpacity(0.3),
-                                    color: accentColor,
-                                    minHeight: 10,
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Text(
-                                '${(progressValue * 100).toStringAsFixed(0)}%',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
+                // Content
+                Positioned(
+                  bottom: 0,
+                  left: 0,
+                  right: 0,
+                  child: Padding(
+                    padding: const EdgeInsets.all(12.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          course['project']['materialName'] ?? 'Tanpa Judul',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 18,
+                            color: Colors.white,
+                            shadows: [
+                              Shadow(blurRadius: 2, color: Colors.black54)
                             ],
                           ),
-                  ],
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 8),
+                        isCompleted
+                            ? const Chip(
+                                avatar: Icon(Icons.check_circle,
+                                    color: Colors.white, size: 16),
+                                label: Text('Selesai'),
+                                backgroundColor: primaryColor,
+                                labelStyle: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              )
+                            : Row(
+                                children: [
+                                  Expanded(
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10),
+                                      child: LinearProgressIndicator(
+                                        value: progressValue,
+                                        backgroundColor:
+                                            Colors.white.withOpacity(0.3),
+                                        color: accentColor,
+                                        minHeight: 10,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    '${(progressValue * 100).toStringAsFixed(0)}%',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 14,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+              ],
             ),
-          ],
+          ),
+        ));
+  }
+
+  Widget _buildLoadingState() {
+    return Column(
+      children: [
+        _buildTabSwitcher(),
+        const SizedBox(height: 16),
+        Expanded(
+          child: ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            itemCount: 3,
+            itemBuilder: (context, index) {
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 20),
+                child: ShimmerCard(
+                  width: double.infinity,
+                  height: 200,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              );
+            },
+          ),
         ),
-      ),
+      ],
     );
   }
 

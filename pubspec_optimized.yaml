@@ -1,0 +1,69 @@
+name: mentorme
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.5.2 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Core UI
+  cupertino_icons: ^1.0.8
+
+  # Firebase - Optimized (hanya yang dibutuhkan)
+  firebase_core: ^3.13.0
+  firebase_auth: ^5.3.1
+  cloud_firestore: ^5.4.4
+  firebase_messaging: ^15.2.5
+
+  # State Management - Ganti Provider dengan Riverpod (lebih ringan)
+  flutter_riverpod: ^2.4.9
+
+  # Network - Optimized
+  dio: ^5.4.0 # Lebih ringan dari http + better caching
+
+  # Storage - Optimized
+  hive: ^2.2.3 # Lebih ringan dari shared_preferences
+  hive_flutter: ^1.1.0
+
+  # UI/UX - Essential only
+  cached_network_image: ^3.3.0 # Image caching
+  shimmer: ^3.0.0 # Loading placeholders
+
+  # Utils - Essential only
+  intl: ^0.19.0
+  url_launcher: ^6.3.1
+  image_picker: ^1.0.7
+
+  # Remove heavy packages:
+  # youtube_player_iframe -> webview_flutter (lighter)
+  # animate_do -> custom animations
+  # file_picker -> platform specific
+  # local_auth -> conditional import
+  # flutter_local_notifications -> conditional
+  # open_filex -> conditional
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.7
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/images/ # Organized assets
+    - assets/icons/
+
+  fonts:
+    - family: OpenSans
+      fonts:
+        - asset: assets/fonts/OpenSans-Regular.ttf
+        - asset: assets/fonts/OpenSans-Bold.ttf
+          weight: 700

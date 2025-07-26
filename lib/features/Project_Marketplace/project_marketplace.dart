@@ -4,6 +4,10 @@ import 'package:mentorme/core/services/kegiatanku_services.dart';
 import 'package:mentorme/features/Project_Marketplace/detail_project_markertplace.dart';
 import 'package:mentorme/providers/getProject_provider.dart';
 import 'package:provider/provider.dart';
+import 'package:mentorme/shared/widgets/optimized_image.dart';
+import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
+import 'package:mentorme/shared/widgets/optimized_animations.dart';
+import 'package:mentorme/shared/widgets/optimized_list_view.dart';
 import 'dart:developer' as developer;
 
 class ProjectPage extends StatefulWidget {
@@ -73,20 +77,23 @@ class _ProjectPageState extends State<ProjectPage> {
       body: Consumer<GetProjectProvider>(
         builder: (context, projectProvider, child) {
           if (isLoadingLearning || projectProvider.isLoading) {
-            return const Center(
-                child: CircularProgressIndicator(color: primaryColor));
+            return _buildLoadingState();
           }
           if (projectProvider.projects.isEmpty) {
             return _buildEmptyState();
           }
 
-          return ListView.builder(
-            padding: const EdgeInsets.all(8),
-            itemCount: projectProvider.projects.length,
-            itemBuilder: (context, index) {
-              return _buildProjectCard(
-                  context, projectProvider.projects[index]);
+          return OptimizedListView<dynamic>(
+            items: projectProvider.projects,
+            itemsPerPage: 10,
+            itemBuilder: (context, project, index) {
+              return OptimizedFadeSlide(
+                delay: Duration(milliseconds: index * 100),
+                child:
+                    _buildProjectCard(context, project as Map<String, dynamic>),
+              );
             },
+            padding: const EdgeInsets.all(8),
           );
         },
       ),
@@ -160,16 +167,23 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Widget _buildCardImage(String? imageUrl) {
     return imageUrl != null && imageUrl.isNotEmpty
-        ? Image.network(
-            imageUrl,
+        ? OptimizedImage(
+            imageUrl: imageUrl,
             height: 220,
             width: double.infinity,
             fit: BoxFit.cover,
-            errorBuilder: (context, error, stackTrace) {
-              return _buildImagePlaceholder();
-            },
+            borderRadius: BorderRadius.circular(16),
+            placeholder: _buildShimmerPlaceholder(),
+            errorWidget: _buildImagePlaceholder(),
           )
         : _buildImagePlaceholder();
+  }
+
+  Widget _buildShimmerPlaceholder() {
+    return const ShimmerCard(
+      width: double.infinity,
+      height: 220,
+    );
   }
 
   Widget _buildImagePlaceholder() {
@@ -180,6 +194,57 @@ class _ProjectPageState extends State<ProjectPage> {
       child: const Center(
         child: Icon(Icons.school_outlined, size: 60, color: Colors.grey),
       ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      padding: const EdgeInsets.all(8),
+      itemCount: 6,
+      itemBuilder: (context, index) {
+        return Card(
+          clipBehavior: Clip.antiAlias,
+          elevation: 4,
+          margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          child: const Stack(
+            children: [
+              // Shimmer Image
+              ShimmerCard(
+                width: double.infinity,
+                height: 220,
+              ),
+              // Shimmer Content
+              Positioned(
+                bottom: 12,
+                left: 16,
+                right: 16,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    ShimmerText(width: 200, height: 20),
+                    SizedBox(height: 8),
+                    ShimmerText(width: 120, height: 14),
+                  ],
+                ),
+              ),
+              // Shimmer Price Badge
+              Positioned(
+                top: 12,
+                left: 12,
+                child: ShimmerCard(width: 80, height: 32),
+              ),
+              // Shimmer Method Badge
+              Positioned(
+                top: 12,
+                right: 12,
+                child: ShimmerCard(width: 60, height: 32),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

@@ -2,13 +2,13 @@
 
 import 'package:flutter/material.dart';
 import 'package:google_nav_bar/google_nav_bar.dart'; // <-- BARU: Impor package GNav
-import 'package:mentorme/Pages/Profile/profile.dart';
-import 'package:mentorme/Pages/Konsultasi/konsultasi.dart';
-import 'package:mentorme/Pages/notifications/notifications.dart';
+import 'package:mentorme/features/profile/profile_page.dart';
+import 'package:mentorme/features/consultation/konsultasi.dart';
+import 'package:mentorme/features/notifications/notifications.dart';
 import 'package:mentorme/core/services/refresh_services.dart';
-import 'package:mentorme/features/Pelajaranku/pelajaranku_page.dart';
-import 'package:mentorme/features/Project_Marketplace/project_marketplace.dart';
-import 'package:mentorme/features/beranda/beranda_page.dart';
+import 'package:mentorme/features/learning/pelajaranku_page.dart';
+import 'package:mentorme/features/project_marketplace/project_marketplace.dart';
+import 'package:mentorme/features/home/beranda_page.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/controller/api_services.dart';
 
@@ -45,8 +45,8 @@ class _MainStateScreen extends State<MainScreen> {
       ),
       const ProjectPage(key: ValueKey('ProjectPage')),
       const Kegiatanku(key: ValueKey('KegiatankuPage')),
-      KonsultasiPage(key: const ValueKey('KonsultasiPage')),
-      const ProfileScreen(key: ValueKey('ProfileScreen')),
+      const KonsultasiPage(key: ValueKey('KonsultasiPage')),
+      const ProfilePage(key: ValueKey('ProfileScreen')),
     ];
     _fetchProfile(); // Initial fetch
   }

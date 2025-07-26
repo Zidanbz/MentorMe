@@ -1,7 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:mentorme/Pages/Payment/succes_payment.dart';
 import 'package:mentorme/controller/api_services.dart';
+import 'package:mentorme/features/payment/succes_payment.dart';
 
 class WaitingPaymentScreen extends StatefulWidget {
   final String transactionId;

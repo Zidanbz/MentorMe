@@ -2,13 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:mentorme/features/auth/Login/login_page.dart';
+import 'package:mentorme/core/storage/storage_service.dart';
+import 'package:mentorme/features/auth/login/login_page.dart';
 import 'package:mentorme/providers/getProject_provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
 import 'package:mentorme/splash_screen.dart';
 import 'package:mentorme/utils/notification_service.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -102,12 +102,12 @@ class _MyAppState extends State<MyApp> {
 
   // Fungsi pengecekan status aplikasi
   Future<Map<String, dynamic>> _checkAppStatus() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool isFirstLaunch = prefs.getBool('isFirstLaunch') ?? true;
-    bool isLoggedIn = prefs.getBool('isLoggedIn') ?? false;
+    final storage = await SharedPreferencesService.getInstance();
+    bool isFirstLaunch = await storage.isFirstLaunch();
+    bool isLoggedIn = await storage.isLoggedIn();
 
     if (isFirstLaunch) {
-      await prefs.setBool('isFirstLaunch', false);
+      await storage.setFirstLaunch(false);
     }
 
     return {

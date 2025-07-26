@@ -4,7 +4,7 @@ import 'package:intl/intl.dart';
 import 'package:mentorme/core/services/project_services.dart';
 import 'package:mentorme/global/global.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
-import 'package:mentorme/Pages/Payment/payment_detail.dart';
+import 'package:mentorme/features/payment/payment_detail.dart';
 
 class DetailProjectPage extends StatefulWidget {
   final Map<String, dynamic> project;

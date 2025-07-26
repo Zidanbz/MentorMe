@@ -1,13 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:mentorme/Pages/Konsultasi/roomchat.dart';
+import 'package:mentorme/features/consultation/roomchat.dart';
 
 import 'package:mentorme/global/global.dart'; // Assuming this contains currentUserToken
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mentorme/shared/widgets/optimized_image.dart';
+import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
+import 'package:mentorme/shared/widgets/optimized_animations.dart';
+import 'package:mentorme/shared/widgets/optimized_list_view.dart';
 
 class KonsultasiPage extends StatefulWidget {
   const KonsultasiPage({super.key});
+
   @override
   _KonsultasiPageState createState() => _KonsultasiPageState();
 }
@@ -187,10 +192,7 @@ class _KonsultasiPageState extends State<KonsultasiPage>
                     topRight: Radius.circular(40),
                   ),
                   child: isLoading
-                      ? Center(
-                          child: CircularProgressIndicator(
-                              valueColor:
-                                  AlwaysStoppedAnimation<Color>(Colors.teal)))
+                      ? _buildLoadingState()
                       : RefreshIndicator(
                           onRefresh: fetchChatRooms,
                           color: Colors.teal,
@@ -234,12 +236,16 @@ class _KonsultasiPageState extends State<KonsultasiPage>
                                             currentUserEmail &&
                                         !readRooms.contains(room['idRoom']);
 
-                                    return _buildHistoryItem(
-                                      context,
-                                      otherUserName,
-                                      isNewMessage,
-                                      otherUserPicture,
-                                      room['idRoom'],
+                                    return OptimizedFadeSlide(
+                                      delay:
+                                          Duration(milliseconds: index * 100),
+                                      child: _buildHistoryItem(
+                                        context,
+                                        otherUserName,
+                                        isNewMessage,
+                                        otherUserPicture,
+                                        room['idRoom'],
+                                      ),
                                     );
                                   },
                                 ),
@@ -304,17 +310,28 @@ class _KonsultasiPageState extends State<KonsultasiPage>
             padding: const EdgeInsets.all(16),
             child: Row(
               children: [
-                CircleAvatar(
-                  radius: 32,
-                  backgroundColor: Colors.teal.shade100,
-                  backgroundImage: (imageUrl != null && imageUrl.isNotEmpty)
-                      ? NetworkImage(imageUrl)
-                      : const AssetImage('assets/person.png') as ImageProvider,
-                  onBackgroundImageError: (exception, stackTrace) {
-                    // Fallback to asset image on error
-                    print("Error loading image: $exception");
-                  },
-                ),
+                (imageUrl != null && imageUrl.isNotEmpty)
+                    ? ClipOval(
+                        child: OptimizedImage(
+                          imageUrl: imageUrl,
+                          width: 64,
+                          height: 64,
+                          fit: BoxFit.cover,
+                          placeholder: ShimmerCircle(radius: 32),
+                          errorWidget: CircleAvatar(
+                            radius: 32,
+                            backgroundColor: Colors.teal.shade100,
+                            child: Icon(Icons.person,
+                                color: Colors.teal.shade300, size: 32),
+                          ),
+                        ),
+                      )
+                    : CircleAvatar(
+                        radius: 32,
+                        backgroundColor: Colors.teal.shade100,
+                        child: Icon(Icons.person,
+                            color: Colors.teal.shade300, size: 32),
+                      ),
                 SizedBox(width: 20),
                 Expanded(
                   child: Column(
@@ -370,6 +387,49 @@ class _KonsultasiPageState extends State<KonsultasiPage>
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildLoadingState() {
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(16, 24, 16, 16),
+      itemCount: 5,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: EdgeInsets.symmetric(vertical: 8),
+          child: Container(
+            width: double.infinity,
+            height: 80,
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: Row(
+              children: [
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: ShimmerCircle(radius: 32),
+                ),
+                SizedBox(width: 4),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      ShimmerText(width: 150, height: 19),
+                      SizedBox(height: 4),
+                      ShimmerText(width: 200, height: 14),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsets.all(16),
+                  child: ShimmerText(width: 18, height: 18),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 }

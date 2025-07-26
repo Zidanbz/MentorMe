@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:mentorme/app/constants/app_colors.dart';
+import 'package:mentorme/app/constants/app_strings.dart';
 import 'package:mentorme/core/services/auth_services.dart';
+import 'package:mentorme/core/storage/storage_service.dart';
 import 'package:mentorme/features/auth/register/register_page.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:local_auth/local_auth.dart';
-
-import 'package:mentorme/global/Fontstyle.dart';
+import 'package:mentorme/shared/widgets/custom_button.dart';
+import 'package:mentorme/shared/widgets/custom_text_field.dart';
+import 'package:mentorme/shared/widgets/loading_dialog.dart';
 import 'package:mentorme/global/global.dart';
 import 'package:mentorme/mainScreen.dart';
 
@@ -22,254 +24,216 @@ class _LoginPageState extends State<LoginPage> {
   final emailTextEditingController = TextEditingController();
   final passwordTextEditingController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  final LocalAuthentication auth = LocalAuthentication();
-  bool _passwordVisible = false;
+  bool _isLoading = false;
 
-  void showLoadingDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return Dialog(
-          backgroundColor: const Color(0xFFE0FFF3),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Image.asset('assets/Logo.png', width: 60, height: 60),
-                const SizedBox(height: 15),
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const CircularProgressIndicator(color: Colors.green),
-                    const SizedBox(width: 15),
-                    const Text("Sedang masuk...",
-                        style: Subjudulstyle.defaultTextStyle),
-                  ],
-                ),
-              ],
-            ),
-          ),
-        );
-      },
-    );
+  @override
+  void dispose() {
+    emailTextEditingController.dispose();
+    passwordTextEditingController.dispose();
+    super.dispose();
   }
 
-  void hideLoadingDialog() {
-    Navigator.of(context, rootNavigator: true).pop();
-  }
+  Future<void> _loginUser() async {
+    if (!_formKey.currentState!.validate()) {
+      Fluttertoast.showToast(msg: AppStrings.pleaseCompleteAllFields);
+      return;
+    }
 
-  Future<void> loginUser() async {
-    if (_formKey.currentState!.validate()) {
-      showLoadingDialog();
-      try {
-        final fcmToken = await FirebaseMessaging.instance.getToken();
+    setState(() => _isLoading = true);
+    LoadingDialog.show(context, message: AppStrings.loggingIn);
 
-        final responseData = await AuthService.login(
-          email: emailTextEditingController.text,
-          password: passwordTextEditingController.text,
-          fcmToken: fcmToken,
-        );
+    try {
+      final fcmToken = await FirebaseMessaging.instance.getToken();
 
-        hideLoadingDialog();
+      final responseData = await AuthService.login(
+        email: emailTextEditingController.text.trim(),
+        password: passwordTextEditingController.text.trim(),
+        fcmToken: fcmToken,
+      );
 
-        String token = responseData['data']['token'];
-        currentUserToken = token;
+      final token = responseData['data']['token'] as String;
+      currentUserToken = token;
 
-        String nameUser = responseData['data']['nameUser'] ?? '';
-        String emailUser = responseData['data']['email'] ?? '';
+      final nameUser = responseData['data']['nameUser'] as String? ?? '';
+      final emailUser = responseData['data']['email'] as String? ?? '';
 
-        final prefs = await SharedPreferences.getInstance();
-        await prefs.setString('nameUser', nameUser);
-        await prefs.setString('emailUser', emailUser);
-        await prefs.setString(
-            'passwordUser', passwordTextEditingController.text.trim());
-        await prefs.setBool('isLoggedIn', true);
-        print('🔥 isLoggedIn set ke true');
+      // Save user data using our storage service
+      final storage = await SharedPreferencesService.getInstance();
+      await storage.saveUserToken(token);
+      await storage.saveUserData(
+        name: nameUser,
+        email: emailUser,
+        password: passwordTextEditingController.text.trim(),
+      );
+      await storage.setLoggedIn(true);
 
-        User? firebaseUser = FirebaseAuth.instance.currentUser;
-        if (firebaseUser != null && nameUser.isNotEmpty) {
-          await firebaseUser.updateDisplayName(nameUser);
-          await firebaseUser.reload();
-          print('✅ Display name diperbarui: $nameUser');
-        }
+      // Update Firebase user display name
+      final firebaseUser = FirebaseAuth.instance.currentUser;
+      if (firebaseUser != null && nameUser.isNotEmpty) {
+        await firebaseUser.updateDisplayName(nameUser);
+        await firebaseUser.reload();
+      }
 
-        List<Map<String, dynamic>> categories =
-            responseData['data']['categories'] != null
-                ? List<Map<String, dynamic>>.from(
-                    responseData['data']['categories'])
-                : [];
+      // Parse categories and learning paths
+      final categories = responseData['data']['categories'] != null
+          ? List<Map<String, dynamic>>.from(responseData['data']['categories'])
+          : <Map<String, dynamic>>[];
 
-        List<Map<String, dynamic>> learningPaths =
-            responseData['data']['learningPath'] != null
-                ? List<Map<String, dynamic>>.from(
-                    responseData['data']['learningPath'])
-                : [];
-        // Menyimpan ke SharedPreferences
-        await prefs.setString('categories', categories.toString());
-        await prefs.setString('learningPaths', learningPaths.toString());
+      final learningPaths = responseData['data']['learningPath'] != null
+          ? List<Map<String, dynamic>>.from(
+              responseData['data']['learningPath'])
+          : <Map<String, dynamic>>[];
 
-        Fluttertoast.showToast(msg: "Login berhasil");
+      // Save additional data
+      await storage.setString('categories', categories.toString());
+      await storage.setString('learningPaths', learningPaths.toString());
+
+      LoadingDialog.hide(context);
+      Fluttertoast.showToast(msg: AppStrings.loginSuccess);
+
+      // Navigate to main screen
+      if (mounted) {
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(
-            builder: (c) => MainScreen(
+            builder: (context) => MainScreen(
               categories: categories,
               learningPaths: learningPaths,
             ),
           ),
         );
-      } catch (error) {
-        hideLoadingDialog();
-        Fluttertoast.showToast(msg: "Gagal login: $error");
       }
-    } else {
-      Fluttertoast.showToast(msg: "Mohon isi semua data dengan benar");
+    } catch (error) {
+      LoadingDialog.hide(context);
+      Fluttertoast.showToast(msg: "${AppStrings.loginFailed}: $error");
+    } finally {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
-  // Future<void> _loginWithFingerprint() async {
-  //   try {
-  //     final isSupported = await auth.isDeviceSupported();
-  //     final canCheckBiometrics = await auth.canCheckBiometrics;
+  String? _validateEmail(String? value) {
+    if (value == null || value.isEmpty) {
+      return AppStrings.fieldRequired;
+    }
+    if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+      return AppStrings.invalidEmail;
+    }
+    return null;
+  }
 
-  //     if (!isSupported || !canCheckBiometrics) {
-  //       Fluttertoast.showToast(msg: "Perangkat tidak mendukung biometrik");
-  //       return;
-  //     }
-
-  //     final isAuthenticated = await auth.authenticate(
-  //       localizedReason: 'Gunakan sidik jari untuk masuk',
-  //       options: const AuthenticationOptions(
-  //         biometricOnly: true,
-  //         stickyAuth: true,
-  //       ),
-  //     );
-
-  //     if (isAuthenticated) {
-  //       final prefs = await SharedPreferences.getInstance();
-  //       String? savedEmail = prefs.getString('emailUser');
-  //       String? savedPassword = prefs.getString('passwordUser');
-  //       prefs.setBool('isLoggedIn', true);
-  //       print('🔥 isLoggedIn set ke true');
-
-  //       if (savedEmail != null && savedPassword != null) {
-  //         emailTextEditingController.text = savedEmail;
-  //         passwordTextEditingController.text = savedPassword;
-  //         await loginUser();
-  //       } else {
-  //         Fluttertoast.showToast(msg: "Data login tidak ditemukan");
-  //       }
-  //     }
-  //   } catch (e) {
-  //     Fluttertoast.showToast(msg: "Autentikasi gagal: $e");
-  //   }
-  // }
+  String? _validatePassword(String? value) {
+    if (value == null || value.isEmpty) {
+      return AppStrings.fieldRequired;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFE0FFF3),
-      body: SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(
-            minHeight: MediaQuery.of(context).size.height,
-          ),
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(20.0),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Image.asset('assets/Logo.png', width: 200, height: 200),
-                    const Text('LOGIN', style: Subjudulstyle.defaultTextStyle),
-                    const SizedBox(height: 30),
-                    TextFormField(
-                      controller: emailTextEditingController,
-                      decoration: InputDecoration(
-                        hintText: 'Email',
-                        hintStyle: Captionsstyle.defaultTextStyle,
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(40),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(Icons.email),
+      backgroundColor: AppColors.primaryLight,
+      body: SafeArea(
+        child: SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: MediaQuery.of(context).size.height -
+                  MediaQuery.of(context).padding.top,
+            ),
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(20.0),
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // Logo
+                      Image.asset(
+                        'assets/Logo.png',
+                        width: 200,
+                        height: 200,
                       ),
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (text) {
-                        if (text == null || text.isEmpty)
-                          return 'Tidak boleh kosong';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    TextFormField(
-                      controller: passwordTextEditingController,
-                      obscureText: !_passwordVisible,
-                      decoration: InputDecoration(
-                        hintText: 'Password',
-                        hintStyle: Captionsstyle.defaultTextStyle,
-                        filled: true,
-                        fillColor: Colors.white,
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(40),
-                          borderSide: BorderSide.none,
-                        ),
-                        prefixIcon: const Icon(Icons.security),
-                        suffixIcon: IconButton(
-                          icon: Icon(_passwordVisible
-                              ? Icons.visibility
-                              : Icons.visibility_off),
-                          onPressed: () => setState(
-                              () => _passwordVisible = !_passwordVisible),
+
+                      // Title
+                      Text(
+                        AppStrings.login,
+                        style: const TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
                         ),
                       ),
-                      autovalidateMode: AutovalidateMode.onUserInteraction,
-                      validator: (text) {
-                        if (text == null || text.isEmpty)
-                          return 'Tidak boleh kosong';
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 25),
-                    ElevatedButton(
-                      onPressed: loginUser,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFF339989),
-                        minimumSize: const Size.fromHeight(50),
-                        shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(25)),
+                      const SizedBox(height: 30),
+
+                      // Email Field
+                      CustomTextField(
+                        controller: emailTextEditingController,
+                        hintText: AppStrings.email,
+                        keyboardType: TextInputType.emailAddress,
+                        prefixIcon: Icons.email,
+                        validator: _validateEmail,
+                        enabled: !_isLoading,
                       ),
-                      child: const Text('Masuk',
-                          style: TextStyle(fontSize: 18, color: Colors.white)),
-                    ),
-                    const SizedBox(height: 20),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        const Text('Belum punya akun?',
-                            style: TextStyle(fontSize: 16)),
-                        TextButton(
-                          onPressed: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (context) => const RegisterPage()),
-                            );
-                          },
-                          child: const Text('Daftar di sini',
-                              style: TextStyle(
-                                  fontSize: 16, color: Color(0xFF339989))),
-                        ),
-                      ],
-                    ),
-                  ],
+                      const SizedBox(height: 16),
+
+                      // Password Field
+                      CustomTextField(
+                        controller: passwordTextEditingController,
+                        hintText: AppStrings.password,
+                        obscureText: true,
+                        prefixIcon: Icons.security,
+                        validator: _validatePassword,
+                        enabled: !_isLoading,
+                      ),
+                      const SizedBox(height: 24),
+
+                      // Login Button
+                      CustomButton(
+                        text: AppStrings.loginButton,
+                        onPressed: _isLoading ? null : _loginUser,
+                        isLoading: _isLoading,
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Register Link
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            AppStrings.dontHaveAccount,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          TextButton(
+                            onPressed: _isLoading
+                                ? null
+                                : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) =>
+                                            const RegisterPage(),
+                                      ),
+                                    );
+                                  },
+                            child: Text(
+                              AppStrings.registerHere,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),

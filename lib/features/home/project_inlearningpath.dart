@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:mentorme/core/services/kegiatanku_services.dart';
-import 'package:mentorme/features/beranda/detail_project_inLearnPath.dart';
+import 'package:mentorme/features/home/detail_project_inLearnPath.dart';
 import 'package:provider/provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
 
