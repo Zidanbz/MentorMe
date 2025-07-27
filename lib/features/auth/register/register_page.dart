@@ -4,6 +4,8 @@ import 'package:mentorme/app/constants/app_colors.dart';
 import 'package:mentorme/app/constants/app_strings.dart';
 import 'package:mentorme/features/auth/services/auth_api_service.dart';
 import 'package:mentorme/features/auth/Login/login_page.dart';
+import 'package:mentorme/features/profile/terms_conditions_page.dart';
+import 'package:mentorme/features/profile/privacy_policy_page.dart';
 import 'package:mentorme/shared/widgets/custom_button.dart';
 import 'package:mentorme/shared/widgets/custom_text_field.dart';
 import 'package:mentorme/shared/widgets/enhanced_animations.dart' as enhanced;
@@ -58,6 +60,12 @@ class _RegisterPageState extends State<RegisterPage>
   Future<void> _registerUser() async {
     if (!_formKey.currentState!.validate()) {
       Fluttertoast.showToast(msg: AppStrings.pleaseCompleteAllFields);
+      return;
+    }
+
+    // Show Terms & Conditions and Privacy Policy popup
+    final bool? accepted = await _showTermsAndPrivacyDialog();
+    if (accepted != true) {
       return;
     }
 
@@ -138,6 +146,193 @@ class _RegisterPageState extends State<RegisterPage>
       return AppStrings.passwordNotMatch;
     }
     return null;
+  }
+
+  Future<bool?> _showTermsAndPrivacyDialog() async {
+    return showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Container(
+            padding: const EdgeInsets.all(24),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(20),
+              gradient: const LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color(0xFFe0fff3),
+                  Color(0xFF339989),
+                ],
+              ),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.security,
+                        color: const Color(0xFF339989),
+                        size: 28,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          'Syarat & Ketentuan',
+                          style: AppTextStyles.headlineSmall.copyWith(
+                            color: const Color(0xFF3c493f),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Content
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Sebelum mendaftar, Anda perlu menyetujui:',
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: const Color(0xFF3c493f),
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      // Terms & Conditions Button
+                      Container(
+                        width: double.infinity,
+                        margin: const EdgeInsets.only(bottom: 12),
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) =>
+                                    const TermsConditionsPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.description, size: 20),
+                          label: const Text('Baca Syarat & Ketentuan'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF339989),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+
+                      // Privacy Policy Button
+                      Container(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const PrivacyPolicyPage(),
+                              ),
+                            );
+                          },
+                          icon: const Icon(Icons.privacy_tip, size: 20),
+                          label: const Text('Baca Kebijakan Privasi'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF3c493f),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Action Buttons
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(false);
+                        },
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                            side:
+                                const BorderSide(color: Colors.white, width: 2),
+                          ),
+                        ),
+                        child: Text(
+                          'Batal',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          Navigator.of(context).pop(true);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF339989),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                        child: Text(
+                          'Saya Setuju',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: const Color(0xFF339989),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
   }
 
   @override

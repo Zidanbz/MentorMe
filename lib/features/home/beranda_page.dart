@@ -26,12 +26,9 @@ class BerandaPage extends StatefulWidget {
 }
 
 class _BerandaPageState extends State<BerandaPage>
-    with TickerProviderStateMixin {
+    with SingleTickerProviderStateMixin {
   bool _isLoading = false;
-  late AnimationController _backgroundController;
-  late AnimationController _floatingController;
-  late AnimationController _pulseController;
-  late Animation<double> _backgroundAnimation;
+  late AnimationController _mainController;
   late Animation<double> _floatingAnimation;
   late Animation<double> _pulseAnimation;
 
@@ -42,51 +39,32 @@ class _BerandaPageState extends State<BerandaPage>
   }
 
   void _initAnimations() {
-    _backgroundController = AnimationController(
-      duration: const Duration(seconds: 6),
+    // Single controller for better performance
+    _mainController = AnimationController(
+      duration: const Duration(seconds: 4),
       vsync: this,
     )..repeat(reverse: true);
-
-    _floatingController = AnimationController(
-      duration: const Duration(seconds: 3),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _pulseController = AnimationController(
-      duration: const Duration(seconds: 2),
-      vsync: this,
-    )..repeat(reverse: true);
-
-    _backgroundAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _backgroundController,
-      curve: Curves.easeInOut,
-    ));
 
     _floatingAnimation = Tween<double>(
-      begin: -15.0,
-      end: 15.0,
+      begin: -8.0, // Reduced range
+      end: 8.0,
     ).animate(CurvedAnimation(
-      parent: _floatingController,
+      parent: _mainController,
       curve: Curves.easeInOut,
     ));
 
     _pulseAnimation = Tween<double>(
-      begin: 0.8,
-      end: 1.2,
+      begin: 0.95, // Reduced range
+      end: 1.05,
     ).animate(CurvedAnimation(
-      parent: _pulseController,
+      parent: _mainController,
       curve: Curves.easeInOut,
     ));
   }
 
   @override
   void dispose() {
-    _backgroundController.dispose();
-    _floatingController.dispose();
-    _pulseController.dispose();
+    _mainController.dispose();
     super.dispose();
   }
 
@@ -132,113 +110,84 @@ class _BerandaPageState extends State<BerandaPage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AnimatedBuilder(
-        animation: _backgroundAnimation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(const Color(0xFFe0fff3), const Color(0xFF339989),
-                      _backgroundAnimation.value * 0.3)!,
-                  Color.lerp(const Color(0xFF339989), const Color(0xFFe0fff3),
-                      _backgroundAnimation.value * 0.5)!,
-                  Color.lerp(const Color(0xFFe0fff3), const Color(0xFF3c493f),
-                      _backgroundAnimation.value * 0.2)!,
+      body: Container(
+        // Static gradient for better performance
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFe0fff3),
+              Color(0xFF339989),
+              Color(0xFF3c493f),
+            ],
+            stops: [0.0, 0.5, 1.0],
+          ),
+        ),
+        child: Stack(
+          children: [
+            _buildSimpleFloatingElements(),
+            SafeArea(
+              child: CustomScrollView(
+                physics: const BouncingScrollPhysics(),
+                slivers: [
+                  // Welcome Header
+                  SliverToBoxAdapter(
+                    child: _buildWelcomeHeader(),
+                  ),
+
+                  // Categories Section
+                  SliverToBoxAdapter(
+                    child: _buildSectionTitle("Kategori"),
+                  ),
+                  SliverToBoxAdapter(
+                    child: _buildCategoryList(),
+                  ),
+
+                  // Learning Paths Section
+                  SliverToBoxAdapter(
+                    child: _buildSectionTitle("Learning Path Populer"),
+                  ),
+                  _buildLearningPathGrid(),
                 ],
-                stops: const [0.0, 0.5, 1.0],
               ),
             ),
-            child: Stack(
-              children: [
-                _buildFloatingElements(),
-                SafeArea(
-                  child: CustomScrollView(
-                    physics: const BouncingScrollPhysics(),
-                    slivers: [
-                      // Welcome Header
-                      SliverToBoxAdapter(
-                        child: _buildWelcomeHeader(),
-                      ),
-
-                      // Categories Section
-                      SliverToBoxAdapter(
-                        child: _buildSectionTitle("Kategori"),
-                      ),
-                      SliverToBoxAdapter(
-                        child: _buildCategoryList(),
-                      ),
-
-                      // Learning Paths Section
-                      SliverToBoxAdapter(
-                        child: _buildSectionTitle("Learning Path Populer"),
-                      ),
-                      _buildLearningPathGrid(),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildFloatingElements() {
+  Widget _buildSimpleFloatingElements() {
     return AnimatedBuilder(
       animation: _floatingAnimation,
       builder: (context, child) {
         return Stack(
           children: [
-            // Floating circles with different sizes and positions
+            // Reduced number of floating elements for better performance
             Positioned(
-              top: 80 + _floatingAnimation.value,
-              right: 30,
+              top: 100 + _floatingAnimation.value,
+              right: 40,
               child: Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF339989).withOpacity(0.1),
-                ),
-              ),
-            ),
-            Positioned(
-              top: 150 - _floatingAnimation.value * 0.5,
-              left: 20,
-              child: Container(
-                width: 60,
+                width: 60, // Smaller size
                 height: 60,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFFe0fff3).withOpacity(0.3),
+                  color:
+                      const Color(0xFF339989).withOpacity(0.08), // More subtle
                 ),
               ),
             ),
             Positioned(
-              top: 300 + _floatingAnimation.value * 0.8,
-              right: 60,
+              top: 200 - _floatingAnimation.value * 0.5,
+              left: 30,
               child: Container(
-                width: 40,
+                width: 40, // Smaller size
                 height: 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
-                  color: const Color(0xFF3c493f).withOpacity(0.15),
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 200 - _floatingAnimation.value,
-              left: 40,
-              child: Container(
-                width: 100,
-                height: 100,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: const Color(0xFF339989).withOpacity(0.08),
+                  color:
+                      const Color(0xFFe0fff3).withOpacity(0.15), // More subtle
                 ),
               ),
             ),
@@ -308,15 +257,15 @@ class _BerandaPageState extends State<BerandaPage>
                     return Transform.scale(
                       scale: _pulseAnimation.value,
                       child: Container(
-                        padding: const EdgeInsets.all(16),
+                        padding: const EdgeInsets.all(14), // Slightly smaller
                         decoration: BoxDecoration(
                           color: Colors.white.withOpacity(0.2),
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(18),
                         ),
                         child: const Icon(
                           Icons.school_outlined,
                           color: Colors.white,
-                          size: 32,
+                          size: 28, // Smaller icon
                         ),
                       ),
                     );

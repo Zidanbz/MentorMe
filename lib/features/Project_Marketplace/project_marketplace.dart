@@ -8,6 +8,8 @@ import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
 import 'package:mentorme/shared/widgets/optimized_animations.dart';
 import 'package:mentorme/shared/widgets/optimized_list_view.dart';
+import 'package:mentorme/shared/widgets/app_background.dart';
+import 'package:mentorme/global/Fontstyle.dart';
 import 'dart:developer' as developer;
 
 class ProjectPage extends StatefulWidget {
@@ -64,38 +66,66 @@ class _ProjectPageState extends State<ProjectPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          "Project Marketplace",
-          style: TextStyle(color: darkTextColor, fontWeight: FontWeight.bold),
-        ),
-        backgroundColor: backgroundColor,
-        elevation: 0,
-        centerTitle: true,
-      ),
-      body: Consumer<GetProjectProvider>(
-        builder: (context, projectProvider, child) {
-          if (isLoadingLearning || projectProvider.isLoading) {
-            return _buildLoadingState();
-          }
-          if (projectProvider.projects.isEmpty) {
-            return _buildEmptyState();
-          }
+      body: AppBackground(
+        child: Column(
+          children: [
+            // Custom App Bar with consistent styling
+            SafeArea(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 4,
+                      height: 24,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                        ),
+                        borderRadius: BorderRadius.circular(2),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Text(
+                      "Project Marketplace",
+                      style: AppTextStyles.headlineSmall.copyWith(
+                        color: const Color(0xFF3c493f),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Content
+            Expanded(
+              child: Consumer<GetProjectProvider>(
+                builder: (context, projectProvider, child) {
+                  if (isLoadingLearning || projectProvider.isLoading) {
+                    return _buildLoadingState();
+                  }
+                  if (projectProvider.projects.isEmpty) {
+                    return _buildEmptyState();
+                  }
 
-          return OptimizedListView<dynamic>(
-            items: projectProvider.projects,
-            itemsPerPage: 10,
-            itemBuilder: (context, project, index) {
-              return OptimizedFadeSlide(
-                delay: Duration(milliseconds: index * 100),
-                child:
-                    _buildProjectCard(context, project as Map<String, dynamic>),
-              );
-            },
-            padding: const EdgeInsets.all(8),
-          );
-        },
+                  return OptimizedListView<dynamic>(
+                    items: projectProvider.projects,
+                    itemsPerPage: 10,
+                    itemBuilder: (context, project, index) {
+                      return OptimizedFadeSlide(
+                        delay: Duration(milliseconds: index * 100),
+                        child: _buildProjectCard(
+                            context, project as Map<String, dynamic>),
+                      );
+                    },
+                    padding: const EdgeInsets.all(8),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -136,30 +166,30 @@ class _ProjectPageState extends State<ProjectPage> {
           ),
         );
       },
-      child: Card(
-        clipBehavior: Clip.antiAlias,
-        elevation: 4,
-        shadowColor: primaryColor.withOpacity(0.2),
+      child: AppCard(
         margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: Stack(
-          children: [
-            // Gambar Background
-            _buildCardImage(projectData['picture']),
-            // Gradient Overlay
-            _buildGradientOverlay(),
-            // Konten
-            _buildCardContent(
-              title: projectData['materialName'] ?? 'Untitled',
-              mentor: projectData['mentor'] ?? 'Unknown',
-            ),
-            // Lencana Harga
-            _buildPriceBadge(formattedPrice),
-            // Lencana Metode Belajar
-            _buildMethodBadge(projectData['learningMethod']),
-            // Pita "Sudah Dibeli"
-            if (isPurchased) _buildPurchasedRibbon(),
-          ],
+        padding: EdgeInsets.zero,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(20),
+          child: Stack(
+            children: [
+              // Gambar Background
+              _buildCardImage(projectData['picture']),
+              // Gradient Overlay
+              _buildGradientOverlay(),
+              // Konten
+              _buildCardContent(
+                title: projectData['materialName'] ?? 'Untitled',
+                mentor: projectData['mentor'] ?? 'Unknown',
+              ),
+              // Lencana Harga
+              _buildPriceBadge(formattedPrice),
+              // Lencana Metode Belajar
+              _buildMethodBadge(projectData['learningMethod']),
+              // Pita "Sudah Dibeli"
+              if (isPurchased) _buildPurchasedRibbon(),
+            ],
+          ),
         ),
       ),
     );
@@ -202,46 +232,46 @@ class _ProjectPageState extends State<ProjectPage> {
       padding: const EdgeInsets.all(8),
       itemCount: 6,
       itemBuilder: (context, index) {
-        return Card(
-          clipBehavior: Clip.antiAlias,
-          elevation: 4,
+        return AppCard(
           margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-          child: const Stack(
-            children: [
-              // Shimmer Image
-              ShimmerCard(
-                width: double.infinity,
-                height: 220,
-              ),
-              // Shimmer Content
-              Positioned(
-                bottom: 12,
-                left: 16,
-                right: 16,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    ShimmerText(width: 200, height: 20),
-                    SizedBox(height: 8),
-                    ShimmerText(width: 120, height: 14),
-                  ],
+          padding: EdgeInsets.zero,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
+            child: const Stack(
+              children: [
+                // Shimmer Image
+                ShimmerCard(
+                  width: double.infinity,
+                  height: 220,
                 ),
-              ),
-              // Shimmer Price Badge
-              Positioned(
-                top: 12,
-                left: 12,
-                child: ShimmerCard(width: 80, height: 32),
-              ),
-              // Shimmer Method Badge
-              Positioned(
-                top: 12,
-                right: 12,
-                child: ShimmerCard(width: 60, height: 32),
-              ),
-            ],
+                // Shimmer Content
+                Positioned(
+                  bottom: 12,
+                  left: 16,
+                  right: 16,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      ShimmerText(width: 200, height: 20),
+                      SizedBox(height: 8),
+                      ShimmerText(width: 120, height: 14),
+                    ],
+                  ),
+                ),
+                // Shimmer Price Badge
+                Positioned(
+                  top: 12,
+                  left: 12,
+                  child: ShimmerCard(width: 80, height: 32),
+                ),
+                // Shimmer Method Badge
+                Positioned(
+                  top: 12,
+                  right: 12,
+                  child: ShimmerCard(width: 60, height: 32),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -354,24 +384,43 @@ class _ProjectPageState extends State<ProjectPage> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.search_off_rounded, size: 80, color: Colors.grey.shade400),
-          const SizedBox(height: 16),
-          const Text(
-            'Belum Ada Proyek',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: darkTextColor),
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Proyek baru akan segera ditambahkan.',
-            style: TextStyle(fontSize: 14, color: Colors.grey),
-          ),
-        ],
+      child: AppCard(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: const Icon(
+                Icons.layers_outlined,
+                size: 48,
+                color: Colors.white,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Belum Ada Proyek',
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: const Color(0xFF3c493f),
+                fontWeight: FontWeight.w600,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Proyek baru akan segera ditambahkan untuk membantu perjalanan belajar Anda',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: const Color(0xFF3c493f).withOpacity(0.7),
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

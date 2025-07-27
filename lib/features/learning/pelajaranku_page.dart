@@ -5,6 +5,7 @@ import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
 import 'package:mentorme/shared/widgets/enhanced_animations.dart' as enhanced;
 import 'package:mentorme/shared/widgets/optimized_list_view.dart';
+import 'package:mentorme/shared/widgets/app_background.dart';
 import 'package:mentorme/global/Fontstyle.dart';
 
 class Kegiatanku extends StatefulWidget {
@@ -155,52 +156,27 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AnimatedBuilder(
-        animation: _backgroundAnimation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(backgroundColor, primaryColor,
-                      _backgroundAnimation.value * 0.3)!,
-                  Color.lerp(primaryColor, backgroundColor,
-                      _backgroundAnimation.value * 0.5)!,
-                  Color.lerp(backgroundColor, darkTextColor,
-                      _backgroundAnimation.value * 0.2)!,
-                ],
-                stops: const [0.0, 0.5, 1.0],
+      body: AppBackground(
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildEnhancedAppBar(),
+              const SizedBox(height: 20),
+              _buildTabSwitcher(),
+              const SizedBox(height: 20),
+              Expanded(
+                child: _isLoading
+                    ? _buildLoadingState()
+                    : _errorMessage.isNotEmpty
+                        ? _buildErrorState(_errorMessage)
+                        : enhanced.OptimizedFadeSlide(
+                            duration: const Duration(milliseconds: 600),
+                            child: _buildCurrentList(),
+                          ),
               ),
-            ),
-            child: Stack(
-              children: [
-                _buildFloatingElements(),
-                SafeArea(
-                  child: Column(
-                    children: [
-                      _buildEnhancedAppBar(),
-                      const SizedBox(height: 20),
-                      _buildTabSwitcher(),
-                      const SizedBox(height: 20),
-                      Expanded(
-                        child: _isLoading
-                            ? _buildLoadingState()
-                            : _errorMessage.isNotEmpty
-                                ? _buildErrorState(_errorMessage)
-                                : enhanced.OptimizedFadeSlide(
-                                    duration: const Duration(milliseconds: 600),
-                                    child: _buildCurrentList(),
-                                  ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -273,56 +249,53 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
     return enhanced.OptimizedFadeSlide(
       duration: const Duration(milliseconds: 800),
       child: Container(
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Row(
           children: [
+            Container(
+              width: 4,
+              height: 24,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                ),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      colors: [Colors.white, backgroundColor],
-                    ).createShader(bounds),
-                    child: Text(
-                      "Kegiatanku",
-                      style: AppTextStyles.headlineLarge.copyWith(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                        shadows: [
-                          const Shadow(
-                            blurRadius: 8.0,
-                            color: Colors.black26,
-                            offset: Offset(2, 2),
-                          ),
-                        ],
-                      ),
+                  Text(
+                    "Pelajaranku",
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      color: const Color(0xFF3c493f),
+                      fontWeight: FontWeight.bold,
                     ),
                   ),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 4),
                   Text(
                     'Pantau progress belajar Anda',
                     style: AppTextStyles.bodyMedium.copyWith(
-                      color: Colors.white.withOpacity(0.9),
+                      color: const Color(0xFF3c493f).withOpacity(0.7),
                     ),
                   ),
                 ],
               ),
             ),
             Container(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.3),
-                  width: 1,
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF339989), Color(0xFF3c493f)],
                 ),
+                borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
                 Icons.trending_up,
                 color: Colors.white,
-                size: 28,
+                size: 24,
               ),
             ),
           ],
@@ -338,13 +311,13 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
         margin: const EdgeInsets.symmetric(horizontal: 24),
         padding: const EdgeInsets.all(6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.9),
+          color: Colors.white.withOpacity(0.95),
           borderRadius: BorderRadius.circular(25),
           boxShadow: [
             BoxShadow(
-              color: primaryColor.withOpacity(0.2),
+              color: primaryColor.withOpacity(0.15),
               blurRadius: 15,
-              offset: const Offset(0, 5),
+              offset: const Offset(0, 8),
             ),
           ],
         ),

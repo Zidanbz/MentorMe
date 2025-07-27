@@ -10,12 +10,15 @@ import 'package:mentorme/features/auth/login/login_page.dart';
 import 'package:mentorme/shared/widgets/custom_button.dart';
 import 'package:mentorme/shared/widgets/loading_dialog.dart';
 import 'package:mentorme/features/profile/edit_profile.dart';
+import 'package:mentorme/features/profile/terms_conditions_page.dart';
+import 'package:mentorme/features/profile/privacy_policy_page.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/features/profile/services/profile_api_service.dart';
 import 'package:mentorme/models/learning_model.dart';
 import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
 import 'package:mentorme/shared/widgets/enhanced_animations.dart' as enhanced;
+import 'package:mentorme/shared/widgets/app_background.dart';
 import 'package:mentorme/global/Fontstyle.dart';
 
 class ProfilePage extends StatefulWidget {
@@ -253,42 +256,41 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  void _navigateToTermsConditions() {
+    Navigator.push(
+      context,
+      enhanced.OptimizedPageRoute(
+        child: const TermsConditionsPage(),
+        transitionType: enhanced.PageTransitionType.slideUp,
+      ),
+    );
+  }
+
+  void _navigateToPrivacyPolicy() {
+    Navigator.push(
+      context,
+      enhanced.OptimizedPageRoute(
+        child: const PrivacyPolicyPage(),
+        transitionType: enhanced.PageTransitionType.slideUp,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: AnimatedBuilder(
-        animation: _backgroundAnimation,
-        builder: (context, child) {
-          return Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  Color.lerp(const Color(0xFF339989), const Color(0xFFe0fff3),
-                      _backgroundAnimation.value)!,
-                  Color.lerp(const Color(0xFFe0fff3), const Color(0xFF3c493f),
-                      _backgroundAnimation.value)!,
-                  Color.lerp(const Color(0xFF3c493f), const Color(0xFF339989),
-                      _backgroundAnimation.value)!,
-                ],
-                stops: const [0.0, 0.5, 1.0],
+      body: AppBackground(
+        child: _isLoading
+            ? _buildLoadingState()
+            : enhanced.OptimizedFadeSlide(
+                duration: const Duration(milliseconds: 600),
+                child: Stack(
+                  children: [
+                    _buildHeaderActions(),
+                    _buildBodyContent(),
+                  ],
+                ),
               ),
-            ),
-            child: _isLoading
-                ? _buildLoadingState()
-                : enhanced.OptimizedFadeSlide(
-                    duration: const Duration(milliseconds: 600),
-                    child: Stack(
-                      children: [
-                        _buildFloatingElements(),
-                        _buildHeaderActions(),
-                        _buildBodyContent(),
-                      ],
-                    ),
-                  ),
-          );
-        },
       ),
     );
   }
@@ -424,6 +426,8 @@ class _ProfilePageState extends State<ProfilePage>
               const SizedBox(height: 16), // Reduced spacing
               _buildActionButtons(),
               const SizedBox(height: 20), // Reduced spacing
+              _buildMenuSection(),
+              const SizedBox(height: 20), // Spacing between sections
               _buildTransactionSection(),
               const SizedBox(height: 100), // Bottom padding for safe scrolling
             ],
@@ -650,6 +654,148 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildMenuSection() {
+    return enhanced.OptimizedFadeSlide(
+      delay: const Duration(milliseconds: 500),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF339989).withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.menu_book,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Informasi Legal',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: const Color(0xFF3c493f),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildMenuItem(
+              icon: Icons.description_outlined,
+              title: 'Syarat & Ketentuan',
+              subtitle: 'Baca syarat dan ketentuan penggunaan aplikasi',
+              onTap: _navigateToTermsConditions,
+            ),
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              icon: Icons.privacy_tip_outlined,
+              title: 'Kebijakan Privasi',
+              subtitle: 'Pelajari bagaimana kami melindungi data Anda',
+              onTap: _navigateToPrivacyPolicy,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuItem({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return enhanced.OptimizedHover(
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFFe0fff3).withOpacity(0.3),
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: const Color(0xFF339989).withOpacity(0.2),
+            width: 1,
+          ),
+        ),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: onTap,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  icon,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      title,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: const Color(0xFF3c493f),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      subtitle,
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: const Color(0xFF3c493f).withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF339989).withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios,
+                  color: Color(0xFF339989),
+                  size: 16,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

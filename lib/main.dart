@@ -45,61 +45,73 @@ class _MyAppState extends State<MyApp> {
   @override
   void initState() {
     super.initState();
+    _initializeFirebaseMessaging();
+  }
 
+  void _initializeFirebaseMessaging() async {
     _firebaseMessaging = FirebaseMessaging.instance;
     flutterLocalNotificationsPlugin = FlutterLocalNotificationsPlugin();
 
-    // Inisialisasi notifikasi lokal
+    // Initialize notifications asynchronously to avoid blocking UI
     _initializeNotifications();
 
-    // Mengatur callback untuk notifikasi saat aplikasi aktif
+    // Set up message listener
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-      print(
-          'Notifikasi diterima di foreground: ${message.notification?.title}');
-      _showNotification(message);
+      if (message.notification != null) {
+        _showNotification(message);
+      }
     });
 
-    // Ambil token FCM
+    // Get FCM token asynchronously
     _getToken();
   }
 
   void _initializeNotifications() async {
-    const AndroidInitializationSettings initializationSettingsAndroid =
-        AndroidInitializationSettings('app_icon');
-    final InitializationSettings initializationSettings =
-        InitializationSettings(
-      android: initializationSettingsAndroid,
-      // iOS: IOSInitializationSettings(),
-    );
-    await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    try {
+      const AndroidInitializationSettings initializationSettingsAndroid =
+          AndroidInitializationSettings('app_icon');
+      final InitializationSettings initializationSettings =
+          InitializationSettings(
+        android: initializationSettingsAndroid,
+      );
+      await flutterLocalNotificationsPlugin.initialize(initializationSettings);
+    } catch (e) {
+      print('Error initializing notifications: $e');
+    }
   }
 
   void _showNotification(RemoteMessage message) async {
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-        AndroidNotificationDetails(
-      'your_channel_id',
-      'your_channel_name',
-      importance: Importance.max,
-      priority: Priority.high,
-      ticker: 'ticker',
-    );
-    const NotificationDetails platformChannelSpecifics = NotificationDetails(
-      android: androidPlatformChannelSpecifics,
-    );
+    try {
+      const AndroidNotificationDetails androidPlatformChannelSpecifics =
+          AndroidNotificationDetails(
+        'mentorme_channel',
+        'MentorMe Notifications',
+        importance: Importance.high,
+        priority: Priority.high,
+        ticker: 'ticker',
+      );
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidPlatformChannelSpecifics,
+      );
 
-    // Menampilkan notifikasi lokal
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      message.notification?.title,
-      message.notification?.body,
-      platformChannelSpecifics,
-      payload: 'item x',
-    );
+      await flutterLocalNotificationsPlugin.show(
+        DateTime.now().millisecondsSinceEpoch.remainder(100000),
+        message.notification?.title,
+        message.notification?.body,
+        platformChannelSpecifics,
+      );
+    } catch (e) {
+      print('Error showing notification: $e');
+    }
   }
 
   void _getToken() async {
-    String? token = await FirebaseMessaging.instance.getToken();
-    print("🔥 FCM Token: $token");
+    try {
+      String? token = await FirebaseMessaging.instance.getToken();
+      print("🔥 FCM Token: $token");
+    } catch (e) {
+      print('Error getting FCM token: $e');
+    }
   }
 
   // Fungsi pengecekan status aplikasi
