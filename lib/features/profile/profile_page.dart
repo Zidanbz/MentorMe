@@ -344,32 +344,14 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  // DIUBAH: Header disederhanakan, hanya menampilkan judul
   Widget _buildHeaderActions() {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
         child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.center, // Diubah ke center
           children: [
-            enhanced.OptimizedHover(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  Icons.notifications_outlined,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              onTap: _navigateToNotifications,
-            ),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
@@ -388,31 +370,13 @@ class _ProfilePageState extends State<ProfilePage>
                 ),
               ),
             ),
-            enhanced.OptimizedHover(
-              child: Container(
-                padding: const EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(15),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Icon(
-                  Icons.logout,
-                  color: Colors.white,
-                  size: 24,
-                ),
-              ),
-              onTap: _isLoggingOut ? null : _handleLogout,
-            ),
           ],
         ),
       ),
     );
   }
 
+  // DIUBAH: Menambahkan _buildAccountActionsSection()
   Widget _buildBodyContent() {
     return SafeArea(
       child: SingleChildScrollView(
@@ -421,17 +385,87 @@ class _ProfilePageState extends State<ProfilePage>
           padding: const EdgeInsets.symmetric(horizontal: 24.0),
           child: Column(
             children: [
-              const SizedBox(height: 80), // Reduced space for header
+              const SizedBox(height: 80), // Space untuk header
               _buildProfileInfo(),
-              const SizedBox(height: 16), // Reduced spacing
+              const SizedBox(height: 16),
               _buildActionButtons(),
-              const SizedBox(height: 20), // Reduced spacing
-              _buildMenuSection(),
-              const SizedBox(height: 20), // Spacing between sections
+              const SizedBox(height: 20),
+              // Posisi ditukar: Riwayat Transaksi sekarang di atas
               _buildTransactionSection(),
-              const SizedBox(height: 100), // Bottom padding for safe scrolling
+              const SizedBox(height: 20),
+              // Posisi ditukar: Informasi Legal sekarang di bawah
+              _buildMenuSection(),
+              const SizedBox(height: 20),
+              _buildAccountActionsSection(),
+              const SizedBox(height: 100), // Bottom padding
             ],
           ),
+        ),
+      ),
+    );
+  }
+
+  // BARU: Method untuk membuat seksi Notifikasi dan Logout
+  Widget _buildAccountActionsSection() {
+    return enhanced.OptimizedFadeSlide(
+      delay: const Duration(milliseconds: 700),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF339989).withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.settings_outlined,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Pengaturan Akun',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: const Color(0xFF3c493f),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildMenuItem(
+              icon: Icons.notifications_outlined,
+              title: 'Notifikasi',
+              subtitle: 'Lihat pemberitahuan terbaru dari aplikasi',
+              onTap: _navigateToNotifications,
+            ),
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              icon: Icons.logout,
+              title: 'Logout',
+              subtitle: 'Keluar dari akun Anda saat ini',
+              onTap: _handleLogout,
+            ),
+          ],
         ),
       ),
     );
@@ -442,12 +476,11 @@ class _ProfilePageState extends State<ProfilePage>
       duration: const Duration(milliseconds: 800),
       staggerDelay: const Duration(milliseconds: 150),
       children: [
-        // Profile Avatar with enhanced styling - Smaller size
         enhanced.OptimizedScale(
           duration: const Duration(milliseconds: 1000),
           curve: Curves.elasticOut,
           child: Container(
-            padding: const EdgeInsets.all(4), // Reduced padding
+            padding: const EdgeInsets.all(4),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
@@ -455,23 +488,22 @@ class _ProfilePageState extends State<ProfilePage>
               ),
               boxShadow: [
                 BoxShadow(
-                  color: const Color(0xFF339989)
-                      .withOpacity(0.3), // Reduced opacity
-                  blurRadius: 15, // Reduced blur
-                  spreadRadius: 3, // Reduced spread
-                  offset: const Offset(0, 6), // Reduced offset
+                  color: const Color(0xFF339989).withOpacity(0.3),
+                  blurRadius: 15,
+                  spreadRadius: 3,
+                  offset: const Offset(0, 6),
                 ),
               ],
             ),
             child: CircleAvatar(
-              radius: 45, // Reduced from 54 to 45
+              radius: 45,
               backgroundColor: const Color(0xFFe0fff3),
               child: _profile?.picture != null && _profile!.picture.isNotEmpty
                   ? ClipOval(
                       child: OptimizedImage(
                         imageUrl: _profile!.picture,
-                        width: 85, // Reduced from 100 to 85
-                        height: 85, // Reduced from 100 to 85
+                        width: 85,
+                        height: 85,
                         fit: BoxFit.cover,
                         placeholder: _buildAvatarShimmer(),
                         errorWidget: _buildAvatarPlaceholder(),
@@ -481,9 +513,7 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
         ),
-        const SizedBox(height: 12), // Reduced spacing
-
-        // Name with gradient text
+        const SizedBox(height: 12),
         ShaderMask(
           shaderCallback: (bounds) => const LinearGradient(
             colors: [Color(0xFF3c493f), Color(0xFF339989)],
@@ -498,8 +528,6 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         const SizedBox(height: 8),
-
-        // Role badge
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
           decoration: BoxDecoration(
@@ -524,18 +552,16 @@ class _ProfilePageState extends State<ProfilePage>
           ),
         ),
         const SizedBox(height: 12),
-
-        // Description - Smaller and more compact
         Container(
-          padding: const EdgeInsets.all(12), // Reduced padding
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(12), // Smaller radius
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF339989).withOpacity(0.1),
-                blurRadius: 8, // Reduced blur
-                offset: const Offset(0, 3), // Reduced offset
+                blurRadius: 8,
+                offset: const Offset(0, 3),
               ),
             ],
           ),
@@ -543,9 +569,8 @@ class _ProfilePageState extends State<ProfilePage>
             'Mahasiswa yang terus belajar dan berkembang',
             textAlign: TextAlign.center,
             style: AppTextStyles.bodySmall.copyWith(
-              // Changed to bodySmall
               color: const Color(0xFF3c493f),
-              height: 1.4, // Reduced line height
+              height: 1.4,
             ),
           ),
         ),
@@ -562,7 +587,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: enhanced.OptimizedHover(
               scale: 1.02,
               child: Container(
-                height: 48, // Reduced from 56 to 48
+                height: 48,
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF339989), Color(0xFF3c493f)],
@@ -609,7 +634,7 @@ class _ProfilePageState extends State<ProfilePage>
             child: enhanced.OptimizedHover(
               scale: 1.02,
               child: Container(
-                height: 48, // Reduced from 56 to 48
+                height: 48,
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.9),
                   borderRadius: BorderRadius.circular(16),
@@ -996,60 +1021,52 @@ class _ProfilePageState extends State<ProfilePage>
               padding: const EdgeInsets.symmetric(horizontal: 24.0),
               child: Column(
                 children: [
-                  const SizedBox(height: 80), // Reduced space
-                  // Profile Avatar Shimmer
-                  const ShimmerCircle(radius: 50), // Smaller radius
-                  const SizedBox(height: 12), // Reduced spacing
-                  // Name Shimmer
-                  const ShimmerText(width: 180, height: 20), // Smaller
-                  const SizedBox(height: 6), // Reduced spacing
-                  // Role Shimmer
-                  const ShimmerText(width: 80, height: 14), // Smaller
-                  const SizedBox(height: 6), // Reduced spacing
-                  // Description Shimmer
-                  const ShimmerText(width: 250, height: 12), // Smaller
-                  const SizedBox(height: 16), // Reduced spacing
-                  // Buttons Shimmer
+                  const SizedBox(height: 80),
+                  const ShimmerCircle(radius: 50),
+                  const SizedBox(height: 12),
+                  const ShimmerText(width: 180, height: 20),
+                  const SizedBox(height: 6),
+                  const ShimmerText(width: 80, height: 14),
+                  const SizedBox(height: 6),
+                  const ShimmerText(width: 250, height: 12),
+                  const SizedBox(height: 16),
                   Row(
                     children: [
                       Expanded(
                         child: ShimmerCard(
                           width: double.infinity,
-                          height: 44, // Smaller height
+                          height: 44,
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
-                      const SizedBox(width: 12), // Reduced spacing
+                      const SizedBox(width: 12),
                       Expanded(
                         child: ShimmerCard(
                           width: double.infinity,
-                          height: 44, // Smaller height
+                          height: 44,
                           borderRadius: BorderRadius.circular(8),
                         ),
                       ),
                     ],
                   ),
-                  const SizedBox(height: 20), // Reduced spacing
-                  // Transaction Section Shimmer
+                  const SizedBox(height: 20),
                   const Align(
                     alignment: Alignment.centerLeft,
-                    child: ShimmerText(width: 140, height: 18), // Smaller
+                    child: ShimmerText(width: 140, height: 18),
                   ),
-                  const SizedBox(height: 12), // Reduced spacing
-                  // Transaction Items Shimmer - Reduced count
+                  const SizedBox(height: 12),
                   ...List.generate(
-                    2, // Reduced from 3 to 2
+                    2,
                     (index) => Padding(
-                      padding:
-                          const EdgeInsets.only(bottom: 8), // Reduced spacing
+                      padding: const EdgeInsets.only(bottom: 8),
                       child: ShimmerCard(
                         width: double.infinity,
-                        height: 60, // Smaller height
+                        height: 60,
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 100), // Bottom padding
+                  const SizedBox(height: 100),
                 ],
               ),
             ),

@@ -145,9 +145,9 @@ class TermsConditionsPage extends StatelessWidget {
                       _buildSection(
                         '10. Kontak',
                         'Jika Anda memiliki pertanyaan tentang syarat dan ketentuan ini, silakan hubungi kami melalui:\n\n'
-                            'Email: support@mentorme.id\n'
-                            'Telepon: +62 21 1234 5678\n'
-                            'Alamat: Jakarta, Indonesia',
+                            'Email: mentormeid1@gmail.com\n'
+                            'Telepon: +62 85 1830 60349\n'
+                            'Alamat: Makassar, Indonesia',
                       ),
                       const SizedBox(height: 20),
                       Container(

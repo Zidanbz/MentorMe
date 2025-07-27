@@ -182,11 +182,11 @@ class PrivacyPolicyPage extends StatelessWidget {
                       _buildSection(
                         '11. Hubungi Kami',
                         'Jika Anda memiliki pertanyaan tentang kebijakan privasi atau ingin menggunakan hak-hak Anda:\n\n'
-                            'Email: privacy@mentorme.id\n'
-                            'Telepon: +62 21 1234 5678\n'
-                            'Alamat: Jakarta, Indonesia\n\n'
+                            'Email: mentormeid1@gmail.com\n'
+                            'Telepon: +62 85 1830 60349 \n'
+                            'Alamat: Makassar, Indonesia\n\n'
                             'Data Protection Officer:\n'
-                            'Email: dpo@mentorme.id\n\n'
+                            'Email: mentormeid1@gmail.com\n\n'
                             'Kami akan merespons dalam waktu 14 hari kerja.',
                       ),
                       const SizedBox(height: 20),
