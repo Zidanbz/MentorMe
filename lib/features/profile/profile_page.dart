@@ -11,11 +11,12 @@ import 'package:mentorme/shared/widgets/custom_button.dart';
 import 'package:mentorme/shared/widgets/loading_dialog.dart';
 import 'package:mentorme/features/profile/edit_profile.dart';
 import 'package:mentorme/models/Profile_models.dart';
-import 'package:mentorme/controller/api_services.dart';
+import 'package:mentorme/features/profile/services/profile_api_service.dart';
 import 'package:mentorme/models/learning_model.dart';
 import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
-import 'package:mentorme/shared/widgets/optimized_animations.dart';
+import 'package:mentorme/shared/widgets/enhanced_animations.dart' as enhanced;
+import 'package:mentorme/global/Fontstyle.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -24,31 +25,104 @@ class ProfilePage extends StatefulWidget {
   State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends State<ProfilePage> {
+class _ProfilePageState extends State<ProfilePage>
+    with TickerProviderStateMixin {
   Profile? _profile;
   List<Learning>? _learningData;
   bool _isLoading = true;
   bool _isLoggingOut = false;
+  late AnimationController _backgroundController;
+  late AnimationController _floatingController;
+  late Animation<double> _backgroundAnimation;
+  late Animation<double> _floatingAnimation;
 
   @override
   void initState() {
     super.initState();
+    _initAnimations();
     _fetchProfile();
+  }
+
+  void _initAnimations() {
+    _backgroundController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _floatingController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _backgroundController,
+      curve: Curves.easeInOut,
+    ));
+
+    _floatingAnimation = Tween<double>(
+      begin: -10.0,
+      end: 10.0,
+    ).animate(CurvedAnimation(
+      parent: _floatingController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _backgroundController.dispose();
+    _floatingController.dispose();
+    super.dispose();
   }
 
   Future<void> _fetchProfile() async {
     try {
       setState(() => _isLoading = true);
 
-      final profile = await ApiService().fetchProfile();
-      final learningData = await ApiService().fetchUserLearning();
+      // Fetch profile data
+      final profileResponse = await ProfileApiService.fetchProfile();
+      final learningResponse = await ProfileApiService.fetchUserLearning();
 
       if (mounted) {
+        Profile? profile;
+        List<Learning>? learningData;
+
+        // Process profile response
+        if (profileResponse.success && profileResponse.data != null) {
+          final profileData = profileResponse.data!;
+          profile = Profile(
+            fullName: profileData['fullName'] ?? '',
+            picture: profileData['picture'] ?? '',
+            phone: profileData['phone'] ?? '',
+          );
+        }
+
+        // Process learning response
+        if (learningResponse.success && learningResponse.data != null) {
+          final learningListData = learningResponse.data!['learning'] ?? [];
+          learningData = (learningListData as List)
+              .map((item) => Learning.fromJson(item))
+              .toList();
+        }
+
         setState(() {
           _profile = profile;
           _learningData = learningData;
           _isLoading = false;
         });
+
+        // Show error if any API call failed
+        if (!profileResponse.success) {
+          ErrorHandler.showError(
+              context, 'Gagal memuat profil: ${profileResponse.message}');
+        }
+        if (!learningResponse.success) {
+          ErrorHandler.showError(context,
+              'Gagal memuat data pembelajaran: ${learningResponse.message}');
+        }
       }
     } catch (error) {
       if (mounted) {
@@ -80,7 +154,10 @@ class _ProfilePageState extends State<ProfilePage> {
       if (mounted) {
         Navigator.pushAndRemoveUntil(
           context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
+          enhanced.OptimizedPageRoute(
+            child: const LoginPage(),
+            transitionType: enhanced.PageTransitionType.fade,
+          ),
           (Route<dynamic> route) => false,
         );
       }
@@ -100,21 +177,44 @@ class _ProfilePageState extends State<ProfilePage> {
     return await showDialog<bool>(
           context: context,
           builder: (context) => AlertDialog(
-            title: const Text('Konfirmasi Logout'),
-            content: const Text('Apakah Anda yakin ingin keluar?'),
+            backgroundColor: const Color(0xFFe0fff3),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+            ),
+            title: Text(
+              'Konfirmasi Logout',
+              style: AppTextStyles.headlineSmall.copyWith(
+                color: const Color(0xFF3c493f),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            content: Text(
+              'Apakah Anda yakin ingin keluar?',
+              style: AppTextStyles.bodyMedium.copyWith(
+                color: const Color(0xFF3c493f),
+              ),
+            ),
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(false),
-                child: Text(
-                  AppStrings.cancel,
-                  style: const TextStyle(color: AppColors.textSecondary),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF3c493f),
                 ),
+                child: Text(AppStrings.cancel),
               ),
-              TextButton(
-                onPressed: () => Navigator.of(context).pop(true),
-                child: Text(
-                  AppStrings.confirm,
-                  style: const TextStyle(color: AppColors.error),
+              Container(
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                  ),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: TextButton(
+                  onPressed: () => Navigator.of(context).pop(true),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text(AppStrings.confirm),
                 ),
               ),
             ],
@@ -126,50 +226,119 @@ class _ProfilePageState extends State<ProfilePage> {
   void _navigateToEditProfile() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => const EditProfileScreen()),
+      enhanced.OptimizedPageRoute(
+        child: const EditProfileScreen(),
+        transitionType: enhanced.PageTransitionType.slideRight,
+      ),
     ).then((_) => _fetchProfile()); // Refresh profile after edit
   }
 
   void _navigateToHelpPage() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => HelpPage()),
+      enhanced.OptimizedPageRoute(
+        child: HelpPage(),
+        transitionType: enhanced.PageTransitionType.slideUp,
+      ),
     );
   }
 
   void _navigateToNotifications() {
     Navigator.push(
       context,
-      MaterialPageRoute(builder: (context) => NotificationPage()),
+      enhanced.OptimizedPageRoute(
+        child: NotificationPage(),
+        transitionType: enhanced.PageTransitionType.slideLeft,
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      body: _isLoading
-          ? _buildLoadingState()
-          : OptimizedFadeSlide(
-              duration: const Duration(milliseconds: 600),
-              child: Stack(
-                children: [
-                  _buildCurvedHeader(),
-                  _buildHeaderActions(),
-                  _buildBodyContent(),
+      body: AnimatedBuilder(
+        animation: _backgroundAnimation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.lerp(const Color(0xFF339989), const Color(0xFFe0fff3),
+                      _backgroundAnimation.value)!,
+                  Color.lerp(const Color(0xFFe0fff3), const Color(0xFF3c493f),
+                      _backgroundAnimation.value)!,
+                  Color.lerp(const Color(0xFF3c493f), const Color(0xFF339989),
+                      _backgroundAnimation.value)!,
                 ],
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
+            child: _isLoading
+                ? _buildLoadingState()
+                : enhanced.OptimizedFadeSlide(
+                    duration: const Duration(milliseconds: 600),
+                    child: Stack(
+                      children: [
+                        _buildFloatingElements(),
+                        _buildHeaderActions(),
+                        _buildBodyContent(),
+                      ],
+                    ),
+                  ),
+          );
+        },
+      ),
     );
   }
 
-  Widget _buildCurvedHeader() {
-    return ClipPath(
-      clipper: WaveClipper(),
-      child: Container(
-        height: 250,
-        color: AppColors.primary,
-      ),
+  Widget _buildFloatingElements() {
+    return AnimatedBuilder(
+      animation: _floatingAnimation,
+      builder: (context, child) {
+        return Stack(
+          children: [
+            // Floating circles
+            Positioned(
+              top: 100 + _floatingAnimation.value,
+              right: 30,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFe0fff3).withOpacity(0.3),
+                ),
+              ),
+            ),
+            Positioned(
+              top: 200 - _floatingAnimation.value,
+              left: 20,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF339989).withOpacity(0.2),
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 150 + _floatingAnimation.value,
+              right: 50,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFF3c493f).withOpacity(0.1),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 
@@ -180,29 +349,61 @@ class _ProfilePageState extends State<ProfilePage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            IconButton(
-              icon: const Icon(
-                Icons.notifications_outlined,
-                color: AppColors.textLight,
-                size: 28,
+            enhanced.OptimizedHover(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.notifications_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
-              onPressed: _navigateToNotifications,
+              onTap: _navigateToNotifications,
             ),
-            Text(
-              AppStrings.profile,
-              style: const TextStyle(
-                color: AppColors.textLight,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: Text(
+                AppStrings.profile,
+                style: AppTextStyles.headlineSmall.copyWith(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
             ),
-            IconButton(
-              icon: const Icon(
-                Icons.logout,
-                color: AppColors.textLight,
-                size: 28,
+            enhanced.OptimizedHover(
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(15),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+                child: Icon(
+                  Icons.logout,
+                  color: Colors.white,
+                  size: 24,
+                ),
               ),
-              onPressed: _isLoggingOut ? null : _handleLogout,
+              onTap: _isLoggingOut ? null : _handleLogout,
             ),
           ],
         ),
@@ -211,68 +412,137 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildBodyContent() {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0),
-        child: Column(
-          children: [
-            const SizedBox(height: 120), // Space for curved header
-            _buildProfileInfo(),
-            const SizedBox(height: 24),
-            _buildActionButtons(),
-            const SizedBox(height: 32),
-            _buildTransactionSection(),
-            const SizedBox(height: 24),
-          ],
+    return SafeArea(
+      child: SingleChildScrollView(
+        physics: const BouncingScrollPhysics(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0),
+          child: Column(
+            children: [
+              const SizedBox(height: 80), // Reduced space for header
+              _buildProfileInfo(),
+              const SizedBox(height: 16), // Reduced spacing
+              _buildActionButtons(),
+              const SizedBox(height: 20), // Reduced spacing
+              _buildTransactionSection(),
+              const SizedBox(height: 100), // Bottom padding for safe scrolling
+            ],
+          ),
         ),
       ),
     );
   }
 
   Widget _buildProfileInfo() {
-    return Column(
+    return enhanced.OptimizedStaggeredList(
+      duration: const Duration(milliseconds: 800),
+      staggerDelay: const Duration(milliseconds: 150),
       children: [
-        CircleAvatar(
-          radius: 54,
-          backgroundColor: AppColors.primary.withOpacity(0.8),
-          child: _profile?.picture != null && _profile!.picture.isNotEmpty
-              ? ClipOval(
-                  child: OptimizedImage(
-                    imageUrl: _profile!.picture,
-                    width: 100,
-                    height: 100,
-                    fit: BoxFit.cover,
-                    placeholder: _buildAvatarShimmer(),
-                    errorWidget: _buildAvatarPlaceholder(),
-                  ),
-                )
-              : _buildAvatarPlaceholder(),
-        ),
-        const SizedBox(height: 16),
-        Text(
-          _profile?.fullName ?? 'Nama Pengguna',
-          style: const TextStyle(
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
+        // Profile Avatar with enhanced styling - Smaller size
+        enhanced.OptimizedScale(
+          duration: const Duration(milliseconds: 1000),
+          curve: Curves.elasticOut,
+          child: Container(
+            padding: const EdgeInsets.all(4), // Reduced padding
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: const LinearGradient(
+                colors: [Color(0xFF339989), Color(0xFF3c493f)],
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF339989)
+                      .withOpacity(0.3), // Reduced opacity
+                  blurRadius: 15, // Reduced blur
+                  spreadRadius: 3, // Reduced spread
+                  offset: const Offset(0, 6), // Reduced offset
+                ),
+              ],
+            ),
+            child: CircleAvatar(
+              radius: 45, // Reduced from 54 to 45
+              backgroundColor: const Color(0xFFe0fff3),
+              child: _profile?.picture != null && _profile!.picture.isNotEmpty
+                  ? ClipOval(
+                      child: OptimizedImage(
+                        imageUrl: _profile!.picture,
+                        width: 85, // Reduced from 100 to 85
+                        height: 85, // Reduced from 100 to 85
+                        fit: BoxFit.cover,
+                        placeholder: _buildAvatarShimmer(),
+                        errorWidget: _buildAvatarPlaceholder(),
+                      ),
+                    )
+                  : _buildAvatarPlaceholder(),
+            ),
           ),
         ),
-        const SizedBox(height: 4),
-        const Text(
-          'Mahasiswa',
-          style: TextStyle(
-            fontSize: 16,
-            color: AppColors.primary,
-            fontWeight: FontWeight.w500,
+        const SizedBox(height: 12), // Reduced spacing
+
+        // Name with gradient text
+        ShaderMask(
+          shaderCallback: (bounds) => const LinearGradient(
+            colors: [Color(0xFF3c493f), Color(0xFF339989)],
+          ).createShader(bounds),
+          child: Text(
+            _profile?.fullName ?? 'Nama Pengguna',
+            style: AppTextStyles.headlineMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.bold,
+            ),
+            textAlign: TextAlign.center,
           ),
         ),
         const SizedBox(height: 8),
-        const Text(
-          'Saya seorang mahasiswa yang sedang mencari kebenaran',
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 14,
-            color: AppColors.textSecondary,
+
+        // Role badge
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [Color(0xFF339989), Color(0xFF3c493f)],
+            ),
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF339989).withOpacity(0.3),
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Text(
+            'Mahasiswa',
+            style: AppTextStyles.labelMedium.copyWith(
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Description - Smaller and more compact
+        Container(
+          padding: const EdgeInsets.all(12), // Reduced padding
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.9),
+            borderRadius: BorderRadius.circular(12), // Smaller radius
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF339989).withOpacity(0.1),
+                blurRadius: 8, // Reduced blur
+                offset: const Offset(0, 3), // Reduced offset
+              ),
+            ],
+          ),
+          child: Text(
+            'Mahasiswa yang terus belajar dan berkembang',
+            textAlign: TextAlign.center,
+            style: AppTextStyles.bodySmall.copyWith(
+              // Changed to bodySmall
+              color: const Color(0xFF3c493f),
+              height: 1.4, // Reduced line height
+            ),
           ),
         ),
       ],
@@ -280,76 +550,103 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildActionButtons() {
-    return Row(
-      children: [
-        Expanded(
-          child: CustomButton(
-            text: 'Edit Profil',
-            icon: Icons.edit_outlined,
-            onPressed: _navigateToEditProfile,
-            type: ButtonType.primary,
-          ),
-        ),
-        const SizedBox(width: 16),
-        Expanded(
-          child: CustomButton(
-            text: AppStrings.help,
-            icon: Icons.help_outline,
-            onPressed: _navigateToHelpPage,
-            type: ButtonType.outline,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildTransactionSection() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Text(
-          'Riwayat Transaksi',
-          style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
-            color: AppColors.textPrimary,
-          ),
-        ),
-        const SizedBox(height: 16),
-        if (_learningData == null || _learningData!.isEmpty)
-          _buildEmptyState()
-        else
-          ListView.separated(
-            physics: const NeverScrollableScrollPhysics(),
-            shrinkWrap: true,
-            itemCount: _learningData!.length,
-            separatorBuilder: (context, index) => const SizedBox(height: 12),
-            itemBuilder: (context, index) {
-              final learning = _learningData![index];
-              final isSuccess = !learning.progress;
-              return _buildTransactionItem(
-                learning.project.materialName,
-                isSuccess ? 'Berhasil' : 'Gagal',
-              );
-            },
-          )
-      ],
-    );
-  }
-
-  Widget _buildEmptyState() {
-    return Center(
-      child: Column(
+    return enhanced.OptimizedFadeSlide(
+      delay: const Duration(milliseconds: 400),
+      child: Row(
         children: [
-          const SizedBox(height: 20),
-          Image.asset('assets/Maskot.png', width: 160),
-          const SizedBox(height: 16),
-          const Text(
-            'Belum ada transaksi,\nayo lakukan pembelian!',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              color: AppColors.textSecondary,
+          Expanded(
+            child: enhanced.OptimizedHover(
+              scale: 1.02,
+              child: Container(
+                height: 48, // Reduced from 56 to 48
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF339989).withOpacity(0.3),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: _navigateToEditProfile,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.edit_outlined,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Edit Profil',
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: enhanced.OptimizedHover(
+              scale: 1.02,
+              child: Container(
+                height: 48, // Reduced from 56 to 48
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.9),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF339989).withOpacity(0.3),
+                    width: 2,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF339989).withOpacity(0.1),
+                      blurRadius: 12,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: Material(
+                  color: Colors.transparent,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(16),
+                    onTap: _navigateToHelpPage,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Icon(
+                          Icons.help_outline,
+                          color: Color(0xFF339989),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          AppStrings.help,
+                          style: AppTextStyles.labelLarge.copyWith(
+                            color: const Color(0xFF339989),
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
           ),
         ],
@@ -357,45 +654,185 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Widget _buildTransactionItem(String materialName, String status) {
-    final isSuccess = status == 'Berhasil';
-    return OptimizedFadeSlide(
-      delay: const Duration(milliseconds: 100),
-      child: Card(
-        elevation: 2,
-        shadowColor: AppColors.primary.withOpacity(0.2),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
+  Widget _buildTransactionSection() {
+    return enhanced.OptimizedFadeSlide(
+      delay: const Duration(milliseconds: 600),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF339989).withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
         ),
-        child: ListTile(
-          leading: CircleAvatar(
-            backgroundColor: AppColors.primary.withOpacity(0.1),
-            child: const Icon(
-              Icons.receipt_long_outlined,
-              color: AppColors.primary,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.history,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Riwayat Transaksi',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: const Color(0xFF3c493f),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            if (_learningData == null || _learningData!.isEmpty)
+              _buildEmptyState()
+            else
+              ListView.separated(
+                physics: const NeverScrollableScrollPhysics(),
+                shrinkWrap: true,
+                itemCount: _learningData!.length,
+                separatorBuilder: (context, index) =>
+                    const SizedBox(height: 12),
+                itemBuilder: (context, index) {
+                  final learning = _learningData![index];
+                  final isSuccess = !learning.progress;
+                  return _buildTransactionItem(
+                    learning.project.materialName,
+                    isSuccess ? 'Berhasil' : 'Gagal',
+                    index,
+                  );
+                },
+              )
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: enhanced.OptimizedFadeSlide(
+        delay: const Duration(milliseconds: 200),
+        child: Column(
+          children: [
+            const SizedBox(height: 20),
+            enhanced.OptimizedScale(
+              duration: const Duration(milliseconds: 800),
+              child: Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: const Color(0xFFe0fff3).withOpacity(0.5),
+                ),
+                child: Image.asset('assets/Maskot.png', width: 120),
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Belum ada transaksi,\nayo lakukan pembelian!',
+              textAlign: TextAlign.center,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: const Color(0xFF3c493f),
+                height: 1.5,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTransactionItem(String materialName, String status, int index) {
+    final isSuccess = status == 'Berhasil';
+    return enhanced.OptimizedFadeSlide(
+      delay: Duration(milliseconds: 100 * index),
+      child: enhanced.OptimizedHover(
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFFe0fff3).withOpacity(0.3),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: const Color(0xFF339989).withOpacity(0.2),
+              width: 1,
             ),
           ),
-          title: Text(
-            materialName,
-            style: const TextStyle(
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          ),
-          trailing: Chip(
-            label: Text(status),
-            labelStyle: TextStyle(
-              color: isSuccess ? AppColors.success : AppColors.error,
-              fontWeight: FontWeight.bold,
-              fontSize: 12,
-            ),
-            backgroundColor: isSuccess
-                ? AppColors.success.withOpacity(0.1)
-                : AppColors.error.withOpacity(0.1),
-            padding: const EdgeInsets.symmetric(horizontal: 8),
-            visualDensity: VisualDensity.compact,
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: isSuccess
+                        ? [const Color(0xFF339989), const Color(0xFF3c493f)]
+                        : [Colors.red.shade400, Colors.red.shade600],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(
+                  isSuccess ? Icons.check_circle_outline : Icons.error_outline,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      materialName,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: const Color(0xFF3c493f),
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      'Transaksi pembelajaran',
+                      style: AppTextStyles.bodySmall.copyWith(
+                        color: const Color(0xFF3c493f).withOpacity(0.7),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: isSuccess
+                      ? const Color(0xFF339989).withOpacity(0.1)
+                      : Colors.red.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  status,
+                  style: AppTextStyles.labelSmall.copyWith(
+                    color: isSuccess ? const Color(0xFF339989) : Colors.red,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -405,65 +842,70 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget _buildLoadingState() {
     return Stack(
       children: [
-        _buildCurvedHeader(),
+        _buildFloatingElements(),
         SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 24.0),
-            child: Column(
-              children: [
-                const SizedBox(height: 120),
-                // Profile Avatar Shimmer
-                const ShimmerCircle(radius: 54),
-                const SizedBox(height: 16),
-                // Name Shimmer
-                const ShimmerText(width: 200, height: 24),
-                const SizedBox(height: 8),
-                // Role Shimmer
-                const ShimmerText(width: 100, height: 16),
-                const SizedBox(height: 8),
-                // Description Shimmer
-                const ShimmerText(width: 300, height: 14),
-                const SizedBox(height: 24),
-                // Buttons Shimmer
-                Row(
-                  children: [
-                    Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 24.0),
+              child: Column(
+                children: [
+                  const SizedBox(height: 80), // Reduced space
+                  // Profile Avatar Shimmer
+                  const ShimmerCircle(radius: 50), // Smaller radius
+                  const SizedBox(height: 12), // Reduced spacing
+                  // Name Shimmer
+                  const ShimmerText(width: 180, height: 20), // Smaller
+                  const SizedBox(height: 6), // Reduced spacing
+                  // Role Shimmer
+                  const ShimmerText(width: 80, height: 14), // Smaller
+                  const SizedBox(height: 6), // Reduced spacing
+                  // Description Shimmer
+                  const ShimmerText(width: 250, height: 12), // Smaller
+                  const SizedBox(height: 16), // Reduced spacing
+                  // Buttons Shimmer
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ShimmerCard(
+                          width: double.infinity,
+                          height: 44, // Smaller height
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                      const SizedBox(width: 12), // Reduced spacing
+                      Expanded(
+                        child: ShimmerCard(
+                          width: double.infinity,
+                          height: 44, // Smaller height
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20), // Reduced spacing
+                  // Transaction Section Shimmer
+                  const Align(
+                    alignment: Alignment.centerLeft,
+                    child: ShimmerText(width: 140, height: 18), // Smaller
+                  ),
+                  const SizedBox(height: 12), // Reduced spacing
+                  // Transaction Items Shimmer - Reduced count
+                  ...List.generate(
+                    2, // Reduced from 3 to 2
+                    (index) => Padding(
+                      padding:
+                          const EdgeInsets.only(bottom: 8), // Reduced spacing
                       child: ShimmerCard(
                         width: double.infinity,
-                        height: 48,
-                        borderRadius: BorderRadius.circular(8),
+                        height: 60, // Smaller height
+                        borderRadius: BorderRadius.circular(12),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    Expanded(
-                      child: ShimmerCard(
-                        width: double.infinity,
-                        height: 48,
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 32),
-                // Transaction Section Shimmer
-                const Align(
-                  alignment: Alignment.centerLeft,
-                  child: ShimmerText(width: 150, height: 20),
-                ),
-                const SizedBox(height: 16),
-                // Transaction Items Shimmer
-                ...List.generate(
-                  3,
-                  (index) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: ShimmerCard(
-                      width: double.infinity,
-                      height: 72,
-                      borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 100), // Bottom padding
+                ],
+              ),
             ),
           ),
         ),
@@ -476,49 +918,10 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Widget _buildAvatarPlaceholder() {
-    return CircleAvatar(
-      radius: 50,
-      backgroundColor: AppColors.background,
-      child: const Icon(
-        Icons.person,
-        size: 60,
-        color: AppColors.textHint,
-      ),
+    return const Icon(
+      Icons.person,
+      size: 60,
+      color: Color(0xFF3c493f),
     );
   }
-}
-
-// Custom Clipper for the wave effect
-class WaveClipper extends CustomClipper<Path> {
-  @override
-  Path getClip(Size size) {
-    var path = Path();
-    path.lineTo(0, size.height - 50);
-    var firstControlPoint = Offset(size.width / 4, size.height);
-    var firstEndPoint = Offset(size.width / 2.25, size.height - 30.0);
-    path.quadraticBezierTo(
-      firstControlPoint.dx,
-      firstControlPoint.dy,
-      firstEndPoint.dx,
-      firstEndPoint.dy,
-    );
-
-    var secondControlPoint =
-        Offset(size.width - (size.width / 3.25), size.height - 65);
-    var secondEndPoint = Offset(size.width, size.height - 40);
-    path.quadraticBezierTo(
-      secondControlPoint.dx,
-      secondControlPoint.dy,
-      secondEndPoint.dx,
-      secondEndPoint.dy,
-    );
-
-    path.lineTo(size.width, size.height - 40);
-    path.lineTo(size.width, 0);
-    path.close();
-    return path;
-  }
-
-  @override
-  bool shouldReclip(CustomClipper<Path> oldClipper) => false;
 }

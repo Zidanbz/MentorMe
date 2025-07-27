@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
+import 'package:mentorme/features/consultation/services/consultation_api_service.dart';
 import 'package:mentorme/global/global.dart';
 
 class RoomchatPage extends StatefulWidget {
@@ -43,33 +43,28 @@ class _RoomchatPageState extends State<RoomchatPage> {
   }
 
   Future<void> fetchRoomData() async {
-    final url = Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat');
     try {
-      final response = await http.get(
-        url,
-        headers: {
-          // PERBAIKAN: Menghapus spasi pada nama variabel
-          'Authorization': 'Bearer $currentUserToken',
-          'Content-Type': 'application/json',
-        },
-      );
-      if (response.statusCode == 200) {
-        final decoded = json.decode(response.body);
-        final List<dynamic> data = decoded['data'];
-        final matchedRoom = data.firstWhere(
-          (room) => room['idRoom'] == widget.roomId,
-          orElse: () => null,
-        );
-        if (mounted && matchedRoom != null) {
-          setState(() {
-            roomData = matchedRoom;
-            isLoadingRoom = false;
-          });
-        } else if (mounted) {
+      final response = await ConsultationApiService.fetchChatRooms();
+
+      if (mounted) {
+        if (response.success && response.data != null) {
+          final List<dynamic> data = response.data!;
+          final matchedRoom = data.firstWhere(
+            (room) => room['idRoom'] == widget.roomId,
+            orElse: () => null,
+          );
+
+          if (matchedRoom != null) {
+            setState(() {
+              roomData = matchedRoom;
+              isLoadingRoom = false;
+            });
+          } else {
+            setState(() => isLoadingRoom = false);
+          }
+        } else {
           setState(() => isLoadingRoom = false);
         }
-      } else if (mounted) {
-        setState(() => isLoadingRoom = false);
       }
     } catch (e) {
       if (mounted) {
@@ -85,29 +80,17 @@ class _RoomchatPageState extends State<RoomchatPage> {
     // Menambahkan pesan ke Firestore
     await FirebaseFirestore.instance.collection('messages').add({
       'roomId': widget.roomId,
-      // PERBAIKAN: Menggunakan nama variabel yang benar
       'sender': widget.currentUserName,
       'senderEmail': widget.currentUserEmail,
       'text': text,
       'timestamp': FieldValue.serverTimestamp(),
     });
 
-    // Mengupdate lastSender di API backend
-    final url = Uri.parse(
-        'https://widgets22-catb7yz54a-et.a.run.app/api/chat/lastsender');
+    // Mengupdate lastSender di API backend menggunakan ConsultationApiService
     try {
-      await http.put(
-        url,
-        headers: {
-          'Content-Type': 'application/json',
-          // PERBAIKAN: Menghapus spasi pada nama variabel
-          'Authorization': 'Bearer $currentUserToken',
-        },
-        body: json.encode({
-          'idRoom': widget.roomId,
-          // PERBAIKAN: Menggunakan nama variabel yang benar
-          'lastSender': widget.currentUserEmail,
-        }),
+      await ConsultationApiService.updateLastSender(
+        roomId: widget.roomId,
+        lastSender: widget.currentUserEmail,
       );
     } catch (e) {
       print("Failed to update last sender: $e");

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 
-class OptimizedImage extends StatefulWidget {
+class OptimizedImage extends StatelessWidget {
   final String imageUrl;
   final double? width;
   final double? height;
@@ -21,121 +22,91 @@ class OptimizedImage extends StatefulWidget {
   });
 
   @override
-  State<OptimizedImage> createState() => _OptimizedImageState();
-}
-
-class _OptimizedImageState extends State<OptimizedImage>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-  bool _isLoading = true;
-  bool _hasError = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.3, end: 1.0).animate(
-      CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
-    );
-    _animationController.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    if (imageUrl.isEmpty) {
+      return _buildErrorWidget();
+    }
+
     return ClipRRect(
-      borderRadius: widget.borderRadius ?? BorderRadius.zero,
-      child: SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: _hasError
-            ? _buildErrorWidget()
-            : Stack(
-                children: [
-                  if (_isLoading) _buildShimmerPlaceholder(),
-                  Image.network(
-                    widget.imageUrl,
-                    width: widget.width,
-                    height: widget.height,
-                    fit: widget.fit,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) {
-                        WidgetsBinding.instance.addPostFrameCallback((_) {
-                          if (mounted) {
-                            setState(() => _isLoading = false);
-                            _animationController.stop();
-                          }
-                        });
-                        return child;
-                      }
-                      return _buildShimmerPlaceholder();
-                    },
-                    errorBuilder: (context, error, stackTrace) {
-                      WidgetsBinding.instance.addPostFrameCallback((_) {
-                        if (mounted) {
-                          setState(() {
-                            _isLoading = false;
-                            _hasError = true;
-                          });
-                          _animationController.stop();
-                        }
-                      });
-                      return _buildErrorWidget();
-                    },
-                    // Optimasi memory dengan cacheWidth dan cacheHeight
-                    cacheWidth: widget.width?.toInt(),
-                    cacheHeight: widget.height?.toInt(),
-                  ),
-                ],
-              ),
+      borderRadius: borderRadius ?? BorderRadius.zero,
+      child: CachedNetworkImage(
+        imageUrl: imageUrl,
+        width: width,
+        height: height,
+        fit: fit,
+        placeholder: (context, url) => _buildPlaceholder(),
+        errorWidget: (context, url, error) => _buildErrorWidget(),
+        fadeInDuration: const Duration(milliseconds: 300),
+        fadeOutDuration: const Duration(milliseconds: 100),
+        memCacheWidth: width != null && width!.isFinite ? width!.toInt() : null,
+        memCacheHeight:
+            height != null && height!.isFinite ? height!.toInt() : null,
+        maxWidthDiskCache: 800,
+        maxHeightDiskCache: 800,
       ),
     );
   }
 
-  Widget _buildShimmerPlaceholder() {
-    return widget.placeholder ??
-        AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return Container(
-              width: widget.width,
-              height: widget.height,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.grey[300]!.withOpacity(_animation.value),
-                    Colors.grey[100]!.withOpacity(_animation.value),
-                    Colors.grey[300]!.withOpacity(_animation.value),
-                  ],
-                  stops: const [0.0, 0.5, 1.0],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-              ),
-            );
-          },
+  Widget _buildPlaceholder() {
+    return placeholder ??
+        Container(
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFe0fff3),
+                Color(0xFF339989),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: borderRadius,
+          ),
+          child: const Center(
+            child: CircularProgressIndicator(
+              color: Colors.white,
+              strokeWidth: 2,
+            ),
+          ),
         );
   }
 
   Widget _buildErrorWidget() {
-    return widget.errorWidget ??
+    return errorWidget ??
         Container(
-          width: widget.width,
-          height: widget.height,
-          color: Colors.grey[200],
-          child: const Icon(
-            Icons.error_outline,
-            color: Colors.grey,
-            size: 32,
+          width: width,
+          height: height,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFe0fff3),
+                Color(0xFF339989),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: borderRadius,
+          ),
+          child: const Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.school_outlined,
+                  size: 48,
+                  color: Colors.white,
+                ),
+                SizedBox(height: 8),
+                Text(
+                  'Learning Path',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
           ),
         );
   }

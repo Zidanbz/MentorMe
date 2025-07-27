@@ -8,6 +8,8 @@ import 'package:mentorme/providers/getProject_provider.dart';
 import 'package:mentorme/providers/project_provider.dart';
 import 'package:mentorme/splash_screen.dart';
 import 'package:mentorme/utils/notification_service.dart';
+import 'package:mentorme/app/constants/app_colors.dart';
+import 'package:mentorme/global/Fontstyle.dart';
 import 'package:provider/provider.dart';
 
 Future<void> main() async {
@@ -134,8 +136,161 @@ class _MyAppState extends State<MyApp> {
           debugShowCheckedModeBanner: false,
           theme: ThemeData(
             fontFamily: 'OpenSans',
-            textTheme: const TextTheme(
-              bodyMedium: TextStyle(fontWeight: FontWeight.w400),
+            primaryColor: AppColors.primary,
+            scaffoldBackgroundColor: AppColors.backgroundLight,
+            colorScheme: ColorScheme.light(
+              primary: AppColors.primary,
+              secondary: AppColors.primaryDark,
+              surface: AppColors.surface,
+              background: AppColors.backgroundLight,
+              error: AppColors.error,
+              onPrimary: AppColors.textLight,
+              onSecondary: AppColors.textLight,
+              onSurface: AppColors.textPrimary,
+              onBackground: AppColors.textPrimary,
+              onError: AppColors.textLight,
+            ),
+            textTheme: TextTheme(
+              displayLarge: AppTextStyles.displayLarge,
+              displayMedium: AppTextStyles.displayMedium,
+              displaySmall: AppTextStyles.displaySmall,
+              headlineLarge: AppTextStyles.headlineLarge,
+              headlineMedium: AppTextStyles.headlineMedium,
+              headlineSmall: AppTextStyles.headlineSmall,
+              titleLarge: AppTextStyles.titleLarge,
+              titleMedium: AppTextStyles.titleMedium,
+              titleSmall: AppTextStyles.titleSmall,
+              bodyLarge: AppTextStyles.bodyLarge,
+              bodyMedium: AppTextStyles.bodyMedium,
+              bodySmall: AppTextStyles.bodySmall,
+              labelLarge: AppTextStyles.labelLarge,
+              labelMedium: AppTextStyles.labelMedium,
+              labelSmall: AppTextStyles.labelSmall,
+            ),
+            appBarTheme: AppBarTheme(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.textLight,
+              elevation: 0,
+              centerTitle: true,
+              titleTextStyle: AppTextStyles.headlineMedium.copyWith(
+                color: AppColors.textLight,
+              ),
+              iconTheme: const IconThemeData(color: AppColors.textLight),
+            ),
+            elevatedButtonTheme: ElevatedButtonThemeData(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: AppColors.textLight,
+                elevation: 4,
+                shadowColor: AppColors.shadow,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                textStyle: AppTextStyles.button,
+              ),
+            ),
+            outlinedButtonTheme: OutlinedButtonThemeData(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                side: const BorderSide(color: AppColors.primary, width: 2),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                textStyle: AppTextStyles.button,
+              ),
+            ),
+            textButtonTheme: TextButtonThemeData(
+              style: TextButton.styleFrom(
+                foregroundColor: AppColors.primary,
+                textStyle: AppTextStyles.button,
+              ),
+            ),
+            inputDecorationTheme: InputDecorationTheme(
+              filled: true,
+              fillColor: AppColors.backgroundCard,
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.border),
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide:
+                    const BorderSide(color: AppColors.primary, width: 2),
+              ),
+              errorBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(16),
+                borderSide: const BorderSide(color: AppColors.error),
+              ),
+              labelStyle: AppTextStyles.labelMedium,
+              hintStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textHint,
+              ),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 18,
+              ),
+            ),
+            cardTheme: const CardThemeData(
+              elevation: 2,
+              shadowColor: AppColors.shadowLight,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+              margin: EdgeInsets.all(8),
+            ),
+            floatingActionButtonTheme: FloatingActionButtonThemeData(
+              backgroundColor: AppColors.primary,
+              foregroundColor: AppColors.textLight,
+              elevation: 4,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+            ),
+            bottomNavigationBarTheme: BottomNavigationBarThemeData(
+              backgroundColor: AppColors.surface,
+              selectedItemColor: AppColors.primary,
+              unselectedItemColor: AppColors.textHint,
+              selectedLabelStyle: AppTextStyles.labelSmall,
+              unselectedLabelStyle: AppTextStyles.labelSmall,
+              type: BottomNavigationBarType.fixed,
+            ),
+            dialogTheme: const DialogThemeData(
+              backgroundColor: AppColors.surface,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.all(Radius.circular(16)),
+              ),
+              elevation: 8,
+            ),
+            snackBarTheme: SnackBarThemeData(
+              backgroundColor: AppColors.primaryDark,
+              contentTextStyle: AppTextStyles.bodyMedium.copyWith(
+                color: AppColors.textLight,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+              behavior: SnackBarBehavior.floating,
+            ),
+            dividerTheme: DividerThemeData(
+              color: AppColors.divider,
+              thickness: 1,
+            ),
+            iconTheme: const IconThemeData(
+              color: AppColors.textSecondary,
+              size: 24,
+            ),
+            progressIndicatorTheme: ProgressIndicatorThemeData(
+              color: AppColors.primary,
+              linearTrackColor: AppColors.divider,
+              circularTrackColor: AppColors.divider,
             ),
           ),
           home: isFirstLaunch ? SplashScreen() : const LoginPage(),

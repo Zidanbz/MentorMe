@@ -2,11 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:mentorme/app/constants/app_colors.dart';
 import 'package:mentorme/app/constants/app_strings.dart';
-import 'package:mentorme/core/services/auth_services.dart';
+import 'package:mentorme/features/auth/services/auth_api_service.dart';
 import 'package:mentorme/features/auth/Login/login_page.dart';
 import 'package:mentorme/shared/widgets/custom_button.dart';
 import 'package:mentorme/shared/widgets/custom_text_field.dart';
+import 'package:mentorme/shared/widgets/enhanced_animations.dart' as enhanced;
 import 'package:mentorme/shared/widgets/loading_dialog.dart';
+import 'package:mentorme/global/Fontstyle.dart';
 
 class RegisterPage extends StatefulWidget {
   const RegisterPage({super.key});
@@ -15,13 +17,33 @@ class RegisterPage extends StatefulWidget {
   State<RegisterPage> createState() => _RegisterPageState();
 }
 
-class _RegisterPageState extends State<RegisterPage> {
+class _RegisterPageState extends State<RegisterPage>
+    with TickerProviderStateMixin {
   final namaTextEditingController = TextEditingController();
   final emailTextEditingController = TextEditingController();
   final passwordTextEditingController = TextEditingController();
   final confirmTextEditingController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
+  late AnimationController _backgroundController;
+  late Animation<double> _backgroundAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _backgroundController = AnimationController(
+      duration: const Duration(seconds: 3),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _backgroundController,
+      curve: Curves.easeInOut,
+    ));
+  }
 
   @override
   void dispose() {
@@ -29,6 +51,7 @@ class _RegisterPageState extends State<RegisterPage> {
     emailTextEditingController.dispose();
     passwordTextEditingController.dispose();
     confirmTextEditingController.dispose();
+    _backgroundController.dispose();
     super.dispose();
   }
 
@@ -42,7 +65,7 @@ class _RegisterPageState extends State<RegisterPage> {
     LoadingDialog.show(context, message: AppStrings.registering);
 
     try {
-      await AuthService.register(
+      final response = await AuthApiService.register(
         fullName: namaTextEditingController.text.trim(),
         email: emailTextEditingController.text.trim(),
         password: passwordTextEditingController.text.trim(),
@@ -50,13 +73,22 @@ class _RegisterPageState extends State<RegisterPage> {
       );
 
       LoadingDialog.hide(context);
-      Fluttertoast.showToast(msg: AppStrings.registerSuccess);
 
-      if (mounted) {
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-        );
+      if (response.success) {
+        Fluttertoast.showToast(msg: AppStrings.registerSuccess);
+
+        if (mounted) {
+          Navigator.pushReplacement(
+            context,
+            enhanced.OptimizedPageRoute(
+              child: const LoginPage(),
+              transitionType: enhanced.PageTransitionType.slideLeft,
+            ),
+          );
+        }
+      } else {
+        Fluttertoast.showToast(
+            msg: "${AppStrings.registerFailed}: ${response.message}");
       }
     } catch (error) {
       LoadingDialog.hide(context);
@@ -111,149 +143,379 @@ class _RegisterPageState extends State<RegisterPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.primaryLight,
-      body: SafeArea(
-        child: SingleChildScrollView(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Form(
-              key: _formKey,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const SizedBox(height: 40),
-
-                  // Logo
-                  Image.asset(
-                    'assets/Logo.png',
-                    width: 150,
-                    height: 150,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // App Name
-                  Text(
-                    AppStrings.appName,
-                    style: const TextStyle(
-                      fontSize: 24,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Title
-                  Text(
-                    AppStrings.register,
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-
-                  // Subtitle
-                  Text(
-                    AppStrings.enterYourData,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Name Field
-                  CustomTextField(
-                    controller: namaTextEditingController,
-                    hintText: AppStrings.fullName,
-                    prefixIcon: Icons.person,
-                    validator: _validateName,
-                    enabled: !_isLoading,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Email Field
-                  CustomTextField(
-                    controller: emailTextEditingController,
-                    hintText: AppStrings.email,
-                    keyboardType: TextInputType.emailAddress,
-                    prefixIcon: Icons.email,
-                    validator: _validateEmail,
-                    enabled: !_isLoading,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Password Field
-                  CustomTextField(
-                    controller: passwordTextEditingController,
-                    hintText: AppStrings.password,
-                    obscureText: true,
-                    prefixIcon: Icons.security,
-                    validator: _validatePassword,
-                    enabled: !_isLoading,
-                  ),
-                  const SizedBox(height: 16),
-
-                  // Confirm Password Field
-                  CustomTextField(
-                    controller: confirmTextEditingController,
-                    hintText: AppStrings.confirmPassword,
-                    obscureText: true,
-                    prefixIcon: Icons.security,
-                    validator: _validateConfirmPassword,
-                    enabled: !_isLoading,
-                  ),
-                  const SizedBox(height: 30),
-
-                  // Register Button
-                  CustomButton(
-                    text: AppStrings.registerButton,
-                    onPressed: _isLoading ? null : _registerUser,
-                    isLoading: _isLoading,
-                  ),
-                  const SizedBox(height: 20),
-
-                  // Login Link
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        AppStrings.alreadyHaveAccount,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () {
-                                Navigator.pushReplacement(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (context) => const LoginPage(),
-                                  ),
-                                );
-                              },
-                        child: Text(
-                          AppStrings.loginHere,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            color: AppColors.primary,
-                            fontWeight: FontWeight.w600,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 40),
+      body: AnimatedBuilder(
+        animation: _backgroundAnimation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.lerp(const Color(0xFF339989), const Color(0xFF3c493f),
+                      _backgroundAnimation.value)!,
+                  Color.lerp(const Color(0xFF3c493f), const Color(0xFFe0fff3),
+                      _backgroundAnimation.value)!,
+                  Color.lerp(const Color(0xFFe0fff3), const Color(0xFF339989),
+                      _backgroundAnimation.value)!,
                 ],
+                stops: const [0.0, 0.5, 1.0],
               ),
             ),
-          ),
-        ),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                physics: const BouncingScrollPhysics(),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    minHeight: MediaQuery.of(context).size.height -
+                        MediaQuery.of(context).padding.top,
+                  ),
+                  child: Center(
+                    child: Padding(
+                      padding: const EdgeInsets.all(20.0),
+                      child: Form(
+                        key: _formKey,
+                        child: enhanced.OptimizedStaggeredList(
+                          duration: const Duration(milliseconds: 800),
+                          staggerDelay: const Duration(milliseconds: 120),
+                          children: [
+                            const SizedBox(height: 20),
+
+                            // Logo with enhanced animation
+                            enhanced.OptimizedScale(
+                              duration: const Duration(milliseconds: 1200),
+                              curve: Curves.elasticOut,
+                              child: Container(
+                                padding: const EdgeInsets.all(20),
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  gradient: const RadialGradient(
+                                    colors: [
+                                      Color(0xFFe0fff3),
+                                      Color(0xFF339989),
+                                    ],
+                                  ),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF339989)
+                                          .withOpacity(0.4),
+                                      blurRadius: 25,
+                                      spreadRadius: 8,
+                                      offset: const Offset(0, 8),
+                                    ),
+                                  ],
+                                ),
+                                child: Image.asset(
+                                  'assets/Logo.png',
+                                  width: 120,
+                                  height: 120,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 20),
+
+                            // App Name with gradient text
+                            ShaderMask(
+                              shaderCallback: (bounds) => const LinearGradient(
+                                colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                              ).createShader(bounds),
+                              child: Text(
+                                AppStrings.appName,
+                                style: AppTextStyles.displaySmall.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Title with enhanced styling
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 20, vertical: 8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(25),
+                                gradient: const LinearGradient(
+                                  colors: [
+                                    Color(0xFF339989),
+                                    Color(0xFF3c493f)
+                                  ],
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: const Color(0xFF339989)
+                                        .withOpacity(0.3),
+                                    blurRadius: 15,
+                                    offset: const Offset(0, 5),
+                                  ),
+                                ],
+                              ),
+                              child: Text(
+                                AppStrings.register,
+                                style: AppTextStyles.headlineMedium.copyWith(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 10),
+
+                            // Subtitle
+                            Text(
+                              'Bergabunglah dengan komunitas belajar!',
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: const Color(0xFF3c493f),
+                                fontWeight: FontWeight.w500,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Name Field with enhanced styling
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 200),
+                              child: CustomTextField(
+                                controller: namaTextEditingController,
+                                hintText: AppStrings.fullName,
+                                prefixIcon: Icons.person_outline,
+                                validator: _validateName,
+                                enabled: !_isLoading,
+                                enableGlow: true,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Email Field with enhanced styling
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 300),
+                              child: EmailTextField(
+                                controller: emailTextEditingController,
+                                hintText: AppStrings.email,
+                                validator: _validateEmail,
+                                enabled: !_isLoading,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Password Field with enhanced styling
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 400),
+                              child: PasswordTextField(
+                                controller: passwordTextEditingController,
+                                hintText: AppStrings.password,
+                                validator: _validatePassword,
+                                enabled: !_isLoading,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+
+                            // Confirm Password Field with enhanced styling
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 500),
+                              child: PasswordTextField(
+                                controller: confirmTextEditingController,
+                                hintText: AppStrings.confirmPassword,
+                                validator: _validateConfirmPassword,
+                                enabled: !_isLoading,
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Register Button with enhanced styling
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 600),
+                              child: enhanced.OptimizedHover(
+                                scale: 1.03,
+                                child: Container(
+                                  width: double.infinity,
+                                  height: 56,
+                                  decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(16),
+                                    gradient: const LinearGradient(
+                                      colors: [
+                                        Color(0xFF339989),
+                                        Color(0xFF3c493f)
+                                      ],
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF339989)
+                                            .withOpacity(0.4),
+                                        blurRadius: 15,
+                                        offset: const Offset(0, 8),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Material(
+                                    color: Colors.transparent,
+                                    child: InkWell(
+                                      borderRadius: BorderRadius.circular(16),
+                                      onTap: _isLoading ? null : _registerUser,
+                                      child: Center(
+                                        child: _isLoading
+                                            ? const SizedBox(
+                                                width: 24,
+                                                height: 24,
+                                                child:
+                                                    CircularProgressIndicator(
+                                                  valueColor:
+                                                      AlwaysStoppedAnimation<
+                                                          Color>(Colors.white),
+                                                  strokeWidth: 2,
+                                                ),
+                                              )
+                                            : Text(
+                                                AppStrings.registerButton,
+                                                style: AppTextStyles.labelLarge
+                                                    .copyWith(
+                                                  color: Colors.white,
+                                                  fontWeight: FontWeight.bold,
+                                                ),
+                                              ),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Divider with gradient
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 700),
+                              child: Row(
+                                children: [
+                                  Expanded(
+                                    child: Container(
+                                      height: 1,
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.transparent,
+                                            Color(0xFF339989),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                        horizontal: 16),
+                                    child: Text(
+                                      'atau',
+                                      style: AppTextStyles.bodySmall.copyWith(
+                                        color: const Color(0xFF3c493f),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                  Expanded(
+                                    child: Container(
+                                      height: 1,
+                                      decoration: const BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [
+                                            Colors.transparent,
+                                            Color(0xFF339989),
+                                            Colors.transparent,
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(height: 30),
+
+                            // Login Link with enhanced styling
+                            enhanced.OptimizedFadeSlide(
+                              delay: const Duration(milliseconds: 800),
+                              child: enhanced.OptimizedHover(
+                                child: Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: const Color(0xFFe0fff3)
+                                        .withOpacity(0.8),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: const Color(0xFF339989)
+                                          .withOpacity(0.3),
+                                      width: 1,
+                                    ),
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: const Color(0xFF339989)
+                                            .withOpacity(0.1),
+                                        blurRadius: 10,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Text(
+                                        AppStrings.alreadyHaveAccount,
+                                        style:
+                                            AppTextStyles.bodyMedium.copyWith(
+                                          color: const Color(0xFF3c493f),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                      GestureDetector(
+                                        onTap: _isLoading
+                                            ? null
+                                            : () {
+                                                Navigator.pushReplacement(
+                                                  context,
+                                                  enhanced.OptimizedPageRoute(
+                                                    child: const LoginPage(),
+                                                    transitionType: enhanced
+                                                        .PageTransitionType
+                                                        .slideLeft,
+                                                  ),
+                                                );
+                                              },
+                                        child: ShaderMask(
+                                          shaderCallback: (bounds) =>
+                                              const LinearGradient(
+                                            colors: [
+                                              Color(0xFF339989),
+                                              Color(0xFF3c493f)
+                                            ],
+                                          ).createShader(bounds),
+                                          child: Text(
+                                            AppStrings.loginHere,
+                                            style: AppTextStyles.labelLarge
+                                                .copyWith(
+                                              color: Colors.white,
+                                              fontWeight: FontWeight.bold,
+                                              decoration:
+                                                  TextDecoration.underline,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 40),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

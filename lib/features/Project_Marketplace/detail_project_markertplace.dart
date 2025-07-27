@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:mentorme/core/services/project_services.dart';
+import 'package:mentorme/features/project_marketplace/services/project_marketplace_api_service.dart';
 import 'package:mentorme/features/payment/payment_detail.dart';
 import 'dart:developer' as developer;
 import 'package:mentorme/global/global.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:mentorme/core/api/base_api_client.dart';
 
 class DetailProjectmarketplacePage extends StatefulWidget {
   final Map<String, dynamic> projectId;
@@ -46,23 +47,31 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
     super.dispose();
   }
 
-  void fetchUserLearningIDs() {
-    ProjectService.fetchUserLearningIDs(currentUserToken!).then((ids) {
+  void fetchUserLearningIDs() async {
+    try {
+      final response =
+          await ProjectMarketplaceApiService.fetchUserLearningIDs();
       if (mounted) {
-        setState(() {
-          userLearningIDs = ids;
-          isLoadingLearning = false;
-          // Memeriksa ID project dari data detail, bukan dari widget awal
-          if (detailProject != null && detailProject!['ID'] != null) {
-            hasProject =
-                userLearningIDs.contains(detailProject!['ID'].toString());
-          }
-        });
+        if (response.success && response.data != null) {
+          setState(() {
+            userLearningIDs = response.data!;
+            isLoadingLearning = false;
+            // Memeriksa ID project dari data detail, bukan dari widget awal
+            if (detailProject != null && detailProject!['ID'] != null) {
+              hasProject =
+                  userLearningIDs.contains(detailProject!['ID'].toString());
+            }
+          });
+        } else {
+          setState(() => isLoadingLearning = false);
+          developer
+              .log('Error fetching user learning IDs: ${response.message}');
+        }
       }
-    }).catchError((error) {
+    } catch (error) {
       developer.log('Error fetching user learning IDs: $error');
       if (mounted) setState(() => isLoadingLearning = false);
-    });
+    }
   }
 
   Future<void> fetchDetailProject() async {
@@ -71,30 +80,36 @@ class _DetailProjectPageState extends State<DetailProjectmarketplacePage> {
       return;
     }
     try {
-      final data = await ProjectService.getProjectDetail(
+      final response = await ProjectMarketplaceApiService.getProjectDetail(
         projectId: projectId.toString(),
-        token: currentUserToken!,
       );
       if (mounted) {
-        setState(() {
-          detailProject = data;
-          isLoading = false;
-          if (detailProject?['linkVideo'] != null) {
-            final videoId = YoutubePlayerController.convertUrlToId(
-                detailProject!['linkVideo']);
-            if (videoId != null) {
-              _controller = YoutubePlayerController.fromVideoId(
-                videoId: videoId,
-                params: const YoutubePlayerParams(showFullscreenButton: true),
-              );
+        if (response.success && response.data != null) {
+          setState(() {
+            detailProject = response.data!;
+            isLoading = false;
+            if (detailProject?['linkVideo'] != null) {
+              final videoId = YoutubePlayerController.convertUrlToId(
+                  detailProject!['linkVideo']);
+              if (videoId != null) {
+                _controller = YoutubePlayerController.fromVideoId(
+                  videoId: videoId,
+                  params: const YoutubePlayerParams(showFullscreenButton: true),
+                );
+              }
             }
-          }
-          // Periksa kembali status kepemilikan setelah detail project didapat
-          if (userLearningIDs.isNotEmpty) {
-            hasProject =
-                userLearningIDs.contains(detailProject!['ID'].toString());
-          }
-        });
+            // Periksa kembali status kepemilikan setelah detail project didapat
+            if (userLearningIDs.isNotEmpty) {
+              hasProject =
+                  userLearningIDs.contains(detailProject!['ID'].toString());
+            }
+          });
+        } else {
+          setState(() => isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal memuat detail: ${response.message}')),
+          );
+        }
       }
     } catch (e) {
       developer.log('Error fetching project details: $e');

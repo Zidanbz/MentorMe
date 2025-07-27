@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
-import 'package:http/http.dart' as http;
-import 'package:mentorme/controller/api_services.dart';
-import 'dart:convert';
-import 'package:mentorme/global/global.dart';
+import 'package:mentorme/features/profile/services/profile_api_service.dart';
+import 'package:mentorme/core/api/base_api_client.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -59,62 +57,75 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 
   Future<void> _fetchProfile() async {
     try {
-      final profile = await ApiService().fetchProfile();
+      final response = await ProfileApiService.fetchProfile();
 
-      if (mounted && profile != null) {
-        setState(() {
-          _profile = profile;
-          _nameController.text = profile.fullName ?? '';
-          _phoneController.text = profile.phone ?? '';
+      if (mounted) {
+        if (response.success && response.data != null) {
+          final profileData = response.data!;
+          final profile = Profile(
+            fullName: profileData['fullName'] ?? '',
+            picture: profileData['picture'] ?? '',
+            phone: profileData['phone'] ?? '',
+          );
 
-          if ((profile.picture ?? '').isNotEmpty) {
-            _image = null; // Jangan pakai File jika hanya URL
-          }
+          setState(() {
+            _profile = profile;
+            _nameController.text = profile.fullName ?? '';
+            _phoneController.text = profile.phone ?? '';
 
-          _isLoading = false;
-        });
+            if ((profile.picture ?? '').isNotEmpty) {
+              _image = null; // Jangan pakai File jika hanya URL
+            }
+
+            _isLoading = false;
+          });
+        } else {
+          setState(() {
+            _isLoading = false;
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Gagal memuat profil: ${response.message}')),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {
         setState(() {
           _isLoading = false;
         });
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error fetching profile: $e')),
+        );
       }
-      print("Error fetching profile: $e");
     }
   }
 
   Future<void> _editProfile() async {
     if (_formKey.currentState!.validate()) {
       try {
-        var request = http.MultipartRequest(
-          'PUT',
-          Uri.parse(
-              'https://widgets22-catb7yz54a-et.a.run.app/api/profile/edit'),
+        // Update profile information
+        final updateResponse = await ProfileApiService.updateProfile(
+          fullName: _nameController.text,
+          phone: _phoneController.text,
         );
 
-        // Tambahkan field yang dibutuhkan
-        request.fields['fullName'] = _nameController.text;
-        request.fields['phone'] = _phoneController.text;
+        if (updateResponse.success) {
+          // If there's an image, update profile picture separately
+          if (_image != null) {
+            final imageResponse = await ProfileApiService.updateProfilePicture(
+              imagePath: _image!.path,
+            );
 
-        // Jika ada gambar, kirim sebagai file
-        if (_image != null) {
-          request.files.add(
-            await http.MultipartFile.fromPath('picture', _image!.path),
-          );
-        }
+            if (!imageResponse.success) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                    content: Text(
+                        'Gagal mengupdate foto: ${imageResponse.message}')),
+              );
+              return;
+            }
+          }
 
-        // Tambahkan header jika API membutuhkan authorization
-        request.headers.addAll({
-          'Authorization': 'Bearer $currentUserToken',
-          'Content-Type': 'application/json',
-        });
-
-        // Kirim request
-        var response = await request.send();
-        var responseBody = await response.stream.bytesToString();
-
-        if (response.statusCode == 200) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profil berhasil disimpan')),
           );
@@ -124,16 +135,15 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
           prefs.setString('name', _nameController.text);
           prefs.setString('phone', _phoneController.text);
         } else {
-          print(
-              'Gagal menyimpan profil. Status: ${response.statusCode}, Response: $responseBody');
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Gagal menyimpan profil: $responseBody')),
+            SnackBar(
+                content:
+                    Text('Gagal menyimpan profil: ${updateResponse.message}')),
           );
         }
       } catch (e) {
-        print('Error: $e');
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Terjadi kesalahan. Coba lagi nanti.')),
+          SnackBar(content: Text('Terjadi kesalahan: $e')),
         );
       }
     }

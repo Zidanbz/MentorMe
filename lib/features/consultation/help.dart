@@ -2,8 +2,9 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:mentorme/features/consultation/services/consultation_api_service.dart';
+import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/global/global.dart';
 
 class HelpPage extends StatefulWidget {
@@ -56,51 +57,47 @@ class _HelpPageState extends State<HelpPage> {
     if (email == null || displayName == null) {
       return null;
     }
+
     try {
-      // 1. Cek apakah room sudah ada
-      var response = await http.get(
-        Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
-        headers: {'Authorization': 'Bearer $currentUserToken'},
-      );
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final chatRooms = data['data'] as List;
-        final existingRoom = chatRooms.firstWhere(
-          (room) =>
-              room['nameCustomer'] == displayName &&
-              room['nameMentor'].toString().toLowerCase() == 'admin',
-          orElse: () => null,
-        );
+      // 1. Cek apakah room sudah ada menggunakan ConsultationApiService
+      final response = await ConsultationApiService.fetchChatRooms();
+
+      if (response.success && response.data != null) {
+        final chatRooms = response.data!;
+        final existingRoom = chatRooms.cast<Map<String, dynamic>?>().firstWhere(
+              (room) =>
+                  room != null &&
+                  room['nameCustomer'] == displayName &&
+                  room['nameMentor'].toString().toLowerCase() == 'admin',
+              orElse: () => null,
+            );
         if (existingRoom != null) {
           return existingRoom; // Kembalikan data room yang sudah ada
         }
       }
 
-      // 2. Jika tidak ada, buat room baru
-      final postResponse = await http.post(
-        Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $currentUserToken',
-        },
-        body: jsonEncode({'email': emailAdmin}),
+      // 2. Jika tidak ada, buat room baru menggunakan ConsultationApiService
+      final createResponse = await ConsultationApiService.createChatRoom(
+        mentorEmail: emailAdmin,
+        subject: 'Bantuan Customer Support',
+        initialMessage: 'Halo, saya membutuhkan bantuan.',
       );
 
-      if (postResponse.statusCode == 200) {
-        final result = jsonDecode(postResponse.body);
-        final newRoomId = result['data'];
+      if (createResponse.success && createResponse.data != null) {
+        final newRoomId = createResponse.data!['idRoom'];
 
         // 3. Ambil lagi data chat untuk mendapatkan detail room yang baru dibuat
-        response = await http.get(
-          Uri.parse('https://widgets22-catb7yz54a-et.a.run.app/api/chat'),
-          headers: {'Authorization': 'Bearer $currentUserToken'},
-        );
-        if (response.statusCode == 200) {
-          final data = jsonDecode(response.body);
-          final chatRooms = data['data'] as List;
-          final newRoomData = chatRooms.firstWhere(
+        final updatedResponse = await ConsultationApiService.fetchChatRooms();
+        if (updatedResponse.success && updatedResponse.data != null) {
+          final chatRooms = updatedResponse.data!;
+          Map<String, dynamic>? newRoomData;
+          try {
+            newRoomData = chatRooms.firstWhere(
               (room) => room['idRoom'] == newRoomId,
-              orElse: () => null);
+            );
+          } catch (e) {
+            newRoomData = null;
+          }
           if (newRoomData != null) return newRoomData;
         }
       }
@@ -229,21 +226,6 @@ class ChatBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Logika untuk memilih ImageProvider berdasarkan sumber gambar
-    ImageProvider imageProvider;
-    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
-      if (avatarUrl!.startsWith('http')) {
-        // Jika URL dari internet
-        imageProvider = NetworkImage(avatarUrl!);
-      } else {
-        // Jika path dari aset lokal
-        imageProvider = AssetImage(avatarUrl!);
-      }
-    } else {
-      // Gambar fallback jika tidak ada URL atau path
-      imageProvider = AssetImage('assets/trainee_avatar.png');
-    }
-
     return Column(
       crossAxisAlignment:
           isSender ? CrossAxisAlignment.end : CrossAxisAlignment.start,
@@ -259,9 +241,10 @@ class ChatBubble extends StatelessWidget {
         Row(
           mainAxisAlignment:
               isSender ? MainAxisAlignment.end : MainAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.end,
           children: [
             if (!isSender) ...[
-              CircleAvatar(backgroundImage: imageProvider),
+              _buildAvatar(),
               SizedBox(width: 10),
             ],
             Flexible(
@@ -270,13 +253,20 @@ class ChatBubble extends StatelessWidget {
                 margin: EdgeInsets.symmetric(vertical: 5, horizontal: 10),
                 decoration: BoxDecoration(
                   color: isSender ? Colors.teal : Colors.white,
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.only(
+                    topLeft: Radius.circular(15),
+                    topRight: Radius.circular(15),
+                    bottomLeft:
+                        isSender ? Radius.circular(15) : Radius.circular(0),
+                    bottomRight:
+                        isSender ? Radius.circular(0) : Radius.circular(15),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.grey.withOpacity(0.3),
                       spreadRadius: 1,
-                      blurRadius: 2,
-                      offset: Offset(0, 1),
+                      blurRadius: 3,
+                      offset: Offset(0, 2),
                     ),
                   ],
                 ),
@@ -289,10 +279,48 @@ class ChatBubble extends StatelessWidget {
                 ),
               ),
             ),
-            if (isSender) SizedBox(width: 10),
+            if (isSender) ...[
+              SizedBox(width: 10),
+              _buildAvatar(),
+            ],
           ],
         ),
       ],
     );
+  }
+
+  Widget _buildAvatar() {
+    if (avatarUrl != null && avatarUrl!.isNotEmpty) {
+      if (avatarUrl!.startsWith('http')) {
+        // Network image dengan OptimizedImage
+        return ClipOval(
+          child: OptimizedImage(
+            imageUrl: avatarUrl!,
+            width: 40,
+            height: 40,
+            fit: BoxFit.cover,
+            errorWidget: CircleAvatar(
+              radius: 20,
+              backgroundColor: Colors.teal.shade100,
+              child: Icon(Icons.person, color: Colors.teal.shade300, size: 20),
+            ),
+          ),
+        );
+      } else {
+        // Asset image
+        return CircleAvatar(
+          radius: 20,
+          backgroundImage: AssetImage(avatarUrl!),
+          backgroundColor: Colors.teal.shade100,
+        );
+      }
+    } else {
+      // Default avatar
+      return CircleAvatar(
+        radius: 20,
+        backgroundColor: Colors.teal.shade100,
+        child: Icon(Icons.person, color: Colors.teal.shade300, size: 20),
+      );
+    }
   }
 }

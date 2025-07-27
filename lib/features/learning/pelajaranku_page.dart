@@ -3,8 +3,9 @@ import 'package:mentorme/core/services/kegiatanku_services.dart';
 import 'package:mentorme/features/learning/detail_pelajaranku.dart';
 import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
-import 'package:mentorme/shared/widgets/optimized_animations.dart';
+import 'package:mentorme/shared/widgets/enhanced_animations.dart' as enhanced;
 import 'package:mentorme/shared/widgets/optimized_list_view.dart';
+import 'package:mentorme/global/Fontstyle.dart';
 
 class Kegiatanku extends StatefulWidget {
   const Kegiatanku({super.key});
@@ -13,8 +14,8 @@ class Kegiatanku extends StatefulWidget {
   State<Kegiatanku> createState() => _KegiatankuState();
 }
 
-class _KegiatankuState extends State<Kegiatanku> {
-  // --- COLOR PALETTE ---
+class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
+  // Enhanced color palette
   static const Color primaryColor = Color(0xFF339989);
   static const Color darkTextColor = Color(0xFF3C493F);
   static const Color backgroundColor = Color(0xFFE0FFF3);
@@ -26,11 +27,85 @@ class _KegiatankuState extends State<Kegiatanku> {
   bool _isLoading = true;
   String _errorMessage = '';
 
-  // --- LOGIC (No Changes Needed) ---
+  // Enhanced animation controllers
+  late AnimationController _backgroundController;
+  late AnimationController _floatingController;
+  late AnimationController _tabController;
+  late AnimationController _progressController;
+
+  late Animation<double> _backgroundAnimation;
+  late Animation<double> _floatingAnimation;
+  late Animation<double> _tabAnimation;
+  late Animation<double> _progressAnimation;
+
   @override
   void initState() {
     super.initState();
+    _initAnimations();
     _loadLearningData();
+  }
+
+  void _initAnimations() {
+    _backgroundController = AnimationController(
+      duration: const Duration(seconds: 6),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _floatingController = AnimationController(
+      duration: const Duration(seconds: 4),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _tabController = AnimationController(
+      duration: const Duration(milliseconds: 300),
+      vsync: this,
+    );
+
+    _progressController = AnimationController(
+      duration: const Duration(seconds: 2),
+      vsync: this,
+    )..repeat(reverse: true);
+
+    _backgroundAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _backgroundController,
+      curve: Curves.easeInOut,
+    ));
+
+    _floatingAnimation = Tween<double>(
+      begin: -15.0,
+      end: 15.0,
+    ).animate(CurvedAnimation(
+      parent: _floatingController,
+      curve: Curves.easeInOut,
+    ));
+
+    _tabAnimation = Tween<double>(
+      begin: 0.0,
+      end: 1.0,
+    ).animate(CurvedAnimation(
+      parent: _tabController,
+      curve: Curves.elasticOut,
+    ));
+
+    _progressAnimation = Tween<double>(
+      begin: 0.8,
+      end: 1.2,
+    ).animate(CurvedAnimation(
+      parent: _progressController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _backgroundController.dispose();
+    _floatingController.dispose();
+    _tabController.dispose();
+    _progressController.dispose();
+    super.dispose();
   }
 
   Future<void> _loadLearningData() async {
@@ -77,38 +152,178 @@ class _KegiatankuState extends State<Kegiatanku> {
     }
   }
 
-  // --- UI WIDGETS (New and Improved) ---
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: backgroundColor,
-      appBar: AppBar(
-        title: const Text(
-          "Kegiatanku",
-          style: TextStyle(
-            color: darkTextColor,
-            fontWeight: FontWeight.bold,
-            fontSize: 24,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        centerTitle: true,
+      body: AnimatedBuilder(
+        animation: _backgroundAnimation,
+        builder: (context, child) {
+          return Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Color.lerp(backgroundColor, primaryColor,
+                      _backgroundAnimation.value * 0.3)!,
+                  Color.lerp(primaryColor, backgroundColor,
+                      _backgroundAnimation.value * 0.5)!,
+                  Color.lerp(backgroundColor, darkTextColor,
+                      _backgroundAnimation.value * 0.2)!,
+                ],
+                stops: const [0.0, 0.5, 1.0],
+              ),
+            ),
+            child: Stack(
+              children: [
+                _buildFloatingElements(),
+                SafeArea(
+                  child: Column(
+                    children: [
+                      _buildEnhancedAppBar(),
+                      const SizedBox(height: 20),
+                      _buildTabSwitcher(),
+                      const SizedBox(height: 20),
+                      Expanded(
+                        child: _isLoading
+                            ? _buildLoadingState()
+                            : _errorMessage.isNotEmpty
+                                ? _buildErrorState(_errorMessage)
+                                : enhanced.OptimizedFadeSlide(
+                                    duration: const Duration(milliseconds: 600),
+                                    child: _buildCurrentList(),
+                                  ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          );
+        },
       ),
-      body: SafeArea(
-        child: Column(
+    );
+  }
+
+  Widget _buildFloatingElements() {
+    return AnimatedBuilder(
+      animation: _floatingAnimation,
+      builder: (context, child) {
+        return Stack(
           children: [
-            _buildTabSwitcher(),
-            const SizedBox(height: 16),
+            // Floating learning icons
+            Positioned(
+              top: 100 + _floatingAnimation.value,
+              right: 30,
+              child: Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(30),
+                ),
+                child: const Icon(
+                  Icons.school_outlined,
+                  color: Colors.white,
+                  size: 24,
+                ),
+              ),
+            ),
+            Positioned(
+              top: 200 - _floatingAnimation.value * 0.5,
+              left: 20,
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: backgroundColor.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Icon(
+                  Icons.book_outlined,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+            Positioned(
+              bottom: 150 + _floatingAnimation.value * 0.8,
+              right: 50,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: primaryColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(40),
+                ),
+                child: const Icon(
+                  Icons.psychology_outlined,
+                  color: Colors.white,
+                  size: 32,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildEnhancedAppBar() {
+    return enhanced.OptimizedFadeSlide(
+      duration: const Duration(milliseconds: 800),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        child: Row(
+          children: [
             Expanded(
-              child: _isLoading
-                  ? _buildLoadingState()
-                  : _errorMessage.isNotEmpty
-                      ? _buildErrorState(_errorMessage)
-                      : OptimizedFadeSlide(
-                          duration: const Duration(milliseconds: 600),
-                          child: _buildCurrentList(),
-                        ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  ShaderMask(
+                    shaderCallback: (bounds) => const LinearGradient(
+                      colors: [Colors.white, backgroundColor],
+                    ).createShader(bounds),
+                    child: Text(
+                      "Kegiatanku",
+                      style: AppTextStyles.headlineLarge.copyWith(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                        shadows: [
+                          const Shadow(
+                            blurRadius: 8.0,
+                            color: Colors.black26,
+                            offset: Offset(2, 2),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Pantau progress belajar Anda',
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: Colors.white.withOpacity(0.9),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
+              ),
+              child: const Icon(
+                Icons.trending_up,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ],
         ),
@@ -117,18 +332,28 @@ class _KegiatankuState extends State<Kegiatanku> {
   }
 
   Widget _buildTabSwitcher() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 24),
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: primaryColor.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(30),
-      ),
-      child: Row(
-        children: [
-          _buildTabButton("Dalam Progress", 0),
-          _buildTabButton("Selesai", 1),
-        ],
+    return enhanced.OptimizedFadeSlide(
+      delay: const Duration(milliseconds: 200),
+      child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 24),
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.9),
+          borderRadius: BorderRadius.circular(25),
+          boxShadow: [
+            BoxShadow(
+              color: primaryColor.withOpacity(0.2),
+              blurRadius: 15,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            _buildTabButton("Dalam Progress", 0),
+            _buildTabButton("Selesai", 1),
+          ],
+        ),
       ),
     );
   }
@@ -136,21 +361,55 @@ class _KegiatankuState extends State<Kegiatanku> {
   Widget _buildTabButton(String text, int index) {
     bool isActive = _currentIndex == index;
     return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _currentIndex = index),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: isActive ? primaryColor : Colors.transparent,
-            borderRadius: BorderRadius.circular(30),
-          ),
-          child: Text(
-            text,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              color: isActive ? Colors.white : darkTextColor.withOpacity(0.8),
-              fontWeight: FontWeight.bold,
+      child: enhanced.OptimizedHover(
+        scale: 1.02,
+        child: GestureDetector(
+          onTap: () {
+            setState(() => _currentIndex = index);
+            _tabController.forward().then((_) => _tabController.reverse());
+          },
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            decoration: BoxDecoration(
+              gradient: isActive
+                  ? const LinearGradient(
+                      colors: [primaryColor, darkTextColor],
+                    )
+                  : null,
+              color: isActive ? null : Colors.transparent,
+              borderRadius: BorderRadius.circular(20),
+              boxShadow: isActive
+                  ? [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                  : null,
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                if (isActive)
+                  Icon(
+                    index == 0 ? Icons.hourglass_empty : Icons.check_circle,
+                    color: Colors.white,
+                    size: 16,
+                  ),
+                if (isActive) const SizedBox(width: 8),
+                Text(
+                  text,
+                  textAlign: TextAlign.center,
+                  style: AppTextStyles.labelMedium.copyWith(
+                    color: isActive
+                        ? Colors.white
+                        : darkTextColor.withOpacity(0.8),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -172,234 +431,492 @@ class _KegiatankuState extends State<Kegiatanku> {
             );
     }
 
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      itemCount: list.length,
-      itemBuilder: (context, index) {
-        return _buildCourseCard(list[index]);
-      },
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: primaryColor.withOpacity(0.1),
+            blurRadius: 20,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+          physics: const BouncingScrollPhysics(),
+          itemCount: list.length,
+          itemBuilder: (context, index) {
+            return enhanced.OptimizedFadeSlide(
+              delay: Duration(milliseconds: 100 * index),
+              child: _buildCourseCard(list[index], index),
+            );
+          },
+        ),
+      ),
     );
   }
 
-  Widget _buildCourseCard(Map<String, dynamic> course) {
+  Widget _buildCourseCard(Map<String, dynamic> course, int index) {
     String? rawImageUrl = course['project']?['picture'];
     String? imageUrl;
 
     if (rawImageUrl != null && rawImageUrl.isNotEmpty) {
-      // --- LOGIKA PERBAIKAN URL ---
-      // Ambil bagian terakhir dari URL setelah 'storage.googleapis.com'.
-      // Ini efektif untuk menangani URL yang benar maupun yang dobel.
       final path = rawImageUrl.split('storage.googleapis.com').last;
-
-      // Gabungkan kembali menjadi URL yang valid dan bersih.
       imageUrl = 'https://storage.googleapis.com$path';
     }
 
     double progressValue = (course['progress'] as num?)?.toDouble() ?? 0.0;
     bool isCompleted = progressValue >= 1.0;
 
-    return OptimizedFadeSlide(
-        delay: Duration(milliseconds: 100),
-        child: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) =>
-                    DetailKegiatan(activityId: course['ID'] ?? ''),
+    return enhanced.OptimizedHover(
+      scale: 1.02,
+      child: GestureDetector(
+        onTap: () {
+          Navigator.push(
+            context,
+            enhanced.OptimizedPageRoute(
+              child: DetailKegiatan(activityId: course['ID'] ?? ''),
+              transitionType: enhanced.PageTransitionType.slideUp,
+            ),
+          );
+        },
+        child: Container(
+          margin: const EdgeInsets.only(bottom: 20),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(20),
+            boxShadow: [
+              BoxShadow(
+                color: primaryColor.withOpacity(0.2),
+                blurRadius: 15,
+                spreadRadius: 2,
+                offset: const Offset(0, 8),
               ),
-            );
-          },
-          child: Card(
-            elevation: 4,
-            shadowColor: primaryColor.withOpacity(0.2),
-            margin: const EdgeInsets.only(bottom: 20),
-            shape:
-                RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-            clipBehavior: Clip.antiAlias,
+            ],
+          ),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(20),
             child: Stack(
               children: [
-                // Background Image
-                if (imageUrl != null)
-                  OptimizedImage(
-                    imageUrl: imageUrl,
-                    width: double.infinity,
-                    height: 200,
-                    fit: BoxFit.cover,
-                    placeholder: ShimmerCard(
-                      width: double.infinity,
-                      height: 200,
-                      borderRadius: BorderRadius.circular(0),
-                    ),
-                    errorWidget: _buildImagePlaceholder(),
-                  )
-                else
-                  _buildImagePlaceholder(),
+                // Background Image with enhanced styling
+                Container(
+                  height: 220,
+                  width: double.infinity,
+                  child: imageUrl != null
+                      ? OptimizedImage(
+                          imageUrl: imageUrl,
+                          width: double.infinity,
+                          height: 220,
+                          fit: BoxFit.cover,
+                          placeholder: ShimmerCard(
+                            width: double.infinity,
+                            height: 220,
+                            borderRadius: BorderRadius.circular(0),
+                          ),
+                          errorWidget: _buildImagePlaceholder(),
+                        )
+                      : _buildImagePlaceholder(),
+                ),
 
-                // Gradient Overlay
+                // Enhanced gradient overlay
                 Positioned.fill(
                   child: Container(
                     decoration: BoxDecoration(
                       gradient: LinearGradient(
                         colors: [
-                          Colors.black.withOpacity(0.7),
-                          Colors.transparent
+                          darkTextColor.withOpacity(0.8),
+                          Colors.transparent,
+                          Colors.transparent,
+                          primaryColor.withOpacity(0.6),
                         ],
                         begin: Alignment.bottomCenter,
-                        end: Alignment.center,
+                        end: Alignment.topCenter,
+                        stops: const [0.0, 0.3, 0.7, 1.0],
                       ),
                     ),
                   ),
                 ),
 
-                // Content
+                // Content with enhanced styling
                 Positioned(
                   bottom: 0,
                   left: 0,
                   right: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(12.0),
+                  child: Container(
+                    padding: const EdgeInsets.all(20),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
                           course['project']['materialName'] ?? 'Tanpa Judul',
-                          style: const TextStyle(
+                          style: AppTextStyles.headlineSmall.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 18,
                             color: Colors.white,
                             shadows: [
-                              Shadow(blurRadius: 2, color: Colors.black54)
+                              const Shadow(
+                                blurRadius: 4,
+                                color: Colors.black54,
+                                offset: Offset(1, 1),
+                              )
                             ],
                           ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 8),
-                        isCompleted
-                            ? const Chip(
-                                avatar: Icon(Icons.check_circle,
-                                    color: Colors.white, size: 16),
-                                label: Text('Selesai'),
-                                backgroundColor: primaryColor,
-                                labelStyle: TextStyle(
+                        const SizedBox(height: 12),
+                        if (isCompleted)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              gradient: const LinearGradient(
+                                colors: [primaryColor, accentColor],
+                              ),
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: primaryColor.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.check_circle,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Selesai',
+                                  style: AppTextStyles.labelMedium.copyWith(
                                     color: Colors.white,
-                                    fontWeight: FontWeight.bold),
-                              )
-                            : Row(
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          )
+                        else
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Expanded(
-                                    child: ClipRRect(
-                                      borderRadius: BorderRadius.circular(10),
-                                      child: LinearProgressIndicator(
-                                        value: progressValue,
-                                        backgroundColor:
-                                            Colors.white.withOpacity(0.3),
-                                        color: accentColor,
-                                        minHeight: 10,
-                                      ),
+                                  Text(
+                                    'Progress',
+                                    style: AppTextStyles.labelMedium.copyWith(
+                                      color: Colors.white.withOpacity(0.9),
+                                      fontWeight: FontWeight.w600,
                                     ),
                                   ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    '${(progressValue * 100).toStringAsFixed(0)}%',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 14,
-                                    ),
+                                  AnimatedBuilder(
+                                    animation: _progressAnimation,
+                                    builder: (context, child) {
+                                      return Transform.scale(
+                                        scale: _progressAnimation.value,
+                                        child: Text(
+                                          '${(progressValue * 100).toStringAsFixed(0)}%',
+                                          style:
+                                              AppTextStyles.labelLarge.copyWith(
+                                            color: Colors.white,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      );
+                                    },
                                   ),
                                 ],
                               ),
+                              const SizedBox(height: 8),
+                              Container(
+                                height: 8,
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withOpacity(0.3),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: ClipRRect(
+                                  borderRadius: BorderRadius.circular(4),
+                                  child: LinearProgressIndicator(
+                                    value: progressValue,
+                                    backgroundColor: Colors.transparent,
+                                    valueColor: AlwaysStoppedAnimation<Color>(
+                                      accentColor,
+                                    ),
+                                    minHeight: 8,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
                       ],
+                    ),
+                  ),
+                ),
+
+                // Floating action indicator
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.2),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(
+                        color: Colors.white.withOpacity(0.3),
+                        width: 1,
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.play_arrow,
+                      color: Colors.white,
+                      size: 16,
                     ),
                   ),
                 ),
               ],
             ),
           ),
-        ));
+        ),
+      ),
+    );
   }
 
   Widget _buildLoadingState() {
-    return Column(
-      children: [
-        _buildTabSwitcher(),
-        const SizedBox(height: 16),
-        Expanded(
-          child: ListView.builder(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            itemCount: 3,
-            itemBuilder: (context, index) {
-              return Padding(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(30),
+          topRight: Radius.circular(30),
+        ),
+        child: ListView.builder(
+          padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+          itemCount: 3,
+          itemBuilder: (context, index) {
+            return enhanced.OptimizedFadeSlide(
+              delay: Duration(milliseconds: index * 100),
+              child: Padding(
                 padding: const EdgeInsets.only(bottom: 20),
                 child: ShimmerCard(
                   width: double.infinity,
-                  height: 200,
-                  borderRadius: BorderRadius.circular(16),
+                  height: 220,
+                  borderRadius: BorderRadius.circular(20),
                 ),
-              );
-            },
-          ),
+              ),
+            );
+          },
         ),
-      ],
+      ),
     );
   }
 
   Widget _buildImagePlaceholder() {
     return Container(
-      height: 200,
-      color: Colors.grey.shade300,
-      child: const Center(
-        child: Icon(Icons.photo_size_select_actual_rounded,
-            color: Colors.grey, size: 50),
+      height: 220,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [backgroundColor, primaryColor],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.school_outlined,
+              color: Colors.white,
+              size: 48,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Kursus',
+              style: AppTextStyles.labelMedium.copyWith(
+                color: Colors.white,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildEmptyState(
-      {String? imagePath, IconData? icon, required String message}) {
+  Widget _buildEmptyState({
+    String? imagePath,
+    IconData? icon,
+    required String message,
+  }) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (imagePath != null)
-            Image.asset(imagePath, height: 150)
-          else if (icon != null)
-            Icon(icon, size: 100, color: darkTextColor.withOpacity(0.3)),
-          const SizedBox(height: 24),
-          Text(
-            message,
-            textAlign: TextAlign.center,
-            style:
-                TextStyle(fontSize: 16, color: darkTextColor.withOpacity(0.7)),
-          ),
-          const SizedBox(height: 50), // Extra space at the bottom
-        ],
+      child: enhanced.OptimizedFadeSlide(
+        delay: const Duration(milliseconds: 300),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (imagePath != null)
+              enhanced.OptimizedScale(
+                duration: const Duration(milliseconds: 800),
+                child: Container(
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.2),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Image.asset(imagePath, height: 120),
+                ),
+              )
+            else if (icon != null)
+              enhanced.OptimizedScale(
+                duration: const Duration(milliseconds: 800),
+                child: Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [primaryColor, darkTextColor],
+                    ),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: primaryColor.withOpacity(0.3),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 64,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Text(
+                message,
+                textAlign: TextAlign.center,
+                style: AppTextStyles.bodyLarge.copyWith(
+                  color: darkTextColor,
+                  height: 1.5,
+                ),
+              ),
+            ),
+            const SizedBox(height: 50),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildErrorState(String message) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.cloud_off, size: 80, color: Colors.red.shade300),
-          const SizedBox(height: 16),
-          Text(
-            'Oops, Terjadi Kesalahan',
-            style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: darkTextColor),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            message,
-            style: TextStyle(color: darkTextColor.withOpacity(0.8)),
-          ),
-        ],
+      child: enhanced.OptimizedFadeSlide(
+        delay: const Duration(milliseconds: 300),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            enhanced.OptimizedScale(
+              duration: const Duration(milliseconds: 800),
+              child: Container(
+                padding: const EdgeInsets.all(32),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade100,
+                  borderRadius: BorderRadius.circular(30),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.red.withOpacity(0.2),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Icon(
+                  Icons.cloud_off,
+                  size: 64,
+                  color: Colors.red.shade400,
+                ),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryColor.withOpacity(0.1),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Text(
+                    'Oops, Terjadi Kesalahan',
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: darkTextColor,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    message,
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: darkTextColor.withOpacity(0.8),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
