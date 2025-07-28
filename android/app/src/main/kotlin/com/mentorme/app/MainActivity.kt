@@ -1,4 +1,4 @@
-package com.example.mentorme
+package com.mentorme.app
 
 import io.flutter.embedding.android.FlutterActivity
 

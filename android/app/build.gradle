@@ -29,9 +29,9 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.example.mentorme"
+        applicationId = "com.mentorme.app"
         minSdkVersion 23
-        targetSdkVersion 33
+        targetSdkVersion 34
         versionCode = flutter.versionCode
         versionName = flutter.versionName
     }

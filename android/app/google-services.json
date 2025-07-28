@@ -34,6 +34,35 @@
           ]
         }
       }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:131671305259:android:340396779257dd61618e6e",
+        "android_client_info": {
+          "package_name": "com.mentorme.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "131671305259-citpr2i28num626l97oeek7m4gb2nckj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAda3nZme8oEF2s5d7aK7oqfFlq7NuD70"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "131671305259-citpr2i28num626l97oeek7m4gb2nckj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
     }
   ],
   "configuration_version": "1"
