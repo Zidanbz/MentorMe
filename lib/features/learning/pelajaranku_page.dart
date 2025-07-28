@@ -110,10 +110,10 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
   }
 
   Future<void> _loadLearningData() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = '';
-    });
+    // setState(() {
+    //   _isLoading = true;
+    //   _errorMessage = '';
+    // });
 
     try {
       final learningData = await ActivityService.fetchLearningData();
@@ -158,6 +158,11 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
     return Scaffold(
       body: AppBackground(
         child: SafeArea(
+          // [PERUBAHAN DIMULAI DI SINI]
+          // child: RefreshIndicator(
+          //   onRefresh: _loadLearningData,
+          //   color: primaryColor,
+          //   backgroundColor: Colors.white,
           child: Column(
             children: [
               _buildEnhancedAppBar(),
@@ -177,7 +182,9 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
             ],
           ),
         ),
+        // [PERUBAHAN BERAKHIR DI SINI]
       ),
+      // ),
     );
   }
 
@@ -426,7 +433,8 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
         ),
         child: ListView.builder(
           padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-          physics: const BouncingScrollPhysics(),
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
           itemCount: list.length,
           itemBuilder: (context, index) {
             return enhanced.OptimizedFadeSlide(
@@ -481,7 +489,7 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
             child: Stack(
               children: [
                 // Background Image with enhanced styling
-                Container(
+                SizedBox(
                   height: 220,
                   width: double.infinity,
                   child: imageUrl != null
@@ -710,8 +718,8 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
   Widget _buildImagePlaceholder() {
     return Container(
       height: 220,
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
           colors: [backgroundColor, primaryColor],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
@@ -745,83 +753,100 @@ class _KegiatankuState extends State<Kegiatanku> with TickerProviderStateMixin {
     IconData? icon,
     required String message,
   }) {
-    return Center(
-      child: enhanced.OptimizedFadeSlide(
-        delay: const Duration(milliseconds: 300),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            if (imagePath != null)
-              enhanced.OptimizedScale(
-                duration: const Duration(milliseconds: 800),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.9),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withOpacity(0.2),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
+    // [PERBAIKAN] Bungkus dengan LayoutBuilder dan SingleChildScrollView
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(
+              parent: BouncingScrollPhysics()),
+          child: ConstrainedBox(
+            constraints: BoxConstraints(
+              minHeight: constraints
+                  .maxHeight, // Memastikan area scroll setinggi layar
+            ),
+            child: Center(
+              // Gunakan Center agar konten tetap di tengah
+              child: enhanced.OptimizedFadeSlide(
+                delay: const Duration(milliseconds: 300),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    if (imagePath != null)
+                      enhanced.OptimizedScale(
+                        duration: const Duration(milliseconds: 800),
+                        child: Container(
+                          padding: const EdgeInsets.all(20),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.9),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.2),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Image.asset(imagePath, height: 120),
+                        ),
+                      )
+                    else if (icon != null)
+                      enhanced.OptimizedScale(
+                        duration: const Duration(milliseconds: 800),
+                        child: Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [primaryColor, darkTextColor],
+                            ),
+                            borderRadius: BorderRadius.circular(30),
+                            boxShadow: [
+                              BoxShadow(
+                                color: primaryColor.withOpacity(0.3),
+                                blurRadius: 20,
+                                offset: const Offset(0, 8),
+                              ),
+                            ],
+                          ),
+                          child: Icon(
+                            icon,
+                            size: 64,
+                            color: Colors.white,
+                          ),
+                        ),
                       ),
-                    ],
-                  ),
-                  child: Image.asset(imagePath, height: 120),
-                ),
-              )
-            else if (icon != null)
-              enhanced.OptimizedScale(
-                duration: const Duration(milliseconds: 800),
-                child: Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    gradient: const LinearGradient(
-                      colors: [primaryColor, darkTextColor],
+                    const SizedBox(height: 24),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 32, vertical: 16),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: primaryColor.withOpacity(0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Text(
+                        message,
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: darkTextColor,
+                          height: 1.5,
+                        ),
+                      ),
                     ),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: primaryColor.withOpacity(0.3),
-                        blurRadius: 20,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    icon,
-                    size: 64,
-                    color: Colors.white,
-                  ),
-                ),
-              ),
-            const SizedBox(height: 24),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.9),
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryColor.withOpacity(0.1),
-                    blurRadius: 10,
-                    offset: const Offset(0, 4),
-                  ),
-                ],
-              ),
-              child: Text(
-                message,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.bodyLarge.copyWith(
-                  color: darkTextColor,
-                  height: 1.5,
+                    const SizedBox(height: 50),
+                  ],
                 ),
               ),
             ),
-            const SizedBox(height: 50),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 

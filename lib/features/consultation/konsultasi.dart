@@ -48,25 +48,21 @@ class _KonsultasiPageState extends State<KonsultasiPage>
   }
 
   void _initAnimations() {
-    // Background gradient animation
     _backgroundController = AnimationController(
       duration: const Duration(seconds: 5),
       vsync: this,
     )..repeat(reverse: true);
 
-    // Header animation
     _headerController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1000),
     );
 
-    // Floating elements animation
     _floatingController = AnimationController(
       duration: const Duration(seconds: 4),
       vsync: this,
     )..repeat(reverse: true);
 
-    // Pulse animation for new messages
     _pulseController = AnimationController(
       duration: const Duration(seconds: 1),
       vsync: this,
@@ -246,7 +242,6 @@ class _KonsultasiPageState extends State<KonsultasiPage>
       builder: (context, child) {
         return Stack(
           children: [
-            // Floating chat bubbles
             Positioned(
               top: 100 + _floatingAnimation.value,
               right: 30,
@@ -369,6 +364,8 @@ class _KonsultasiPageState extends State<KonsultasiPage>
     );
   }
 
+  // Lokasi: konsultasi_page.dart
+
   Widget _buildChatRoomsList() {
     return Container(
       decoration: BoxDecoration(
@@ -395,13 +392,14 @@ class _KonsultasiPageState extends State<KonsultasiPage>
             ? _buildLoadingState()
             : RefreshIndicator(
                 onRefresh: fetchChatRooms,
-                color: const Color(0xFF339989),
-                backgroundColor: const Color(0xFFe0fff3),
+                // [PERBAIKAN] Tambahkan baris ini untuk menyembunyikan lingkaran loading
+                notificationPredicate: (notification) => false,
                 child: chatRooms.isEmpty
                     ? _buildEmptyState()
                     : ListView.builder(
                         padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
-                        physics: const BouncingScrollPhysics(),
+                        physics: const AlwaysScrollableScrollPhysics(
+                            parent: BouncingScrollPhysics()),
                         itemCount: chatRooms.length,
                         itemBuilder: (context, index) {
                           final room = chatRooms[index];
@@ -440,58 +438,70 @@ class _KonsultasiPageState extends State<KonsultasiPage>
     );
   }
 
+  // [PERUBAHAN 2]
   Widget _buildEmptyState() {
-    return Center(
-      child: enhanced.OptimizedFadeSlide(
-        delay: const Duration(milliseconds: 300),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            enhanced.OptimizedScale(
-              duration: const Duration(milliseconds: 800),
-              child: Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF339989), Color(0xFF3c493f)],
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: const Color(0xFF339989).withOpacity(0.3),
-                      blurRadius: 20,
-                      offset: const Offset(0, 8),
+    return LayoutBuilder(builder: (context, constraints) {
+      return SingleChildScrollView(
+        physics: const AlwaysScrollableScrollPhysics(
+            parent: BouncingScrollPhysics()),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            minHeight: constraints.maxHeight,
+          ),
+          child: Center(
+            child: enhanced.OptimizedFadeSlide(
+              delay: const Duration(milliseconds: 300),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  enhanced.OptimizedScale(
+                    duration: const Duration(milliseconds: 800),
+                    child: Container(
+                      padding: const EdgeInsets.all(32),
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                        ),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF339989).withOpacity(0.3),
+                            blurRadius: 20,
+                            offset: const Offset(0, 8),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.chat_bubble_outline,
+                        size: 64,
+                        color: Colors.white,
+                      ),
                     ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.chat_bubble_outline,
-                  size: 64,
-                  color: Colors.white,
-                ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Belum ada riwayat chat',
+                    style: AppTextStyles.headlineSmall.copyWith(
+                      color: const Color(0xFF3c493f),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    'Mulai konsultasi dengan mentor untuk\nmemulai percakapan pertama Anda',
+                    textAlign: TextAlign.center,
+                    style: AppTextStyles.bodyMedium.copyWith(
+                      color: const Color(0xFF3c493f).withOpacity(0.7),
+                      height: 1.5,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 24),
-            Text(
-              'Belum ada riwayat chat',
-              style: AppTextStyles.headlineSmall.copyWith(
-                color: const Color(0xFF3c493f),
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              'Mulai konsultasi dengan mentor untuk\nmemulai percakapan pertama Anda',
-              textAlign: TextAlign.center,
-              style: AppTextStyles.bodyMedium.copyWith(
-                color: const Color(0xFF3c493f).withOpacity(0.7),
-                height: 1.5,
-              ),
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildHistoryItem(
@@ -566,7 +576,6 @@ class _KonsultasiPageState extends State<KonsultasiPage>
               padding: const EdgeInsets.all(20),
               child: Row(
                 children: [
-                  // Profile picture with enhanced styling
                   Stack(
                     children: [
                       Container(
@@ -606,7 +615,6 @@ class _KonsultasiPageState extends State<KonsultasiPage>
                                 ),
                               ),
                       ),
-                      // Online indicator
                       if (isNewMessage)
                         Positioned(
                           bottom: 0,
@@ -635,8 +643,6 @@ class _KonsultasiPageState extends State<KonsultasiPage>
                     ],
                   ),
                   const SizedBox(width: 20),
-
-                  // Chat info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -679,8 +685,6 @@ class _KonsultasiPageState extends State<KonsultasiPage>
                       ],
                     ),
                   ),
-
-                  // Arrow icon with animation
                   enhanced.OptimizedHover(
                     child: Container(
                       padding: const EdgeInsets.all(8),
