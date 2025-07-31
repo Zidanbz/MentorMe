@@ -161,6 +161,18 @@ class LearningApiService {
     return response;
   }
 
+  /// Complete learning process
+  static Future<ApiResponse<String>> completeLearning({
+    required String learningId,
+  }) async {
+    final response = await BaseApiClient.post<String>(
+      '/learning/$learningId/complete',
+      body: {},
+    );
+
+    return response;
+  }
+
   /// Rate a completed course
   static Future<ApiResponse<Map<String, dynamic>>> rateCourse({
     required String courseId,
