@@ -10,48 +10,51 @@ class ProfileApiService {
     return response;
   }
 
-  /// Update user profile
+  /// [PERBAIKAN]
+  /// Mengupdate profil pengguna (teks dan gambar dalam satu request).
+  /// Fungsi ini selalu menggunakan multipart/form-data.
   static Future<ApiResponse<Map<String, dynamic>>> updateProfile({
     required String fullName,
-    String? email,
     String? phone,
-    String? bio,
+    String? imagePath, // Parameter untuk path gambar (opsional)
   }) async {
-    final body = <String, dynamic>{
+    // Siapkan field teks
+    final fields = <String, String>{
       'fullName': fullName.trim(),
     };
+    if (phone != null) {
+      fields['phone'] = phone.trim();
+    }
 
-    if (email != null) body['email'] = email.trim();
-    if (phone != null) body['phone'] = phone.trim();
-    if (bio != null) body['bio'] = bio.trim();
+    // Siapkan file jika ada
+    final files = <String, String>{};
+    if (imagePath != null && imagePath.isNotEmpty) {
+      // 'picture' adalah key yang diharapkan oleh backend Anda
+      files['picture'] = imagePath;
+    }
 
-    final response = await BaseApiClient.put<Map<String, dynamic>>(
-      '/profile/update',
-      body: body,
-    );
-
-    return response;
-  }
-
-  /// Update profile picture
-  static Future<ApiResponse<Map<String, dynamic>>> updateProfilePicture({
-    required String imagePath,
-  }) async {
+    // Gunakan multipartRequest untuk mengirim keduanya
     final response = await BaseApiClient.multipartRequest<Map<String, dynamic>>(
-      '/profile/update-picture',
+      // Pastikan endpoint ini benar sesuai routing backend Anda
+      '/profile/edit',
       'PUT',
-      files: {'picture': imagePath},
+      fields: fields,
+      files: files,
     );
 
     return response;
   }
+
+  /*
+    Fungsi updateProfilePicture sudah tidak diperlukan karena logikanya
+    telah digabungkan ke dalam fungsi updateProfile di atas.
+  */
 
   /// Fetch profile history/transactions
   static Future<ApiResponse<Map<String, dynamic>>> fetchProfileHistory() async {
     final response = await BaseApiClient.get<Map<String, dynamic>>(
       '/profile/history',
     );
-
     return response;
   }
 
@@ -60,7 +63,6 @@ class ProfileApiService {
     final response = await BaseApiClient.get<Map<String, dynamic>>(
       '/coin/get',
     );
-
     return response;
   }
 
@@ -69,7 +71,6 @@ class ProfileApiService {
     final response = await BaseApiClient.get<Map<String, dynamic>>(
       '/my/learning',
     );
-
     return response;
   }
 
@@ -84,12 +85,10 @@ class ProfileApiService {
       'newPassword': newPassword,
       'confirmPassword': confirmPassword,
     };
-
     final response = await BaseApiClient.put<Map<String, dynamic>>(
       '/profile/change-password',
       body: body,
     );
-
     return response;
   }
 
@@ -100,11 +99,11 @@ class ProfileApiService {
     final body = {
       'password': password,
     };
-
     final response = await BaseApiClient.delete<Map<String, dynamic>>(
       '/profile/delete',
+      // Seharusnya body dikirim di sini jika API Anda mengharapkannya
+      // body: body,
     );
-
     return response;
   }
 
@@ -119,12 +118,10 @@ class ProfileApiService {
       'pushNotifications': pushNotifications,
       'smsNotifications': smsNotifications,
     };
-
     final response = await BaseApiClient.put<Map<String, dynamic>>(
       '/profile/notification-settings',
       body: body,
     );
-
     return response;
   }
 
@@ -134,7 +131,6 @@ class ProfileApiService {
     final response = await BaseApiClient.get<Map<String, dynamic>>(
       '/profile/notification-settings',
     );
-
     return response;
   }
 }

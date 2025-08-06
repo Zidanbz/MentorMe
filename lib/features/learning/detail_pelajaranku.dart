@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'package:file_picker/file_picker.dart';
 import 'package:mentorme/features/consultation/roomchat.dart';
+import 'package:mentorme/features/learning/services/learning_api_service.dart';
 import 'package:mentorme/global/global.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -24,6 +25,7 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
 
   late Future<Map<String, dynamic>> _activityFuture;
   bool _isChatLoading = false;
+  bool _isCompletionLoading = false;
 
   // --- LOGIC (No Changes) ---
   @override
@@ -46,9 +48,12 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
       );
 
       final responseData = json.decode(response.body);
-      print("Activity Details Fetched: $responseData");
+      print("DEBUG: Activity Details Fetched: $responseData");
       if (response.statusCode == 200 && responseData.containsKey('data')) {
-        return responseData['data'];
+        final activityData = responseData['data'];
+        print(
+            "DEBUG: Activity data - isCompleted: ${activityData['isCompleted']}, completed: ${activityData['completed']}, status: ${activityData['status']}");
+        return activityData;
       } else {
         throw Exception('Failed to load activity details');
       }
@@ -160,6 +165,97 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
     });
   }
 
+  Future<void> _handleCompleteLearning() async {
+    // Get the learning ID from activity details first
+    final activityDetails = await _activityFuture;
+    final learningId = activityDetails['learningId'];
+
+    if (learningId == null || learningId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('ID pembelajaran tidak ditemukan'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Show confirmation dialog first
+    final bool? confirmed = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('Selesaikan Pembelajaran'),
+          content: const Text(
+            'Apakah Anda yakin ingin menyelesaikan pembelajaran ini? '
+            'Tindakan ini tidak dapat dibatalkan dan akan memproses pembayaran ke mentor.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(false),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(true),
+              style: ElevatedButton.styleFrom(backgroundColor: primaryColor),
+              child: const Text('Ya, Selesaikan',
+                  style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isCompletionLoading = true);
+
+    try {
+      print('DEBUG: Starting learning completion for Learning ID: $learningId');
+      final response = await LearningApiService.completeLearning(
+        learningId: learningId,
+      );
+
+      print(
+          'DEBUG: Completion response - Success: ${response.success}, Message: ${response.message}');
+
+      if (mounted) {
+        if (response.success) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.data ??
+                  'Pembelajaran berhasil diselesaikan! Pendapatan telah ditambahkan ke mentor.'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 4),
+            ),
+          );
+          print('DEBUG: Refreshing activity data...');
+          _refreshActivity(); // Refresh to update UI
+        } else {
+          print('DEBUG: Completion failed - ${response.message}');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(response.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('DEBUG: Exception during completion: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Terjadi kesalahan: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isCompletionLoading = false);
+    }
+  }
+
   // --- UI WIDGETS (New and Improved) ---
   @override
   Widget build(BuildContext context) {
@@ -183,6 +279,12 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
           final materialName = activityDetails['materialName'] ?? 'N/A';
           final trainActivities = activityDetails['train'] as List? ?? [];
           final pictureUrl = activityDetails['picture'] ?? '';
+
+          // Check if learning is already completed
+          final isLearningCompleted = activityDetails['isCompleted'] == true ||
+              activityDetails['completed'] == true ||
+              activityDetails['status'] == true;
+
           final completedTrain = trainActivities
               .where((t) => (t['trainActivity']?['status'] ?? false) == true)
               .length;
@@ -221,8 +323,11 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
                       childCount: trainActivities.length,
                     ),
                   ),
-                  const SliverToBoxAdapter(
-                      child: SizedBox(height: 100)), // Space for FAB
+                  SliverToBoxAdapter(
+                      child: SizedBox(
+                          height: totalProgress >= 1.0
+                              ? 160
+                              : 100)), // Space for FABs
                 ],
               ),
               _buildAppBar(),
@@ -230,7 +335,90 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
           );
         },
       ),
-      floatingActionButton: FloatingActionButton.extended(
+      floatingActionButton: FutureBuilder<Map<String, dynamic>>(
+        future: _activityFuture,
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) return const SizedBox.shrink();
+
+          final activityDetails = snapshot.data!;
+          final trainActivities = activityDetails['train'] as List? ?? [];
+
+          // Check if learning is already completed
+          final isLearningCompleted = activityDetails['isCompleted'] == true ||
+              activityDetails['completed'] == true ||
+              activityDetails['status'] == true;
+
+          final completedTrain = trainActivities
+              .where((t) => (t['trainActivity']?['status'] ?? false) == true)
+              .length;
+          final totalTrain = trainActivities.length;
+          final totalProgress =
+              totalTrain == 0 ? 0.0 : completedTrain / totalTrain;
+
+          return _buildFloatingActionButtons(
+              totalProgress, isLearningCompleted);
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
+    );
+  }
+
+  Widget _buildFloatingActionButtons(
+      double progress, bool isLearningCompleted) {
+    if (progress >= 1.0) {
+      // Show both buttons when all activities are complete
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Complete Learning Button - disabled if already completed
+          FloatingActionButton.extended(
+            onPressed: isLearningCompleted || _isCompletionLoading
+                ? null
+                : _handleCompleteLearning,
+            backgroundColor:
+                isLearningCompleted ? Colors.grey.shade400 : Colors.green,
+            heroTag: "complete_learning",
+            icon: _isCompletionLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : Icon(
+                    isLearningCompleted
+                        ? Icons.check_circle
+                        : Icons.check_circle_outline,
+                    color: Colors.white,
+                  ),
+            label: Text(
+              _isCompletionLoading
+                  ? 'Memproses...'
+                  : isLearningCompleted
+                      ? 'Pembelajaran Selesai'
+                      : 'Selesaikan Pembelajaran',
+              style: const TextStyle(color: Colors.white),
+            ),
+          ),
+          const SizedBox(height: 12),
+          // Contact Mentor Button
+          FloatingActionButton.extended(
+            onPressed: _isChatLoading ? null : _handleContactMentor,
+            backgroundColor: primaryColor,
+            heroTag: "contact_mentor",
+            icon: _isChatLoading
+                ? const SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                        strokeWidth: 2, color: Colors.white))
+                : const Icon(Icons.chat_bubble_outline_rounded),
+            label: Text(_isChatLoading ? 'Memuat...' : 'Hubungi Mentor'),
+          ),
+        ],
+      );
+    } else {
+      // Show only contact mentor button when learning is not complete
+      return FloatingActionButton.extended(
         onPressed: _isChatLoading ? null : _handleContactMentor,
         backgroundColor: primaryColor,
         icon: _isChatLoading
@@ -241,9 +429,8 @@ class _DetailKegiatanState extends State<DetailKegiatan> {
                     strokeWidth: 2, color: Colors.white))
             : const Icon(Icons.chat_bubble_outline_rounded),
         label: Text(_isChatLoading ? 'Memuat...' : 'Hubungi Mentor'),
-      ),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-    );
+      );
+    }
   }
 
   Widget _buildAppBar() {

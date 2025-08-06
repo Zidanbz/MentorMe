@@ -8,8 +8,9 @@ class BaseApiClient {
   static const Duration timeout = Duration(seconds: 30);
 
   static Map<String, String> _getHeaders({String? token}) {
+    print('--- DEBUG TOKEN --- : $currentUserToken');
+
     final headers = <String, String>{
-      'Content-Type': 'application/json',
       'Accept': 'application/json',
     };
 
@@ -33,9 +34,10 @@ class BaseApiClient {
         uri = uri.replace(queryParameters: queryParams);
       }
 
-      final response = await http
-          .get(uri, headers: _getHeaders(token: token))
-          .timeout(timeout);
+      final headers = _getHeaders(token: token);
+      // headers['Content-Type'] = 'application/json'; // <-- [DIHAPUS] Ini adalah perbaikannya
+
+      final response = await http.get(uri, headers: headers).timeout(timeout);
 
       return _handleResponse<T>(response);
     } on SocketException {
@@ -55,10 +57,13 @@ class BaseApiClient {
     String? token,
   }) async {
     try {
+      final headers = _getHeaders(token: token);
+      headers['Content-Type'] = 'application/json';
+
       final response = await http
           .post(
             Uri.parse('$baseUrl$endpoint'),
-            headers: _getHeaders(token: token),
+            headers: headers,
             body: body != null ? json.encode(body) : null,
           )
           .timeout(timeout);
@@ -81,10 +86,13 @@ class BaseApiClient {
     String? token,
   }) async {
     try {
+      final headers = _getHeaders(token: token);
+      headers['Content-Type'] = 'application/json';
+
       final response = await http
           .put(
             Uri.parse('$baseUrl$endpoint'),
-            headers: _getHeaders(token: token),
+            headers: headers,
             body: body != null ? json.encode(body) : null,
           )
           .timeout(timeout);
@@ -106,10 +114,13 @@ class BaseApiClient {
     String? token,
   }) async {
     try {
+      final headers = _getHeaders(token: token);
+      headers['Content-Type'] = 'application/json';
+
       final response = await http
           .delete(
             Uri.parse('$baseUrl$endpoint'),
-            headers: _getHeaders(token: token),
+            headers: headers,
           )
           .timeout(timeout);
 
@@ -168,6 +179,12 @@ class BaseApiClient {
   }
 
   static ApiResponse<T> _handleResponse<T>(http.Response response) {
+    print('--- DEBUG API RESPONSE ---');
+    print('Endpoint: ${response.request?.url}');
+    print('Status Code: ${response.statusCode}');
+    print('Raw Response Body: ${response.body}');
+    print('--- AKHIR DEBUG ---');
+
     try {
       final Map<String, dynamic> data = json.decode(response.body);
 
