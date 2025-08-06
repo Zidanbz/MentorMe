@@ -12,6 +12,9 @@ import 'package:mentorme/shared/widgets/loading_dialog.dart';
 import 'package:mentorme/features/profile/edit_profile.dart';
 import 'package:mentorme/features/profile/terms_conditions_page.dart';
 import 'package:mentorme/features/profile/privacy_policy_page.dart';
+import 'package:mentorme/features/voucher/my_vouchers_page.dart';
+import 'package:mentorme/features/voucher/voucher_claim_page.dart';
+import 'package:mentorme/features/voucher/voucher_code_claim_page.dart';
 import 'package:mentorme/models/Profile_models.dart';
 import 'package:mentorme/features/profile/services/profile_api_service.dart';
 import 'package:mentorme/models/learning_model.dart';
@@ -276,6 +279,26 @@ class _ProfilePageState extends State<ProfilePage>
     );
   }
 
+  void _navigateToMyVouchers() {
+    Navigator.push(
+      context,
+      enhanced.OptimizedPageRoute(
+        child: const MyVouchersPage(),
+        transitionType: enhanced.PageTransitionType.slideRight,
+      ),
+    );
+  }
+
+  void _navigateToClaimVoucher() {
+    Navigator.push(
+      context,
+      enhanced.OptimizedPageRoute(
+        child: const VoucherCodeClaimPage(),
+        transitionType: enhanced.PageTransitionType.slideLeft,
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -389,6 +412,9 @@ class _ProfilePageState extends State<ProfilePage>
               _buildProfileInfo(),
               const SizedBox(height: 16),
               _buildActionButtons(),
+              const SizedBox(height: 20),
+              // Tambahkan section voucher
+              _buildVoucherSection(),
               const SizedBox(height: 20),
               // Posisi ditukar: Riwayat Transaksi sekarang di atas
               _buildTransactionSection(),
@@ -679,6 +705,71 @@ class _ProfilePageState extends State<ProfilePage>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildVoucherSection() {
+    return enhanced.OptimizedFadeSlide(
+      delay: const Duration(milliseconds: 450),
+      child: Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.95),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF339989).withOpacity(0.1),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    gradient: const LinearGradient(
+                      colors: [Color(0xFF339989), Color(0xFF3c493f)],
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.card_giftcard,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Voucher',
+                  style: AppTextStyles.headlineSmall.copyWith(
+                    color: const Color(0xFF3c493f),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            _buildMenuItem(
+              icon: Icons.wallet_giftcard,
+              title: 'Voucher Saya',
+              subtitle: 'Lihat semua voucher yang sudah diklaim',
+              onTap: _navigateToMyVouchers,
+            ),
+            const SizedBox(height: 12),
+            _buildMenuItem(
+              icon: Icons.redeem,
+              title: 'Klaim Voucher',
+              subtitle: 'Klaim voucher baru untuk mendapatkan diskon',
+              onTap: _navigateToClaimVoucher,
+            ),
+          ],
+        ),
       ),
     );
   }

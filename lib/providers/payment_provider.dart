@@ -98,7 +98,138 @@ class PaymentProvider {
     }
   }
 
-  /// **5. Top Up Coin**
+  /// **5. Get Available Vouchers to Claim**
+  Future<Map<String, dynamic>> getAvailableVouchersToClaim() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/voucher/available-to-claim'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        throw Exception(
+            responseData['error'] ?? 'Failed to load available vouchers');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to server: $e');
+    }
+  }
+
+  /// **6. Claim Voucher**
+  Future<Map<String, dynamic>> claimVoucher(String voucherId) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/voucher/claim/$voucherId'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return responseData;
+      } else {
+        throw Exception(responseData['error'] ?? 'Failed to claim voucher');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to server: $e');
+    }
+  }
+
+  /// **7. Get My Claimed Vouchers**
+  Future<Map<String, dynamic>> getMyVouchers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/voucher/my-vouchers'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        throw Exception(responseData['error'] ?? 'Failed to load my vouchers');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to server: $e');
+    }
+  }
+
+  /// **8. Get My Available Vouchers for Payment**
+  Future<Map<String, dynamic>> getMyAvailableVouchers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/voucher/my-available'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentUserToken',
+        },
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 200) {
+        return responseData;
+      } else {
+        throw Exception(
+            responseData['error'] ?? 'Failed to load available vouchers');
+      }
+    } catch (e) {
+      throw Exception('Failed to connect to server: $e');
+    }
+  }
+
+  /// **9. Claim Voucher by Code**
+  Future<Map<String, dynamic>> claimVoucherByCode(String voucherCode) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/voucher/claim-by-code'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $currentUserToken',
+        },
+        body: jsonEncode({'voucherCode': voucherCode}),
+      );
+
+      final responseData = json.decode(response.body);
+
+      if (response.statusCode == 201) {
+        return {
+          'success': true,
+          'data': responseData['data'],
+          'message':
+              responseData['data']['message'] ?? 'Voucher claimed successfully'
+        };
+      } else {
+        return {
+          'success': false,
+          'data': null,
+          'message': responseData['error'] ?? 'Failed to claim voucher'
+        };
+      }
+    } catch (e) {
+      return {
+        'success': false,
+        'data': null,
+        'message': 'Failed to connect to server: $e'
+      };
+    }
+  }
+
+  /// **10. Top Up Coin**
   Future<Map<String, dynamic>> topUpCoin(int amount) async {
     try {
       final response = await http.post(

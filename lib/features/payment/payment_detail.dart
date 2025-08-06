@@ -85,9 +85,10 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
         }
         isLoading = false;
       });
-      // Ambil daftar voucher
-      final voucherResponse = await _paymentProvider.getVoucher();
-      print("📌 Response API getVoucher: $voucherResponse");
+      // Ambil daftar voucher yang sudah diklaim dan bisa digunakan
+      final voucherResponse = await _paymentProvider.getMyAvailableVouchers();
+      print("📌 Response API getMyAvailableVouchers: $voucherResponse");
+
       if (voucherResponse != null &&
           (voucherResponse['code'] == 200 || voucherResponse['code'] == 201) &&
           voucherResponse['data'] is List) {
@@ -96,7 +97,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
               .addAll(List<Map<String, dynamic>>.from(voucherResponse['data']));
         });
       } else {
-        print("⚠️ Gagal memuat voucher, periksa respons API!");
+        print("⚠️ Gagal memuat voucher yang tersedia, periksa respons API!");
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -113,7 +114,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
     if (selectedVoucher == null || price == null) return price ?? 0;
 
     final selectedVoucherData = voucherList.firstWhere(
-      (voucher) => voucher['ID'] == selectedVoucher,
+      (voucher) => voucher['voucherId'] == selectedVoucher,
       orElse: () => {'piece': 0},
     );
 
@@ -389,7 +390,7 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                         value: selectedVoucher ?? null,
                         isExpanded: true,
                         decoration: const InputDecoration(
-                          hintText: 'Pilih voucher',
+                          hintText: 'Pilih voucher yang sudah diklaim',
                           hintStyle: TextStyle(fontSize: 13),
                           border: OutlineInputBorder(),
                           contentPadding: EdgeInsets.symmetric(
@@ -405,12 +406,12 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                           DropdownMenuItem<String>(
                             value:
                                 null, // Opsi default yang bertindak sebagai hint
-                            child: Text('Pilih voucher',
+                            child: Text('Pilih voucher yang sudah diklaim',
                                 style: TextStyle(color: Colors.grey)),
                           ),
                           ...voucherList.map((voucher) {
                             return DropdownMenuItem<String>(
-                              value: voucher['ID'],
+                              value: voucher['voucherId'],
                               child: Text(
                                   '${voucher['name']} - Diskon ${voucher['piece']}%'),
                             );
