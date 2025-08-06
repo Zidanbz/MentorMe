@@ -35,6 +35,7 @@ class _HelpPageState extends State<HelpPage> {
     final prefs = await SharedPreferences.getInstance();
     localDisplayName = prefs.getString('nameUser');
     localEmail = prefs.getString('emailUser');
+    print("✅ Loaded name: $localDisplayName, email: $localEmail");
   }
 
   Future<void> _initChat() async {
@@ -81,6 +82,7 @@ class _HelpPageState extends State<HelpPage> {
         mentorEmail: emailAdmin,
         subject: 'Bantuan Customer Support',
         initialMessage: 'Halo, saya membutuhkan bantuan.',
+        
       );
 
       if (createResponse.success && createResponse.data != null) {
@@ -88,6 +90,8 @@ class _HelpPageState extends State<HelpPage> {
 
         // 3. Ambil lagi data chat untuk mendapatkan detail room yang baru dibuat
         final updatedResponse = await ConsultationApiService.fetchChatRooms();
+        print(
+            "📥 Fetch room response: ${response.success}, data: ${response.data}");
         if (updatedResponse.success && updatedResponse.data != null) {
           final chatRooms = updatedResponse.data!;
           Map<String, dynamic>? newRoomData;

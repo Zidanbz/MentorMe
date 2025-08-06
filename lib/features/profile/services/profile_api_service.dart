@@ -71,6 +71,7 @@ class ProfileApiService {
     final response = await BaseApiClient.get<Map<String, dynamic>>(
       '/my/learning',
     );
+    print(response.data);
     return response;
   }
 
