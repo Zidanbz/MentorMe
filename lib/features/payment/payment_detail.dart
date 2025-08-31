@@ -6,6 +6,8 @@ import 'package:mentorme/shared/widgets/optimized_image.dart';
 import 'package:mentorme/shared/widgets/optimized_shimmer.dart';
 import 'package:mentorme/shared/widgets/optimized_animations.dart';
 import 'package:mentorme/shared/widgets/optimized_list_view.dart';
+import 'package:mentorme/features/voucher/voucher_claim_page.dart';
+import 'package:mentorme/features/voucher/voucher_code_claim_page.dart';
 
 class PaymentDetailPage extends StatefulWidget {
   final String projectId;
@@ -34,6 +36,82 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
 
   final PaymentProvider _paymentProvider = PaymentProvider();
 
+  // Helper: normalize success code (200/201 as int or string)
+  bool _isSuccessCode(dynamic code) {
+    if (code == null) return false;
+    if (code is int) return code == 200 || code == 201;
+    final s = code.toString();
+    return s == '200' || s == '201';
+  }
+
+  // Helper: normalize voucher list shape for UI
+  List<Map<String, dynamic>> _normalizeVoucherData(List<dynamic> raw) {
+    return raw
+        .map<Map<String, dynamic>>((item) {
+          final map = Map<String, dynamic>.from(item as Map);
+          final dynamic id =
+              map['voucherId'] ?? map['ID'] ?? map['id'] ?? map['Id'];
+          final String voucherId = id?.toString() ?? '';
+          final String name = (map['name'] ?? 'Voucher').toString();
+          final dynamic pieceRaw = map['piece'];
+          int piece;
+          if (pieceRaw is num) {
+            piece = pieceRaw.toInt();
+          } else {
+            piece = int.tryParse(pieceRaw?.toString() ?? '') ?? 0;
+          }
+          return {
+            'voucherId': voucherId,
+            'name': name,
+            'piece': piece,
+            // keep original fields if needed later
+            ...map,
+          };
+        })
+        .where((e) => (e['voucherId'] as String).isNotEmpty)
+        .toList();
+  }
+
+  // Reload vouchers only (without reloading payment details)
+  Future<void> _reloadVouchersOnly() async {
+    try {
+      final voucherResponse = await _paymentProvider.getMyAvailableVouchers();
+      print("🔄 Refresh vouchers, response: $voucherResponse");
+      if (voucherResponse != null &&
+          _isSuccessCode(voucherResponse['code']) &&
+          voucherResponse['data'] is List) {
+        final normalized =
+            _normalizeVoucherData(voucherResponse['data'] as List<dynamic>);
+        print("✅ Voucher tersedia setelah refresh: ${normalized.length}");
+        setState(() {
+          voucherList
+            ..clear()
+            ..addAll(normalized);
+          if (selectedVoucher != null &&
+              !voucherList.any((v) => v['voucherId'] == selectedVoucher)) {
+            selectedVoucher = null;
+          }
+        });
+      }
+    } catch (e) {
+      print("⚠️ Gagal refresh vouchers: $e");
+    }
+  }
+
+  void _goToVoucherClaimList() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const VoucherClaimPage()),
+    ).then((_) => _reloadVouchersOnly());
+  }
+
+  void _goToVoucherCode() {
+    Navigator.push(
+      context,
+      MaterialPageRoute(builder: (_) => const VoucherCodeClaimPage()),
+    ).then((_) => _reloadVouchersOnly());
+  }
+
   @override
   void initState() {
     super.initState();
@@ -57,8 +135,15 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
           if (response['code'] == 200 && response['data'] != null) {
             materialName =
                 response['data']['materialName'] ?? 'Material tidak tersedia';
-            syllabus = response['data']['syllabus'] ?? 0;
-            price = int.tryParse(response['data']['price']) ?? 0;
+            syllabus = (response['data']['syllabus'] is num)
+                ? (response['data']['syllabus'] as num).toInt()
+                : int.tryParse(
+                        response['data']['syllabus']?.toString() ?? '0') ??
+                    0;
+            final dynamic priceRaw = response['data']['price'];
+            price = (priceRaw is num)
+                ? priceRaw.toInt()
+                : int.tryParse(priceRaw?.toString() ?? '0') ?? 0;
             // error = null; // Reset error jika data berhasil diambil
           } else {
             // Tangani kasus ketika code bukan 200 atau data null
@@ -90,11 +175,18 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
       print("📌 Response API getMyAvailableVouchers: $voucherResponse");
 
       if (voucherResponse != null &&
-          (voucherResponse['code'] == 200 || voucherResponse['code'] == 201) &&
+          _isSuccessCode(voucherResponse['code']) &&
           voucherResponse['data'] is List) {
+        final normalized =
+            _normalizeVoucherData(voucherResponse['data'] as List<dynamic>);
+        print("✅ Voucher tersedia untuk pembayaran: ${normalized.length}");
         setState(() {
-          voucherList
-              .addAll(List<Map<String, dynamic>>.from(voucherResponse['data']));
+          voucherList.addAll(normalized);
+          // Reset selectedVoucher jika tidak ada di list
+          if (selectedVoucher != null &&
+              !voucherList.any((v) => v['voucherId'] == selectedVoucher)) {
+            selectedVoucher = null;
+          }
         });
       } else {
         print("⚠️ Gagal memuat voucher yang tersedia, periksa respons API!");
@@ -386,43 +478,72 @@ class _PaymentDetailPageState extends State<PaymentDetailPage> {
                         ],
                       ),
                       const SizedBox(height: 8),
-                      DropdownButtonFormField<String>(
-                        value: selectedVoucher ?? null,
-                        isExpanded: true,
-                        decoration: const InputDecoration(
-                          hintText: 'Pilih voucher yang sudah diklaim',
-                          hintStyle: TextStyle(fontSize: 13),
-                          border: OutlineInputBorder(),
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                        ),
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: Colors.black,
-                        ),
-                        items: [
-                          DropdownMenuItem<String>(
-                            value:
-                                null, // Opsi default yang bertindak sebagai hint
-                            child: Text('Pilih voucher yang sudah diklaim',
-                                style: TextStyle(color: Colors.grey)),
-                          ),
-                          ...voucherList.map((voucher) {
-                            return DropdownMenuItem<String>(
-                              value: voucher['voucherId'],
-                              child: Text(
-                                  '${voucher['name']} - Diskon ${voucher['piece']}%'),
-                            );
-                          }).toList(),
-                        ],
-                        onChanged: (String? value) {
-                          setState(() {
-                            selectedVoucher = value;
-                          });
-                        },
-                      ),
+                      voucherList.isEmpty
+                          ? Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 8),
+                                const Text(
+                                  'Tidak ada voucher tersedia untuk pembayaran',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: _goToVoucherClaimList,
+                                        child: const Text('Klaim dari daftar'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    Expanded(
+                                      child: OutlinedButton(
+                                        onPressed: _goToVoucherCode,
+                                        child: const Text('Klaim dengan kode'),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                OutlinedButton(
+                                  onPressed: _reloadVouchersOnly,
+                                  child: const Text('Refresh voucher'),
+                                ),
+                              ],
+                            )
+                          : DropdownButtonFormField<String>(
+                              value: selectedVoucher,
+                              isExpanded: true,
+                              decoration: const InputDecoration(
+                                hintText: 'Pilih voucher yang sudah diklaim',
+                                hintStyle: TextStyle(fontSize: 13),
+                                border: OutlineInputBorder(),
+                                contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 6,
+                                ),
+                              ),
+                              style: const TextStyle(
+                                fontSize: 13,
+                                color: Colors.black,
+                              ),
+                              items: voucherList.map((voucher) {
+                                return DropdownMenuItem<String>(
+                                  value: voucher['voucherId']?.toString(),
+                                  child: Text(
+                                      '${voucher['name']} - Diskon ${voucher['piece']}%'),
+                                );
+                              }).toList(),
+                              onChanged: (String? value) {
+                                setState(() {
+                                  selectedVoucher = value;
+                                });
+                              },
+                            ),
                       if (selectedVoucher != null) ...[
                         const SizedBox(height: 12),
                         Row(

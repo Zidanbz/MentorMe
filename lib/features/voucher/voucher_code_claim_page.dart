@@ -82,16 +82,23 @@ class _VoucherCodeClaimPageState extends State<VoucherCodeClaimPage>
           .claimVoucherByCode(_voucherCodeController.text.trim());
 
       if (result['success'] == true) {
+        final String successMsg = (result['message'] ??
+                (result['data'] != null ? result['data']['message'] : null) ??
+                'Voucher berhasil diklaim!')
+            .toString();
+
         setState(() {
-          _successMessage = 'Voucher berhasil diklaim!';
+          _successMessage = successMsg;
           _voucherCodeController.clear();
         });
 
-        // Show success dialog
-        _showSuccessDialog(result['data']);
+        // Show success dialog with voucher details from backend response
+        _showSuccessDialog(
+            result['data'] != null ? result['data']['voucher'] : null);
       } else {
         setState(() {
-          _errorMessage = result['message'] ?? 'Gagal mengklaim voucher';
+          _errorMessage =
+              (result['message'] ?? 'Gagal mengklaim voucher').toString();
         });
       }
     } catch (error) {
@@ -476,11 +483,19 @@ class _VoucherCodeClaimPageState extends State<VoucherCodeClaimPage>
           ),
           textCapitalization: TextCapitalization.characters,
           validator: (value) {
-            if (value == null || value.trim().isEmpty) {
+            final code = value?.trim() ?? '';
+            if (code.isEmpty) {
               return 'Kode voucher tidak boleh kosong';
             }
-            if (value.trim().length < 3) {
+            if (code.length < 3) {
               return 'Kode voucher minimal 3 karakter';
+            }
+            if (code.length > 20) {
+              return 'Kode voucher maksimal 20 karakter';
+            }
+            final regex = RegExp(r'^[A-Za-z0-9_-]+$');
+            if (!regex.hasMatch(code)) {
+              return 'Hanya huruf, angka, underscore (_), dan dash (-)';
             }
             return null;
           },

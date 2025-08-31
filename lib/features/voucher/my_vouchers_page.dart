@@ -92,10 +92,27 @@ class _MyVouchersPageState extends State<MyVouchersPage> {
     }
   }
 
+  // Normalize dynamic values (bool/int/string) to boolean
+  bool _asBool(dynamic v) {
+    if (v is bool) return v;
+    if (v is num) return v != 0;
+    if (v is String) {
+      final lower = v.toLowerCase();
+      if (lower == 'true' ||
+          lower == '1' ||
+          lower == 'available' ||
+          lower == 'active') {
+        return true;
+      }
+      return false;
+    }
+    return false;
+  }
+
   Widget _buildVoucherCard(Map<String, dynamic> voucher) {
-    final bool isUsed = voucher['isUsed'] ?? false;
+    final bool isUsed = _asBool(voucher['isUsed']);
     final bool isExpired = _isVoucherExpired(voucher['dateEnd']);
-    final bool isActive = !isUsed && !isExpired && (voucher['status'] ?? false);
+    final bool isActive = !isUsed && !isExpired && _asBool(voucher['status']);
 
     Color statusColor;
     String statusText;

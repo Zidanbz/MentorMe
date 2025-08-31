@@ -18,8 +18,12 @@ Future<void> main() async {
   await NotificationService().init(); // 🔥 Setup Notification Service
 
   // Dapatkan token FCM
-  String? token = await FirebaseMessaging.instance.getToken();
-  print("🔥 FCM Token: $token");
+  try {
+    String? token = await FirebaseMessaging.instance.getToken();
+    print("🔥 FCM Token: $token");
+  } catch (e) {
+    print("⚠️ Gagal ambil FCM Token: $e");
+  }
 
   runApp(
     MultiProvider(
